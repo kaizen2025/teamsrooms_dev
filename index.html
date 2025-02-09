@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Salle Tramontane</title>
+<style>
+/* ----- Réglage global ----- */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ----- Arrière-plan ----- */
+#background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  animation: zoomBackground 20s infinite alternate ease-in-out;
+}
+
+/* Animation fluide de l'arrière-plan */
+@keyframes zoomBackground {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.02); filter: brightness(1.1); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* ----- Overlay doux pour une meilleure lisibilité ----- */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ----- Zone Date/Heure ----- */
+.header {
+  position: absolute;
+  top: 20px; 
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: 10px;
+  padding: 12px 22px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+.header p {
+  margin: 5px 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #f1f1f1;
+}
+
+/* ----- Titre Principal ----- */
+.title {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2.4rem;
+  font-weight: bold;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 20px;
+  border-radius: 10px;
+  z-index: 10;
+}
+
+/* ----- Conteneur Principal ----- */
+.content {
+  position: absolute;
+  top: 120px;
+  bottom: 40px; 
+  left: 20px; 
+  right: 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  z-index: 10;
+}
+
+/* ----- Bloc Réunions ----- */
+.meetings {
+  width: 100%;
+  max-width: 550px;
+  height: calc(100% - 50px);
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  overflow-y: auto;
+  color: #fff;
+}
+
+/* ----- Titre du Bloc Réunions ----- */
+.meetings h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+  color: #fff;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 5px;
+}
+
+/* ----- Réduction des espacements avant et après "En cours" ----- */
+.status-current {
+  margin-top: 5px !important;  /* Réduit l'espace au-dessus */
+  margin-bottom: 5px !important; /* Réduit l'espace en dessous */
+  padding: 6px 12px; /* Ajuste l'intérieur */
+  display: inline-block;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background-color: #28a745; /* Vert */
+  color: white;
+  animation: blink 1.5s infinite alternate;
+}
+
+/* Effet clignotant sur "En cours" */
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Ajustement global des sections */
+.meetings h3 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+}
+
+/* ----- Cartes réunions ----- */
+.meeting-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin: 8px 0; /* Réduction de l'espacement */
+  padding: 12px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.meeting-item h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #f8f8f8;
+}
+
+.meeting-item p {
+  font-size: 1rem;
+  margin: 5px 0;
+  color: #ddd;
+}
+
+/* Réunions passées avec opacité réduite */
+.meeting-item.past {
+  opacity: 0.75;
+  color: #bbb;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Boutons réunion */
+.meeting-item button {
+  align-self: flex-start;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-top: 8px;
+}
+
+.meeting-item button:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+  color: black;
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.4);
+}
+
+/* ----- Zone des Boutons ----- */
+.footer-buttons {
+  position: fixed;
+  bottom: 20px; 
+  left: 20px;
+  display: flex; 
+  gap: 12px;
+  z-index: 10;
+}
+
+.footer-buttons button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease-in-out;
+  text-transform: uppercase;
+}
+
+.footer-buttons button:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: black;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.4);
+}
+
+/* ----- Texte d'aide pour le plein écran (réduction de hauteur) ----- */
+.exit-hint {
+  position: fixed;
+  bottom: 85px;
+  left: 20px;
+  z-index: 10;
+  font-size: 0.9rem; /* Réduction de la taille du texte */
+  font-weight: bold;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 15px; /* Réduction du padding */
+  border-radius: 8px; /* Légère réduction du border-radius */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  text-align: center;
+  height: auto; /* Assurer que la hauteur s'ajuste automatiquement */
+  min-height: 30px; /* Fixer une hauteur minimale si besoin */
+  line-height: 1.2; /* Ajuster l'espacement du texte */
+}
+
+</style>
+</head>
+<body>
+<div id="background-container"></div>
+
+<!-- Date / Heure -->
+<div class="header">
+  <p id="current-date"></p>
+  <p id="current-time"></p>
+</div>
+
+<!-- Titre principal -->
+<div class="title">Salle de Réunion Tramontane</div>
+
+<!-- Zone principale -->
+<div class="content">
+  <div class="meetings">
+    <h2>Réunions d'aujourd'hui</h2>
+    <div id="meetings-container">Chargement des réunions...</div>
+  </div>
+</div>
+
+<!-- Boutons d'action -->
+<div class="footer-buttons">
+  <button onclick="document.documentElement.requestFullscreen()">🔲 Plein écran</button>
+  <button onclick="document.exitFullscreen()">❎ Réduire</button>
+  <button onclick="fetchMeetings()">🔄 Rafraîchir</button>
+</div>
+
+<!-- Phrase d'aide pour le plein écran -->
+<div class="exit-hint">
+  <p>🔔 Maintenez <strong>Échap</strong> pour quitter le mode plein écran</p>
+</div>
+
+<script>
+  // ------ Mise à jour de la date / heure ------
+  function updateDateTime() {
+    const now = new Date();
+    document.getElementById('current-date').textContent =
+      now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('current-time').textContent = now.toLocaleTimeString('fr-FR');
+  }
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
+// Variable pour stocker l'état précédent des réunions
+let previousMeetings = JSON.stringify([]);
+
+// ------ (2) Récupération et affichage des réunions ------
+async function fetchMeetings() {
+    const salle = window.location.pathname.split('/')[1] || 'tramontane';
+    const response = await fetch(`/meetings.json?salle=${salle}&t=${Date.now()}`);
+    try {
+        const response = await fetch('meetings.json?t=' + Date.now());
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP! Status: ${response.status}`);
+        }
+
+        const meetings = await response.json();
+        if (!Array.isArray(meetings)) {
+            throw new Error("Données invalides: le JSON doit être un tableau.");
+        }
+
+        // Convertir les réunions en JSON pour comparaison
+        const currentMeetings = JSON.stringify(meetings);
+
+        // Comparaison de l'ancien état avec le nouveau
+        if (previousMeetings === currentMeetings) {
+            console.log("Aucun changement détecté, pas de mise à jour.");
+            return; // Ne met pas à jour l'affichage
+        }
+
+        // Mise à jour de l'état précédent
+        previousMeetings = currentMeetings;
+
+        // Mise à jour de l'affichage
+        updateMeetingsDisplay(meetings);
+        
+    } catch (error) {
+        console.error("Erreur lors du chargement des réunions:", error);
+        document.getElementById('meetings-container').innerHTML =
+            '<p>Erreur de chargement des réunions.</p>';
+    }
+}
+
+// Fonction pour mettre à jour l'affichage des réunions
+function updateMeetingsDisplay(meetings) {
+    const container = document.getElementById('meetings-container');
+    container.innerHTML = ''; // Effacer l'ancien affichage
+
+    const now = new Date();
+
+    const pastMeetings = [];
+    const currentMeetings = [];
+    const upcomingMeetings = [];
+
+    // Tri des réunions selon leur état
+    meetings.forEach(m => {
+        const start = new Date(m.Start);
+        const end = new Date(m.End);
+
+        if (end < now) {
+            pastMeetings.push(m);
+        } else if (start <= now && now < end) {
+            currentMeetings.push(m);
+        } else {
+            upcomingMeetings.push(m);
+        }
+    });
+
+    // Fonction pour créer une carte de réunion
+    function createMeetingItem(meeting, category) {
+        const start = new Date(meeting.Start);
+        const end = new Date(meeting.End);
+        const startTime = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const endTime = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+        let extraInfo = '';
+        if (category === 'En cours') {
+            const diffMin = Math.floor((end - now) / 60000);
+            extraInfo = `<p>⏳ Temps restant : ${diffMin} min</p>`;
+        }
+
+        return `
+            <div class="meeting-item ${category === 'Terminée' ? 'past' : ''}">
+                <h3>${meeting.Subject}</h3>
+                <p>🕒 ${startTime} - ${endTime}</p>
+                ${extraInfo}
+                <p>👥 Invités : ${Array.isArray(meeting.Attendees) ? meeting.Attendees.join(', ') : meeting.Attendees}</p>
+                ${meeting.IsOnline ? `<button onclick="window.open('${meeting.JoinUrl}', '_blank')">📎 Rejoindre</button>` : ''}
+            </div>
+        `;
+    }
+
+    // Ajout des sections si elles contiennent des réunions
+if (currentMeetings.length > 0) {
+    container.innerHTML += `<h4 class="status-current">🟢 En cours</h4>`;
+    currentMeetings.forEach(m => {
+        container.innerHTML += createMeetingItem(m, 'En cours');
+    });
+}
+
+
+    if (upcomingMeetings.length > 0) {
+        container.innerHTML += `<h4>🔵 À venir</h4>`;
+        upcomingMeetings.forEach(m => {
+            container.innerHTML += createMeetingItem(m, 'À venir');
+        });
+    }
+
+    if (pastMeetings.length > 0) {
+        container.innerHTML += `<h4>⚪ Terminées</h2>`;
+        pastMeetings.forEach(m => {
+            container.innerHTML += createMeetingItem(m, 'Terminée');
+        });
+    }
+}
+
+// Mise à jour des réunions toutes les 10 secondes
+setInterval(fetchMeetings, 10000);
+fetchMeetings();
+
+
+  // ------ Rotation aléatoire d'arrière-plan toutes les 30 minutes ------
+  const backgrounds = [
+    'Image/iStock-1137376794.jpg',
+    'Image/iStock-1512013316.jpg',
+    'Image/iStock-2019872476.jpg',
+    'Image/iStock-2154828608.jpg',
+    'Image/iStock-2157915069.jpg',
+    'Image/iStock-2162113462.jpg',
+    'Image/iStock-2178301876.jpg',
+    'Image/iStock-2186748328.jpg',
+    'Image/iStock-2187797860.jpg',
+    'Image/iStock-2188982874.jpg'
+  ];
+
+  function changeBackground() {
+    const randomImage = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+    document.getElementById('background-container').style.backgroundImage = `url('${randomImage}')`;
+  }
+  
+  setInterval(changeBackground, 1800000); // 30 min
+  changeBackground();
+</script>
+
+</body>
+</html>
