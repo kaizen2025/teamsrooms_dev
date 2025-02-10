@@ -1,14 +1,26 @@
+#!/usr/bin/env python3
 import os
-import time
-# Pour forcer l'utilisation du fuseau horaire de Paris au niveau système (si supporté)
-os.environ['TZ'] = 'Europe/Paris'
-try:
-    time.tzset()
-except AttributeError:
-    # time.tzset() n'est pas disponible sous Windows
-    pass
+import sys
+import subprocess
 
-from flask import Flask, render_template, jsonify, request, send_from_directory  
+def install_requirements():
+    """
+    Vérifie si le fichier requirements.txt existe et lance pip pour installer les dépendances.
+    """
+    requirements_file = os.path.join(os.path.dirname(__file__), 'requirements.txt')
+    if os.path.exists(requirements_file):
+        try:
+            print("Installation des dépendances depuis requirements.txt…")
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', requirements_file])
+        except subprocess.CalledProcessError as e:
+            print("Erreur lors de l'installation des dépendances :", e)
+    else:
+        print("Fichier requirements.txt non trouvé.")
+
+# Installation des dépendances avant d'importer les modules requis
+install_requirements()
+
+import time
 import configparser
 import requests
 import json
@@ -17,8 +29,18 @@ import pytz
 import re
 from datetime import datetime, timedelta, timezone
 from dateutil import parser  # Nécessite python-dateutil
+from flask import Flask, render_template, jsonify, request, send_from_directory  
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+# Pour forcer l'utilisation du fuseau horaire de Paris (si supporté)
+os.environ['TZ'] = 'Europe/Paris'
+try:
+    time.tzset()
+except AttributeError:
+    # time.tzset() n'est pas disponible sous Windows
+    pass
+
+# Création de l'application Flask et configuration de ProxyFix
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
@@ -34,7 +56,7 @@ if config.has_section('SALLES'):
 # Définition du fuseau horaire de Paris
 PARIS_TZ = pytz.timezone('Europe/Paris')
 
-# Variables d'état
+# Variables d'état et verrou pour les mises à jour
 last_modified_check = {}
 update_lock = threading.Lock()
 
@@ -61,13 +83,10 @@ def get_token():
 def convert_to_paris_time(iso_str):
     """
     Convertit une chaîne ISO en heure de Paris.
-    Cette fonction utilise dateutil pour une analyse fiable.
-    Par exemple, une date "2025-02-10T00:30:00Z" sera convertie en "2025-02-10T01:30:00+01:00"
-    si c'est bien l'heure de Paris.
+    Par exemple, "2025-02-10T00:30:00Z" devient "2025-02-10T01:30:00+01:00" si c'est bien l'heure de Paris.
     """
     try:
-        dt = parser.isoparse(iso_str)  # Analyse la date en tenant compte de l'offset s'il est présent
-        # Si l'objet est naïf, on suppose qu'il est en UTC
+        dt = parser.isoparse(iso_str)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         dt_paris = dt.astimezone(PARIS_TZ)
@@ -101,7 +120,6 @@ def update_meetings(salle_email, salle_name):
         return []
     
     headers = {'Authorization': f'Bearer {token}'}
-    # Utilisation d'un objet timezone-aware pour l'heure actuelle en UTC puis conversion en Paris
     now_utc = datetime.now(timezone.utc)
     now_paris = now_utc.astimezone(PARIS_TZ)
     start = (now_paris - timedelta(hours=2)).isoformat()
@@ -179,13 +197,12 @@ def check_for_changes():
 def update_all_meetings():
     """
     Récupère toutes les réunions et recrée le fichier JSON.
-    Cette fonction est appelée immédiatement au démarrage pour forcer l'update.
     """
     all_meetings = []
     for salle, email in SALLES.items():
         all_meetings.extend(update_meetings(email, salle))
     try:
-        with open(MEETINGS_FILE, 'w') as f:
+        with open(MEETINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(all_meetings, f)
         print(f"Mise à jour réussie à {datetime.now(timezone.utc).astimezone(PARIS_TZ).isoformat(timespec='seconds')} ({len(all_meetings)} réunions)")
     except Exception as e:
@@ -196,7 +213,6 @@ def background_updater():
     Le thread d'arrière-plan effectue :
       - Une mise à jour complète toutes les 30 secondes.
       - Une vérification des changements toutes les 5 secondes.
-    Ainsi, les réunions seront mises à jour au plus tard quelques secondes après un changement.
     """
     last_full_update = datetime.now(timezone.utc)
     while True:
@@ -216,7 +232,7 @@ def background_updater():
             print(f"Erreur critique du thread: {str(e)}")
             time.sleep(5)
 
-# --- Routes ---
+# --- Routes Flask ---
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -233,17 +249,33 @@ def get_meetings():
         with update_lock:
             update_all_meetings()
     return send_from_directory('.', MEETINGS_FILE)
-# --- Démarrage ---
+
+@app.route('/<salle_name>')
+def salle(salle_name):
+    """Affiche les réunions pour une salle spécifique."""
+    salle_name = salle_name.lower()
+    if salle_name not in SALLES:
+        return f"Salle '{salle_name}' non trouvée", 404
+
+    if not os.path.exists(MEETINGS_FILE):
+        return jsonify({"error": "Aucune réunion disponible"}), 404
+
+    try:
+        with open(MEETINGS_FILE, 'r', encoding='utf-8') as f:
+            all_meetings = json.load(f)
+    except Exception as e:
+        return jsonify({"error": f"Erreur de lecture du fichier JSON: {str(e)}"}), 500
+
+    salle_meetings = [meeting for meeting in all_meetings if meeting.get('salle', '').lower() == salle_name]
+    return render_template('index.html', salle_name=salle_name, meetings=salle_meetings)
+
+# --- Exécution principale ---
 if __name__ == '__main__':
-    # Forcer immédiatement une mise à jour pour obtenir les dernières données
-    update_all_meetings()
-    updater = threading.Thread(target=background_updater)
-    updater.daemon = True
-    updater.start()
+    # Lancement du thread d'arrière-plan pour mettre à jour les réunions
+    updater_thread = threading.Thread(target=background_updater, daemon=True)
+    updater_thread.start()
+    # Récupérer le port depuis la variable d'environnement (par défaut 5000)
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
-else:
-    update_all_meetings()
-    updater = threading.Thread(target=background_updater)
-    updater.daemon = True
-    updater.start()
+    # Démarrage du serveur Flask
+    app.run(host='0.0.0.0', port=port)
+
