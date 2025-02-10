@@ -4,14 +4,25 @@ import subprocess
 import threading
 import ctypes
 import re
+import time
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 
-# Pour la création des raccourcis Windows
+# --- Installation automatique de pywin32 si nécessaire ---
 try:
     import win32com.client
 except ImportError:
-    win32com = None
+    print("pywin32 non installé, installation en cours...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
+    except Exception as e:
+        messagebox.showerror("Erreur", "Impossible d'installer pywin32. Veuillez l'installer manuellement.")
+        sys.exit(1)
+    try:
+        import win32com.client
+    except ImportError:
+        messagebox.showerror("Erreur", "Installation de pywin32 échouée. Veuillez l'installer manuellement.")
+        sys.exit(1)
 
 # Expression régulière pour supprimer les séquences ANSI (ex: [G[1A[J)
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
@@ -33,7 +44,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 # --- Fonction d'exécution de commande ---
 def run_command(command, ignore_warnings=False):
     """
-    Exécute une commande en redirigeant stdout et stderr, et affiche la sortie dans le log.
+    Exécute une commande et affiche sa sortie en temps réel dans le log.
     Les séquences ANSI indésirables sont supprimées.
     """
     process = subprocess.Popen(command,
@@ -51,7 +62,19 @@ def run_command(command, ignore_warnings=False):
     process.stdout.close()
     process.wait()
 
-# === OPTION 1 : Déploiement vers Git & Heroku ===
+# --- Fonction pour attendre qu'un service soit en état RUNNING ---
+def wait_for_service(service_name, timeout=30):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        result = subprocess.run(f'sc query {service_name}', shell=True, capture_output=True, text=True)
+        if "RUNNING" in result.stdout:
+            return True
+        time.sleep(1)
+    return False
+
+# =============================================================================
+# OPTION 1 : Déployer vers Git & Heroku
+# =============================================================================
 def update_heroku():
     log_console.insert(tk.END, "[UPDATE] Vérification et mise à jour de Heroku CLI...\n")
     root.update()
@@ -60,7 +83,7 @@ def update_heroku():
 def check_gh_auth():
     log_console.insert(tk.END, "[AUTH] Vérification de l'authentification GitHub...\n")
     root.update()
-    # Exemple de token GitHub (à adapter ou sécuriser)
+    # Exemple de token GitHub (à adapter et sécuriser)
     GITHUB_PAT = "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"
     run_command("git config --global credential.helper store", ignore_warnings=True)
     with open(os.path.expanduser("~/.git-credentials"), "w") as cred_file:
@@ -128,7 +151,9 @@ def start_deployment():
             log_console.insert(tk.END, "🚀 Déploiement terminé avec succès !\n")
     threading.Thread(target=threaded_deployment, daemon=True).start()
 
-# === OPTION 2 : Cloner/Mise à jour du dépôt local ===
+# =============================================================================
+# OPTION 2 : Cloner/Mise à jour du dépôt Teamsrooms (C:\Teamsrooms)
+# =============================================================================
 def sync_local_repo():
     target_dir = r"C:\Teamsrooms"
     if os.path.exists(target_dir):
@@ -140,59 +165,9 @@ def sync_local_repo():
         root.update()
         run_command(f'git clone https://github.com/kaizen2025/teamsrooms.git "{target_dir}"')
 
-# === OPTION 3 : Créer un raccourci pour lancer app.py en arrière-plan ===
-def create_shortcut():
-    desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
-    shortcut_path = os.path.join(desktop, 'Lancer Teamsrooms.lnk')
-    # Utilisation de pythonw.exe pour éviter l'affichage de la console
-    if "python.exe" in sys.executable.lower():
-        target = sys.executable.lower().replace("python.exe", "pythonw.exe")
-    else:
-        target = sys.executable
-    script_path = r"C:\Teamsrooms\app.py"
-    if not os.path.exists(script_path):
-        messagebox.showerror("Erreur", f"Le fichier {script_path} est introuvable.")
-        return
-    if win32com is None:
-        messagebox.showerror("Erreur", "Le module win32com n'est pas installé. Installez pywin32.")
-        return
-    shell = win32com.client.Dispatch("WScript.Shell")
-    shortcut = shell.CreateShortCut(shortcut_path)
-    shortcut.Targetpath = target
-    shortcut.Arguments = f'"{script_path}"'
-    shortcut.WorkingDirectory = r"C:\Teamsrooms"
-    shortcut.IconLocation = target
-    shortcut.WindowStyle = 7  # Démarrage minimisé
-    shortcut.save()
-    log_console.insert(tk.END, "✅ Raccourci pour app.py créé sur le Bureau.\n")
-    root.update()
-
-# === OPTION 4 : Créer/Démarrer un service Windows pour app.py ===
-def create_service():
-    app_path = r"C:\Teamsrooms\app.py"
-    if not os.path.exists(app_path):
-        messagebox.showerror("Erreur", f"Le fichier {app_path} est introuvable.")
-        return
-    python_exe = sys.executable
-    if "python.exe" in python_exe.lower():
-        pythonw_path = python_exe.lower().replace("python.exe", "pythonw.exe")
-    else:
-        pythonw_path = python_exe
-    binPath_str = f'"{pythonw_path}" "{app_path}"'
-    query = subprocess.run('sc query TeamsroomsService', shell=True, capture_output=True, text=True)
-    if "SERVICE_NAME" in query.stdout:
-        answer = messagebox.askyesno("Service existant", "Le service TeamsroomsService existe déjà. Voulez-vous le redémarrer ?")
-        if answer:
-            run_command("sc stop TeamsroomsService")
-            run_command("sc start TeamsroomsService")
-            messagebox.showinfo("Succès", "Service redémarré avec succès.")
-        return
-    create_cmd = f'sc create TeamsroomsService binPath= "{binPath_str}" start= auto'
-    run_command(create_cmd)
-    run_command("sc start TeamsroomsService")
-    messagebox.showinfo("Succès", "Service TeamsroomsService créé et démarré avec succès.")
-
-# === OPTION 5 : Créer un raccourci Chrome pour ouvrir une salle de réunion en plein écran ===
+# =============================================================================
+# OPTION 3 : Créer un raccourci Chrome pour ouvrir une salle de réunion en plein écran
+# =============================================================================
 def get_chrome_path():
     possible_paths = [
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -220,9 +195,6 @@ def create_chrome_shortcut():
     desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
     shortcut_name = f"Ouvrir {room} ({'Local' if mode=='local' else 'Web'}).lnk"
     shortcut_path = os.path.join(desktop, shortcut_name)
-    if win32com is None:
-        messagebox.showerror("Erreur", "Le module win32com n'est pas installé. Installez pywin32.")
-        return
     shell = win32com.client.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(shortcut_path)
     shortcut.Targetpath = chrome_path
@@ -235,24 +207,59 @@ def create_chrome_shortcut():
     log_console.insert(tk.END, f"✅ Raccourci Chrome pour {room} ({mode}) créé avec succès !\n")
     root.update()
 
-# --- Exécution des tâches sélectionnées ---
+# =============================================================================
+# OPTION 4 : Créer/Démarrer le service Windows pour Teamsrooms
+# =============================================================================
+def create_service():
+    # Pour cet exemple, le service lancera app.py situé dans C:\Teamsrooms
+    app_path = r"C:\Teamsrooms\app.py"
+    if not os.path.exists(app_path):
+        messagebox.showerror("Erreur", f"Le fichier {app_path} est introuvable.")
+        return
+    if "python.exe" in sys.executable.lower():
+        pythonw_path = sys.executable.lower().replace("python.exe", "pythonw.exe")
+    else:
+        pythonw_path = sys.executable
+    binPath_str = f'"{pythonw_path}" "{app_path}"'
+    query = subprocess.run('sc query TeamsroomsService', shell=True, capture_output=True, text=True)
+    if "SERVICE_NAME" in query.stdout:
+        answer = messagebox.askyesno("Service existant", "Le service TeamsroomsService existe déjà. Voulez-vous le redémarrer ?")
+        if answer:
+            run_command("sc stop TeamsroomsService")
+            run_command("sc start TeamsroomsService")
+            if wait_for_service("TeamsroomsService"):
+                messagebox.showinfo("Succès", "Service redémarré avec succès.")
+            else:
+                messagebox.showerror("Erreur", "Le service n'a pas répondu assez rapidement après le redémarrage.")
+        return
+    create_cmd = f'sc create TeamsroomsService binPath= "{binPath_str}" start= auto'
+    run_command(create_cmd)
+    run_command("sc start TeamsroomsService")
+    if wait_for_service("TeamsroomsService"):
+        messagebox.showinfo("Succès", "Service TeamsroomsService créé et démarré avec succès.")
+    else:
+        messagebox.showerror("Erreur", "Le service n'a pas répondu assez rapidement après le démarrage.")
+
+# =============================================================================
+# Exécution des tâches sélectionnées selon les cases cochées
+# =============================================================================
 def run_selected_tasks():
     def task_thread():
         if var_deploy.get():
             start_deployment()
         if var_sync_repo.get():
             sync_local_repo()
-        if var_create_shortcut.get():
-            create_shortcut()
-        if var_create_service.get():
-            create_service()
         if var_create_chrome.get():
             create_chrome_shortcut()
+        if var_create_service.get():
+            create_service()
         log_console.insert(tk.END, "\nToutes les installations sélectionnées sont terminées.\n")
         root.update()
     threading.Thread(target=task_thread, daemon=True).start()
 
-# === Interface Graphique (Tkinter) ===
+# =============================================================================
+# Interface Graphique Tkinter
+# =============================================================================
 root = tk.Tk()
 root.title("Installation et Configuration Teamsrooms")
 root.geometry("800x700")
@@ -261,32 +268,29 @@ root.geometry("800x700")
 log_console = scrolledtext.ScrolledText(root, height=15, width=100)
 log_console.pack(pady=10)
 
-# --- Cadre des options à installer ---
+# Cadre pour sélectionner les options à installer
 options_frame = tk.LabelFrame(root, text="Sélectionnez les options à installer", padx=10, pady=10)
 options_frame.pack(padx=10, pady=10, fill="x")
 
 var_deploy = tk.BooleanVar(value=False)
 var_sync_repo = tk.BooleanVar(value=False)
-var_create_shortcut = tk.BooleanVar(value=False)
-var_create_service = tk.BooleanVar(value=False)
 var_create_chrome = tk.BooleanVar(value=False)
+var_create_service = tk.BooleanVar(value=False)
 
 chk_deploy = tk.Checkbutton(options_frame, text="1. Déployer vers Git & Heroku", variable=var_deploy)
 chk_deploy.pack(anchor="w")
 chk_sync_repo = tk.Checkbutton(options_frame, text="2. Cloner/Mise à jour du repo Teamsrooms", variable=var_sync_repo)
 chk_sync_repo.pack(anchor="w")
-chk_create_shortcut = tk.Checkbutton(options_frame, text="3. Créer raccourci pour lancer app.py", variable=var_create_shortcut)
-chk_create_shortcut.pack(anchor="w")
-chk_create_service = tk.Checkbutton(options_frame, text="4. Créer/Démarrer service Teamsrooms", variable=var_create_service)
-chk_create_service.pack(anchor="w")
-chk_create_chrome = tk.Checkbutton(options_frame, text="5. Créer raccourci Chrome pour salle de réunion", variable=var_create_chrome)
+chk_create_chrome = tk.Checkbutton(options_frame, text="3. Créer raccourci Chrome pour salle de réunion", variable=var_create_chrome)
 chk_create_chrome.pack(anchor="w")
+chk_create_service = tk.Checkbutton(options_frame, text="4. Créer/Démarrer le service Teamsrooms", variable=var_create_service)
+chk_create_service.pack(anchor="w")
 
-# --- Cadre pour la configuration de l'option 5 (Salle de réunion) ---
-meeting_frame = tk.LabelFrame(root, text="Configuration du raccourci Chrome (Option 5)", padx=10, pady=10)
+# Cadre pour la configuration du raccourci Chrome (Option 3)
+meeting_frame = tk.LabelFrame(root, text="Configuration du raccourci Chrome", padx=10, pady=10)
 meeting_frame.pack(padx=10, pady=10, fill="x")
 
-# Liste des salles avec leur adresse (pour information)
+# Liste des salles de réunion (pour information)
 meeting_rooms = {
     "Canigou": "Sallecanigou@anecoop-france.com",
     "Castillet": "Sallecastillet@anecoop-france.com",
@@ -312,7 +316,7 @@ radio_local.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 radio_web = tk.Radiobutton(meeting_frame, text="Web", variable=mode_var, value="web")
 radio_web.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
-# --- Cadre pour les boutons d'action ---
+# Cadre pour les boutons d'action
 buttons_frame = tk.Frame(root)
 buttons_frame.pack(pady=10)
 
