@@ -286,8 +286,8 @@
     <p id="current-time"></p>
   </div>
   
-<!-- Titre -->
-<div class="title">Salle de Réunion {{ salle_name | default('Toutes les salles') }}</div>
+  <!-- Titre -->
+  <div class="title">Salle de Réunion {{ salle_name | default('Toutes les salles') }}</div>
   
   <!-- Main content for meetings -->
   <div class="content">
@@ -320,41 +320,47 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
     
-    // Avoid unnecessary updates
+    // Variable pour éviter les mises à jour inutiles
     let previousMeetings = JSON.stringify([]);
     
     // Fetch meetings and update display
     async function fetchMeetings() {
-    try {
+      try {
         // 🔍 Récupérer la salle actuelle depuis l'URL
         let salleName = window.location.pathname.split('/')[1] || '';
-        salleName = salleName.toLowerCase(); // Normalisation en minuscule
-
+        salleName = salleName.toLowerCase(); // Normalisation
+        
         // 🔄 Charger les réunions depuis le fichier JSON
         const response = await fetch(`/meetings.json?t=${Date.now()}`);
         let meetings = await response.json();
-
+        
         // 🎯 FILTRAGE : Garder uniquement les réunions de la salle demandée
         if (salleName) {
-            meetings = meetings.filter(m => m.salle.toLowerCase() === salleName);
+          meetings = meetings.filter(m => m.salle.toLowerCase() === salleName);
         }
-
+        
+        // 🔍 FILTRAGE SUPPLÉMENTAIRE : Ne conserver que les réunions du jour
+        const today = new Date().toDateString();
+        meetings = meetings.filter(m => {
+          const meetingDate = new Date(m.start).toDateString();
+          return meetingDate === today;
+        });
+        
         // ✅ Vérifier si les réunions ont changé avant d'actualiser l'affichage
         const currentMeetingsString = JSON.stringify(meetings);
         if (previousMeetings === currentMeetingsString) return;
-
         previousMeetings = currentMeetingsString;
-
+        
         // ✅ Mettre à jour l'affichage des réunions
         updateMeetingsDisplay(meetings);
-
-    } catch (error) {
+        
+      } catch (error) {
         console.error("❌ Erreur lors du chargement des réunions :", error);
-        document.getElementById('meetings-container').innerHTML = 
-    '<p style="color: red; font-weight: bold; text-align: center;">⚠️ Impossible de récupérer les réunions. Vérifiez la connexion.</p>';
+        document.getElementById('meetings-container').innerHTML =
+          '<p style="color: red; font-weight: bold; text-align: center;">⚠️ Impossible de récupérer les réunions. Vérifiez la connexion.</p>';
+      }
     }
-}
-
+    
     // Update meetings display
     function updateMeetingsDisplay(meetings) {
       const container = document.getElementById('meetings-container');
@@ -386,8 +392,8 @@
         }
         let joinButton = '';
         if (meeting.joinUrl) {
-  joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')">📎 Rejoindre</button>`;
-}
+          joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')">📎 Rejoindre</button>`;
+        }
         const attendees = Array.isArray(meeting.attendees)
           ? meeting.attendees.join(', ')
           : meeting.attendees || 'Aucun invité spécifié';
