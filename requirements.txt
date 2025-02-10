@@ -1,5 +1,6 @@
-flask
-requests
-apscheduler
-python-dotenv
-gunicorn==20.1.0
+flask==3.0.2
+requests==2.31.0
+apscheduler==3.10.1
+pytz==2023.3.post1
+python-dotenv==1.0.0
+configparser==6.0.0

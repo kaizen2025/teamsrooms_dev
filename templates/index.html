@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salle de Réunion Tramontane</title>
+  <style>
+    /* Global styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    /* Background container */
+    #background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      animation: zoomBackground 20s infinite alternate ease-in-out;
+    }
+    @keyframes zoomBackground {
+      0% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.02); filter: brightness(1.1); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(0,0,0,0.2));
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Manual join interface */
+    .meeting-join {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(255,255,255,0.25);
+      padding: 10px 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease-in-out;
+      z-index: 11;
+    }
+    .meeting-join input {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.8);
+      outline: none;
+      width: 220px;
+      transition: box-shadow 0.3s ease-in-out;
+    }
+    .meeting-join input:focus {
+      box-shadow: 0 0 10px rgba(255,255,255,0.6);
+    }
+    .meeting-join button {
+      background-color: #28a745;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .meeting-join button:hover {
+      background-color: #218838;
+      transform: scale(1.05);
+    }
+    /* Header (date/time) */
+    .header {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 10px;
+      padding: 12px 22px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 10;
+    }
+    .header p {
+      margin: 5px 0;
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #f1f1f1;
+    }
+    /* Title */
+    .title {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2.4rem;
+      font-weight: bold;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+      color: #fff;
+      background: rgba(0,0,0,0.3);
+      padding: 8px 20px;
+      border-radius: 10px;
+      z-index: 10;
+    }
+    /* Main content */
+    .content {
+      position: absolute;
+      top: 120px;
+      bottom: 40px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      z-index: 10;
+    }
+    .meetings {
+      width: 100%;
+      max-width: 550px;
+      height: calc(100% - 50px);
+      background: rgba(30,30,30,0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      padding: 20px;
+      overflow-y: auto;
+      color: #fff;
+    }
+    .meetings h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      color: #fff;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 5px;
+      text-align: center;
+    }
+    .status-current {
+      margin-top: 5px;
+      margin-bottom: 5px;
+      padding: 6px 12px;
+      display: inline-block;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background-color: #28a745;
+      color: white;
+      animation: blink 1.5s infinite alternate;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    /* Meeting cards */
+    .meeting-item {
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      margin: 8px 0;
+      padding: 12px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .meeting-item h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #f8f8f8;
+    }
+    .meeting-item p {
+      font-size: 1rem;
+      margin: 5px 0;
+      color: #ddd;
+    }
+    .meeting-item.past {
+      opacity: 0.75;
+      color: #bbb;
+      background-color: rgba(255,255,255,0.08);
+    }
+    .meeting-item button {
+      align-self: flex-start;
+      background-color: #28a745;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.3s, transform 0.2s;
+      margin-top: 8px;
+    }
+    .meeting-item button:hover {
+      background-color: #218838;
+      transform: translateY(-1px);
+    }
+    /* Footer buttons */
+    .footer-buttons {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+    }
+    .footer-buttons button {
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.25);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      transition: all 0.3s ease-in-out;
+      text-transform: uppercase;
+    }
+    .footer-buttons button:hover {
+      background: rgba(255,255,255,0.5);
+      color: black;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255,255,255,0.4);
+    }
+    /* Fullscreen exit hint */
+    .exit-hint {
+      position: fixed;
+      bottom: 85px;
+      left: 20px;
+      z-index: 10;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+      background-color: rgba(0,0,0,0.5);
+      padding: 5px 15px;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+      backdrop-filter: blur(4px);
+      text-align: center;
+      min-height: 30px;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+  <!-- Manual join interface -->
+  <div class="meeting-join">
+    <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
+    <button onclick="joinMeetingWithId()">🚀 Rejoindre</button>
+  </div>
+  
+  <div id="background-container"></div>
+  
+  <!-- Header (date/time) -->
+  <div class="header">
+    <p id="current-date"></p>
+    <p id="current-time"></p>
+  </div>
+  
+<!-- Titre -->
+<div class="title">Salle de Réunion {{ salle_name | default('Toutes les salles') }}</div>
+  
+  <!-- Main content for meetings -->
+  <div class="content">
+    <div class="meetings">
+      <h2>Réunions d'aujourd'hui</h2>
+      <div id="meetings-container">Chargement des réunions...</div>
+    </div>
+  </div>
+  
+  <!-- Footer buttons -->
+  <div class="footer-buttons">
+    <button onclick="document.documentElement.requestFullscreen()">🔲 Plein écran</button>
+    <button onclick="document.exitFullscreen()">❎ Réduire</button>
+    <button onclick="fetchMeetings()">🔄 Rafraîchir</button>
+  </div>
+  
+  <!-- Fullscreen exit hint -->
+  <div class="exit-hint">
+    <p>🔔 Maintenez <strong>Échap</strong> pour quitter le mode plein écran</p>
+  </div>
+  
+  <script>
+    // Update date and time
+    function updateDateTime() {
+      const now = new Date();
+      document.getElementById('current-date').textContent =
+        now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('current-time').textContent = now.toLocaleTimeString('fr-FR');
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+    
+    // Avoid unnecessary updates
+    let previousMeetings = JSON.stringify([]);
+    
+    // Fetch meetings and update display
+    async function fetchMeetings() {
+      try {
+        const response = await fetch('meetings.json?t=' + Date.now());
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP! Status: ${response.status}`);
+        }
+        let meetings = await response.json();
+        if (!Array.isArray(meetings)) {
+          if (meetings && typeof meetings === 'object') {
+            meetings = [meetings];
+          } else {
+            console.error("Erreur: Le JSON retourné n'est pas un tableau.", meetings);
+            throw new Error("Données invalides: le JSON doit être un tableau.");
+          }
+        }
+        if (meetings.length === 0) {
+          console.warn("Aucune réunion détectée.");
+        }
+        const currentMeetingsString = JSON.stringify(meetings);
+        if (previousMeetings === currentMeetingsString) {
+          console.log("Aucun changement détecté.");
+          return;
+        }
+        previousMeetings = currentMeetingsString;
+        updateMeetingsDisplay(meetings);
+      } catch (error) {
+        console.error("Erreur lors du chargement des réunions :", error);
+        document.getElementById('meetings-container').innerHTML =
+          '<p>Erreur de chargement des réunions.</p>';
+      }
+    }
+    
+    // Update meetings display
+    function updateMeetingsDisplay(meetings) {
+      const container = document.getElementById('meetings-container');
+      container.innerHTML = '';
+      const now = new Date();
+      const pastMeetings = [];
+      const currentMeetings = [];
+      const upcomingMeetings = [];
+      meetings.forEach(m => {
+        const start = new Date(m.start);
+        const end = new Date(m.end);
+        if (end < now) {
+          pastMeetings.push(m);
+        } else if (start <= now && now < end) {
+          currentMeetings.push(m);
+        } else {
+          upcomingMeetings.push(m);
+        }
+      });
+      function createMeetingItem(meeting, category) {
+        const start = new Date(meeting.start);
+        const end = new Date(meeting.end);
+        const startTime = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const endTime = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        let extraInfo = '';
+        if (category === 'En cours') {
+          const diffMin = Math.floor((end - now) / 60000);
+          extraInfo = `<p>⏳ Temps restant : ${diffMin} min</p>`;
+        }
+        let joinButton = '';
+        if (meeting.joinUrl) {
+  joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')">📎 Rejoindre</button>`;
+}
+        const attendees = Array.isArray(meeting.attendees)
+          ? meeting.attendees.join(', ')
+          : meeting.attendees || 'Aucun invité spécifié';
+        return `<div class="meeting-item ${category === 'Terminée' ? 'past' : ''}">
+                  <h3>${meeting.subject}</h3>
+                  <p>🕒 ${startTime} - ${endTime}</p>
+                  ${extraInfo}
+                  <p>👥 Invités : ${attendees}</p>
+                  ${joinButton}
+                </div>`;
+      }
+      if (currentMeetings.length > 0) {
+        container.innerHTML += `<h4 class="status-current">🟢 En cours</h4>`;
+        currentMeetings.forEach(m => {
+          container.innerHTML += createMeetingItem(m, 'En cours');
+        });
+      }
+      if (upcomingMeetings.length > 0) {
+        container.innerHTML += `<h4>🔵 À venir</h4>`;
+        upcomingMeetings.forEach(m => {
+          container.innerHTML += createMeetingItem(m, 'À venir');
+        });
+      }
+      if (pastMeetings.length > 0) {
+        container.innerHTML += `<h4>⚪ Terminées</h4>`;
+        pastMeetings.forEach(m => {
+          container.innerHTML += createMeetingItem(m, 'Terminée');
+        });
+      }
+    }
+    
+    // Refresh meetings every 10 seconds
+    setInterval(fetchMeetings, 10000);
+    fetchMeetings();
+    
+    // Function to join a meeting using the meeting ID entered
+    async function joinMeetingWithId() {
+      const meetingId = document.getElementById('meeting-id').value.trim();
+      if (!meetingId) {
+        alert("Veuillez entrer l'ID de la réunion.");
+        return;
+      }
+      try {
+        const response = await fetch('/getJoinUrl?meetingId=' + encodeURIComponent(meetingId));
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération du lien de réunion.");
+        }
+        const data = await response.json();
+        if (data.joinUrl) {
+          window.open(data.joinUrl, "_blank");
+        } else {
+          alert("Le lien de réunion n'a pas pu être récupéré.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Une erreur s'est produite lors de la récupération du lien.");
+      }
+    }
+    
+    // Background rotation of the image every 30 minutes
+    const backgrounds = [
+      '/static/Images/iStock-1137376794.jpg',
+      '/static/Images/iStock-1512013316.jpg',
+      '/static/Images/iStock-2019872476.jpg',
+      '/static/Images/iStock-2154828608.jpg',
+      '/static/Images/iStock-2157915069.jpg',
+      '/static/Images/iStock-2162113462.jpg',
+      '/static/Images/iStock-2178301876.jpg',
+      '/static/Images/iStock-2186748328.jpg',
+      '/static/Images/iStock-2187797860.jpg',
+      '/static/Images/iStock-2188982874.jpg'
+    ];
+    function changeBackground() {
+      const randomImage = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+      document.getElementById('background-container').style.backgroundImage = `url('${randomImage}')`;
+    }
+    setInterval(changeBackground, 1800000);
+    changeBackground();
+  </script>
+</body>
+</html>
