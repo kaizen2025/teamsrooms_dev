@@ -10,7 +10,7 @@ from tkinter import scrolledtext, messagebox
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
+    except Exception:
         return False
 
 # Redémarrer en mode administrateur si nécessaire
@@ -22,19 +22,25 @@ if not is_admin():
 sys.stdout.reconfigure(encoding='utf-8')
 
 def run_command(command, ignore_warnings=False):
-    """Exécute une commande et affiche la sortie en temps réel."""
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-    for line in process.stdout:
-        log_console.insert(tk.END, line + "\n")
-        log_console.see(tk.END)
-        root.update()
-    
-    for line in process.stderr:
+    """
+    Exécute une commande et affiche la sortie en temps réel.
+    Pour simplifier la lecture et éviter de traiter séparément stdout et stderr,
+    nous redirigeons stderr vers stdout.
+    """
+    process = subprocess.Popen(command,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               text=True,
+                               shell=True)
+    # Lire la sortie ligne par ligne et l'afficher dans le widget
+    for line in iter(process.stdout.readline, ''):
         if ignore_warnings and "Warning" in line:
             continue
-        log_console.insert(tk.END, "ERREUR: " + line + "\n", "error")
+        log_console.insert(tk.END, line)
         log_console.see(tk.END)
         root.update()
+    process.stdout.close()
+    process.wait()
 
 def update_heroku():
     log_console.insert(tk.END, "[UPDATE] Vérification et mise à jour de Heroku CLI...\n")
@@ -47,6 +53,7 @@ def check_gh_auth():
     
     GITHUB_PAT = "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"
     run_command("git config --global credential.helper store", ignore_warnings=True)
+    # Attention : le chemin et la méthode d'enregistrement des credentials peut varier selon l'OS.
     with open(os.path.expanduser("~/.git-credentials"), "w") as cred_file:
         cred_file.write(f"https://{GITHUB_PAT}@github.com\n")
     run_command("git config --global user.name 'AutoDeploy'", ignore_warnings=True)
@@ -82,7 +89,7 @@ def check_heroku_auth():
         log_console.insert(tk.END, "✅ Connecté à Heroku\n")
         return True
     
-    log_console.insert(tk.END, "❌ Non connecté à Heroku. Tentative de connexion...\n", "error")
+    log_console.insert(tk.END, "❌ Non connecté à Heroku. Tentative de connexion...\n")
     root.update()
     run_command("heroku login")
     return subprocess.run(["heroku", "auth:whoami"], capture_output=True, text=True, shell=True).returncode == 0
@@ -121,7 +128,6 @@ root.geometry("600x400")
 
 log_console = scrolledtext.ScrolledText(root, height=15, width=70)
 log_console.pack(pady=10)
-log_console.tag_config("error", foreground="red")
 
 btn_start = tk.Button(root, text="Démarrer le déploiement", command=start_deployment)
 btn_start.pack(pady=10)
