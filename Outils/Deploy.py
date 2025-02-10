@@ -35,16 +35,18 @@ def is_admin():
         return False
 
 if not is_admin():
+    # Relance le script en mode administrateur
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " " + __file__, None, 1)
     sys.exit()
 
-# Forcer l'encodage UTF-8 pour la sortie
-sys.stdout.reconfigure(encoding='utf-8')
+# Forcer l'encodage UTF-8 pour la sortie uniquement si sys.stdout est disponible
+if sys.stdout is not None and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # --- Fonction d'exécution de commande ---
 def run_command(command, ignore_warnings=False):
     """
-    Exécute une commande et affiche sa sortie en temps réel dans le log.
+    Exécute une commande en redirigeant stdout et stderr, et affiche sa sortie en temps réel dans le log.
     Les séquences ANSI indésirables sont supprimées.
     """
     process = subprocess.Popen(command,
@@ -324,5 +326,9 @@ btn_run = tk.Button(buttons_frame, text="Lancer l'installation", command=run_sel
 btn_run.grid(row=0, column=0, padx=5, pady=5)
 btn_quit = tk.Button(buttons_frame, text="Quitter", command=root.destroy, width=30)
 btn_quit.grid(row=0, column=1, padx=5, pady=5)
+
+# Pied de page avec la mention "Propriété Anecoop-france"
+footer_label = tk.Label(root, text="Propriété Anecoop-france", font=("Arial", 10))
+footer_label.pack(side="bottom", pady=5)
 
 root.mainloop()
