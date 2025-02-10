@@ -1,13 +1,22 @@
+import os
+import time
+# Pour forcer l'utilisation du fuseau horaire de Paris au niveau système (si supporté)
+os.environ['TZ'] = 'Europe/Paris'
+try:
+    time.tzset()
+except AttributeError:
+    # time.tzset() n'est pas disponible sous Windows
+    pass
+
 from flask import Flask, render_template, jsonify, request, send_from_directory  
 import configparser
 import requests
 import json
-import os
 import threading
-import time
 import pytz
 import re
 from datetime import datetime, timedelta, timezone
+from dateutil import parser  # Nécessite python-dateutil
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -19,7 +28,6 @@ SALLES = {}
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-# Initialisation des salles depuis le fichier de configuration
 if config.has_section('SALLES'):
     SALLES = dict(config.items('SALLES'))
 
@@ -31,7 +39,7 @@ last_modified_check = {}
 update_lock = threading.Lock()
 
 def get_token():
-    """Récupère le token Azure AD avec gestion d'erreur améliorée"""
+    """Récupère le token Azure AD avec gestion d'erreur améliorée."""
     try:
         tenant_id = config['AZURE']['TenantID']
         client_id = config['AZURE']['ClientID']
@@ -52,27 +60,30 @@ def get_token():
 
 def convert_to_paris_time(iso_str):
     """
-    Convertit une chaîne ISO (potentiellement en UTC ou avec 'Z') en heure de Paris.
-    Par exemple, "2025-02-10T00:30:00Z" ou "2025-02-10T00:30:00+00:00" deviendra
-    "2025-02-10T01:30:00+01:00" si c'est bien l'heure de Paris.
+    Convertit une chaîne ISO en heure de Paris.
+    Cette fonction utilise dateutil pour une analyse fiable.
+    Par exemple, une date "2025-02-10T00:30:00Z" sera convertie en "2025-02-10T01:30:00+01:00"
+    si c'est bien l'heure de Paris.
     """
     try:
-        dt = datetime.fromisoformat(iso_str.replace('Z', '+00:00'))
-        dt = dt.astimezone(PARIS_TZ)
-        return dt.isoformat(timespec='seconds')
+        dt = parser.isoparse(iso_str)  # Analyse la date en tenant compte de l'offset s'il est présent
+        # Si l'objet est naïf, on suppose qu'il est en UTC
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt_paris = dt.astimezone(PARIS_TZ)
+        return dt_paris.isoformat(timespec='seconds')
     except Exception as e:
         print(f"Erreur conversion date {iso_str}: {str(e)}")
         return iso_str
 
 def extract_join_url(meeting):
     """
-    Extrait l'URL de réunion Teams depuis le champ onlineMeeting si présent.
+    Extrait l'URL de réunion Teams depuis 'onlineMeeting.joinUrl'.
     Sinon, cherche dans le corps (body.content) une URL Teams et la renvoie.
     """
     join_url = (meeting.get('onlineMeeting') or {}).get('joinUrl', '')
     if join_url:
         return join_url
-
     body_content = meeting.get('body', {}).get('content', '')
     pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
     match = re.search(pattern, body_content)
@@ -81,12 +92,16 @@ def extract_join_url(meeting):
     return ''
 
 def update_meetings(salle_email, salle_name):
-    """Récupère les réunions pour une salle donnée en utilisant l'API Graph."""
+    """
+    Récupère les réunions pour une salle donnée via l'API Graph.
+    La plage horaire est calculée en fonction de l'heure de Paris.
+    """
     token = get_token()
     if not token:
         return []
     
     headers = {'Authorization': f'Bearer {token}'}
+    # Utilisation d'un objet timezone-aware pour l'heure actuelle en UTC puis conversion en Paris
     now_utc = datetime.now(timezone.utc)
     now_paris = now_utc.astimezone(PARIS_TZ)
     start = (now_paris - timedelta(hours=2)).isoformat()
@@ -111,7 +126,9 @@ def update_meetings(salle_email, salle_name):
         return []
 
 def process_meetings(meetings, salle_name):
-    """Filtre les réunions annulées et convertit les dates en heure de Paris."""
+    """
+    Filtre les réunions annulées et convertit les dates en heure de Paris.
+    """
     processed = []
     for m in meetings:
         if m.get('isCancelled'):
@@ -130,7 +147,9 @@ def process_meetings(meetings, salle_name):
     return processed
 
 def check_for_changes():
-    """Détecte les changements à l'aide d'une requête delta sur l'API Graph."""
+    """
+    Détecte les changements via une requête delta sur l'API Graph.
+    """
     global last_modified_check
     changes = False
     for salle, email in SALLES.items():
@@ -158,7 +177,10 @@ def check_for_changes():
     return changes
 
 def update_all_meetings():
-    """Récupère toutes les réunions et recrée le fichier JSON."""
+    """
+    Récupère toutes les réunions et recrée le fichier JSON.
+    Cette fonction est appelée immédiatement au démarrage pour forcer l'update.
+    """
     all_meetings = []
     for salle, email in SALLES.items():
         all_meetings.extend(update_meetings(email, salle))
@@ -174,7 +196,7 @@ def background_updater():
     Le thread d'arrière-plan effectue :
       - Une mise à jour complète toutes les 30 secondes.
       - Une vérification des changements toutes les 5 secondes.
-    Ainsi, les réunions seront mises à jour au plus tard 10 secondes après un changement.
+    Ainsi, les réunions seront mises à jour au plus tard quelques secondes après un changement.
     """
     last_full_update = datetime.now(timezone.utc)
     while True:
@@ -227,7 +249,7 @@ def salle(salle_name):
 
 # --- Démarrage ---
 if __name__ == '__main__':
-    # Force une mise à jour immédiate sans supprimer le fichier existant.
+    # Forcer immédiatement une mise à jour pour obtenir les dernières données
     update_all_meetings()
     updater = threading.Thread(target=background_updater)
     updater.daemon = True
