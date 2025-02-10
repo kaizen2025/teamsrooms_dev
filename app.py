@@ -233,20 +233,6 @@ def get_meetings():
         with update_lock:
             update_all_meetings()
     return send_from_directory('.', MEETINGS_FILE)
-
-@app.route('/<salle_name>')
-def salle(salle_name):
-    """Affiche les réunions pour une salle spécifique"""
-    if salle_name.lower() not in SALLES:
-        return f"Salle '{salle_name}' non trouvée", 404
-    try:
-        with open(MEETINGS_FILE, 'r') as f:
-            meetings = json.load(f)
-    except Exception as e:
-        return f"Erreur de chargement des réunions: {str(e)}", 500
-    salle_meetings = [m for m in meetings if m['salle'].lower() == salle_name.lower()]
-    return render_template('index.html', meetings=salle_meetings, salle_name=salle_name)
-
 # --- Démarrage ---
 if __name__ == '__main__':
     # Forcer immédiatement une mise à jour pour obtenir les dernières données
