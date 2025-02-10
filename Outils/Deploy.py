@@ -36,18 +36,22 @@ def run_command(command, ignore_warnings=False):
         log_console.see(tk.END)
         root.update()
 
+def update_heroku():
+    log_console.insert(tk.END, "[UPDATE] Vérification et mise à jour de Heroku CLI...\n")
+    root.update()
+    run_command("heroku update")
+
 def check_gh_auth():
     log_console.insert(tk.END, "[AUTH] Vérification de l'authentification GitHub...\n")
     root.update()
     
-    # Configuration du PAT directement dans Git
     GITHUB_PAT = "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"
-    run_command(f"git config --global credential.helper 'store'", ignore_warnings=True)
+    run_command("git config --global credential.helper store", ignore_warnings=True)
     with open(os.path.expanduser("~/.git-credentials"), "w") as cred_file:
         cred_file.write(f"https://{GITHUB_PAT}@github.com\n")
     run_command("git config --global user.name 'AutoDeploy'", ignore_warnings=True)
     run_command("git config --global user.email 'autodeploy@example.com'", ignore_warnings=True)
-    
+    run_command("git config --global push.default simple", ignore_warnings=True)
     log_console.insert(tk.END, "✅ Authentification GitHub configurée avec succès !\n")
     return True
 
@@ -55,41 +59,55 @@ def sync_github():
     log_console.insert(tk.END, "[4/6] Synchronisation avec GitHub...\n")
     root.update()
     if check_gh_auth():
-        run_command("git add --all && git commit -m \"Auto-deploy\" && git push origin main", ignore_warnings=True)
+        status = subprocess.run("git status --porcelain", capture_output=True, text=True, shell=True)
+        if not status.stdout.strip():
+            log_console.insert(tk.END, "ℹ️ Aucun changement détecté, pas de commit nécessaire.\n")
+        else:
+            run_command("git add --all && git commit -m \"Auto-deploy\" && git push origin main", ignore_warnings=True)
 
 def check_git():
     log_console.insert(tk.END, "[1/6] Vérification de Git...\n")
     root.update()
-    process = subprocess.run(["git", "--version"], capture_output=True, text=True)
-    return process.returncode == 0
+    return subprocess.run(["git", "--version"], capture_output=True, text=True).returncode == 0
 
 def check_heroku():
     log_console.insert(tk.END, "[2/6] Vérification de Heroku CLI...\n")
     root.update()
-    process = subprocess.run(["where", "heroku"], capture_output=True, text=True, shell=True)
-    return process.returncode == 0
+    return subprocess.run(["where", "heroku"], capture_output=True, text=True, shell=True).returncode == 0
 
 def check_heroku_auth():
     log_console.insert(tk.END, "[3/6] Vérification de l'authentification Heroku...\n")
     root.update()
-    process = subprocess.run(["heroku", "auth:whoami"], capture_output=True, text=True, shell=True)
-    if process.returncode == 0:
+    if subprocess.run(["heroku", "auth:whoami"], capture_output=True, text=True, shell=True).returncode == 0:
         log_console.insert(tk.END, "✅ Connecté à Heroku\n")
         return True
     
     log_console.insert(tk.END, "❌ Non connecté à Heroku. Tentative de connexion...\n", "error")
     root.update()
     run_command("heroku login")
-    process = subprocess.run(["heroku", "auth:whoami"], capture_output=True, text=True, shell=True)
-    if process.returncode != 0:
-        messagebox.showerror("Erreur", "Impossible de se connecter à Heroku. Vérifiez vos identifiants.")
-        return False
+    return subprocess.run(["heroku", "auth:whoami"], capture_output=True, text=True, shell=True).returncode == 0
+
+def check_heroku_project():
+    log_console.insert(tk.END, "[CHECK] Vérification du projet Heroku...\n")
+    root.update()
+    if subprocess.run("heroku apps:info --json", capture_output=True, text=True, shell=True).returncode != 0:
+        log_console.insert(tk.END, "⚠️ Projet Heroku introuvable. Tentative de création...\n")
+        root.update()
+        run_command("heroku create teamsrooms")
+        if subprocess.run("heroku apps:info --json", capture_output=True, text=True, shell=True).returncode != 0:
+            messagebox.showerror("Erreur", "Impossible de trouver ou créer le projet Heroku. Vérifiez votre compte Heroku.")
+            return False
+    run_command("heroku git:remote -a teamsrooms")
+    log_console.insert(tk.END, "✅ Projet Heroku détecté et lié !\n")
     return True
 
 def start_deployment():
     def threaded_deployment():
+        update_heroku()
         if check_git() and check_heroku():
             if not check_heroku_auth():
+                return
+            if not check_heroku_project():
                 return
             sync_github()
             log_console.insert(tk.END, "🚀 Déploiement terminé avec succès !\n")
