@@ -56,13 +56,19 @@ def check_heroku_auth():
     if process.returncode != 0:
         log_console.insert(tk.END, "Vous n'êtes pas connecté à Heroku. Démarrage de la connexion...\n", "error")
         root.update()
-        subprocess.run("start cmd /k heroku login", shell=True)
-        return False
+        run_command("heroku login")
+        return check_heroku_auth()
     return True
+
+def configure_git_identity():
+    log_console.insert(tk.END, "[CONFIG] Configuration de l'identité Git...\n")
+    run_command("git config --global user.name \"Auto-Deploy Bot\"")
+    run_command("git config --global user.email \"auto-deploy@localhost\"")
 
 def sync_github():
     log_console.insert(tk.END, "[4/6] Synchronisation avec GitHub...\n")
     root.update()
+    configure_git_identity()
     run_command("git add --all && git commit -m \"Auto-deploy\" && git push origin main")
 
 def deploy_heroku():
