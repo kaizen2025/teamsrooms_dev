@@ -29,7 +29,7 @@ import pytz
 import re
 from datetime import datetime, timedelta, timezone
 from dateutil import parser  # Nécessite python-dateutil
-from flask import Flask, render_template, jsonify, request, send_from_directory, abort
+from flask import Flask, render_template, jsonify, request, send_from_directory, abort, Response
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Pour forcer l'utilisation du fuseau horaire de Paris (si supporté)
@@ -37,8 +37,7 @@ os.environ['TZ'] = 'Europe/Paris'
 try:
     time.tzset()
 except AttributeError:
-    # time.tzset() n'est pas disponible sous Windows
-    pass
+    pass  # time.tzset() n'est pas disponible sous Windows
 
 # Création de l'application Flask et configuration de ProxyFix
 app = Flask(__name__)
@@ -55,10 +54,9 @@ if config.has_section('SALLES'):
     SALLES = dict(config.items('SALLES'))
 
 # --- FILTRAGE PAR ADRESSE IP ---
-# Les adresses IP autorisées seront définies dans le fichier config.ini dans la section [ALLOWED_IPS]
 ALLOWED_IPS = []
 if config.has_section('ALLOWED_IPS'):
-    # On récupère toutes les valeurs de la section et on supprime les éventuels espaces superflus
+    # On récupère toutes les valeurs et on enlève les espaces superflus
     ALLOWED_IPS = [ip.strip() for key, ip in config.items('ALLOWED_IPS') if ip.strip()]
 
 # Définition du fuseau horaire de Paris
@@ -91,7 +89,7 @@ def get_token():
 def convert_to_paris_time(iso_str):
     """
     Convertit une chaîne ISO en heure de Paris.
-    Par exemple, "2025-02-10T00:30:00Z" devient "2025-02-10T01:30:00+01:00" si c'est bien l'heure de Paris.
+    Exemple : "2025-02-10T00:30:00Z" devient "2025-02-10T01:30:00+01:00".
     """
     try:
         dt = parser.isoparse(iso_str)
@@ -106,7 +104,7 @@ def convert_to_paris_time(iso_str):
 def extract_join_url(meeting):
     """
     Extrait l'URL de réunion Teams depuis 'onlineMeeting.joinUrl'.
-    Sinon, cherche dans le corps (body.content) une URL Teams et la renvoie.
+    Sinon, cherche dans le corps (body.content) une URL Teams.
     """
     join_url = (meeting.get('onlineMeeting') or {}).get('joinUrl', '')
     if join_url:
@@ -198,6 +196,7 @@ def check_for_changes():
                 if last_modified_check.get(email) != current_last_modified:
                     changes = True
                     last_modified_check[email] = current_last_modified
+            # En cas d'erreur, on continue
         except Exception as e:
             print(f"Erreur vérification changements {salle}: {str(e)}")
     return changes
@@ -245,16 +244,15 @@ def background_updater():
 def limit_remote_addr():
     """
     Filtre les requêtes selon l'adresse IP du client.
-    Si la liste ALLOWED_IPS n'est pas vide, seule une IP autorisée pourra accéder aux endpoints.
+    Si ALLOWED_IPS n'est pas vide, seule une IP autorisée pourra accéder aux endpoints.
     """
-    # Récupération de l'IP client via l'en-tête X-Forwarded-For (déployé derrière un proxy) ou remote_addr
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
-        ip = ip.split(',')[0].strip()  # Si plusieurs IP sont présentes, on prend la première
+        ip = ip.split(',')[0].strip()
     if ALLOWED_IPS and ip not in ALLOWED_IPS:
         return jsonify({"error": "Accès refusé depuis cette adresse IP."}), 403
 
-# --- Nouvelle route pour interroger Graph et récupérer le lien de réunion via son ID ---
+# --- Route pour interroger Graph et récupérer le lien de réunion via son ID ---
 @app.route('/lookupMeeting')
 def lookup_meeting():
     """
@@ -269,7 +267,6 @@ def lookup_meeting():
     if not token:
         return jsonify({'error': "Erreur d'authentification."}), 500
 
-    # Utilisation de l'endpoint beta pour récupérer la réunion par son ID
     url = f"https://graph.microsoft.com/beta/communications/onlineMeetings/{meeting_id}"
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -288,11 +285,7 @@ def lookup_meeting():
     else:
         return jsonify({'error': "Réunion non trouvée sur Graph."}), 404
 
-# --- Routes Flask ---
-@app.route('/')
-def index():
-    return render_template('index.html')
-
+# --- Route pour servir le fichier meetings.json ---
 @app.route('/meetings.json')
 def get_meetings():
     """
@@ -306,11 +299,11 @@ def get_meetings():
             update_all_meetings()
     return send_from_directory('.', MEETINGS_FILE)
 
-@app.route('/<salle_name>')
-def salle(salle_name):
-    """Affiche les réunions pour une salle spécifique."""
+# --- Route locale pour afficher les réunions d'une salle ---
+@app.route('/local/<salle_name>')
+def salle_local(salle_name):
     salle_name = salle_name.lower()
-    if salle_name not in SALLES:
+    if salle_name not in [key.lower() for key in SALLES.keys()]:
         return f"Salle '{salle_name}' non trouvée", 404
 
     if not os.path.exists(MEETINGS_FILE):
@@ -325,6 +318,17 @@ def salle(salle_name):
     salle_meetings = [meeting for meeting in all_meetings if meeting.get('salle', '').lower() == salle_name]
     return render_template('index.html', salle_name=salle_name, meetings=salle_meetings)
 
+# --- Route pour afficher les réunions d'une salle directement via /<salle> ---
+@app.route('/<salle>')
+def salle_redirect(salle):
+    # Redirige vers la vue locale (les URL seront de type https://salle.anecoop-france.com/tramontane)
+    return salle_local(salle)
+
+# --- Route d'accueil ---
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 # --- Exécution principale ---
 if __name__ == '__main__':
     # Lancement du thread d'arrière-plan pour mettre à jour les réunions
@@ -332,5 +336,4 @@ if __name__ == '__main__':
     updater_thread.start()
     # Récupérer le port depuis la variable d'environnement (par défaut 5000)
     port = int(os.environ.get('PORT', 5000))
-    # Démarrage du serveur Flask
     app.run(host='0.0.0.0', port=port)
