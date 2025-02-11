@@ -232,6 +232,40 @@ def background_updater():
             print(f"Erreur critique du thread: {str(e)}")
             time.sleep(5)
 
+# --- Nouvelle route pour interroger Graph et récupérer le lien de réunion via son ID ---
+@app.route('/lookupMeeting')
+def lookup_meeting():
+    """
+    Interroge Microsoft Graph pour récupérer l'URL de connexion (joinUrl)
+    d'une réunion Teams à partir de son identifiant.
+    """
+    meeting_id = request.args.get('meetingId')
+    if not meeting_id:
+        return jsonify({'error': "Le paramètre 'meetingId' est requis."}), 400
+
+    token = get_token()
+    if not token:
+        return jsonify({'error': "Erreur d'authentification."}), 500
+
+    # Utilisation de l'endpoint beta pour récupérer la réunion par son ID
+    url = f"https://graph.microsoft.com/beta/communications/onlineMeetings/{meeting_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+    except Exception as e:
+        return jsonify({'error': f"Erreur lors de l'appel à Graph: {str(e)}"}), 500
+
+    if response.status_code == 200:
+        data = response.json()
+        joinUrl = data.get("joinUrl")
+        if joinUrl:
+            return jsonify({"joinUrl": joinUrl})
+        else:
+            return jsonify({'error': "Join URL non disponible pour cette réunion."}), 404
+    else:
+        return jsonify({'error': "Réunion non trouvée sur Graph."}), 404
+
 # --- Routes Flask ---
 @app.route('/')
 def index():
@@ -278,4 +312,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     # Démarrage du serveur Flask
     app.run(host='0.0.0.0', port=port)
-

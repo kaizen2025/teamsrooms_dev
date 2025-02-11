@@ -201,12 +201,12 @@
       background-color: rgba(255,255,255,0.08);
     }
     .meeting-item button {
-      align-self: flex-start;
-      background-color: #28a745;
+      align-self: center;
+      background-color: #2828a7;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       color: white;
-      padding: 6px 10px;
+      padding: 4px 30px;
       cursor: pointer;
       font-size: 0.85rem;
       font-weight: bold;
@@ -214,7 +214,7 @@
       align-items: center;
       gap: 6px;
       transition: background-color 0.3s, transform 0.2s;
-      margin-top: 8px;
+      margin-top: 1px;
     }
     .meeting-item button:hover {
       background-color: #218838;
@@ -392,7 +392,8 @@
         }
         let joinButton = '';
         if (meeting.joinUrl) {
-          joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')">📎 Rejoindre</button>`;
+          joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAADgElEQVR4nO2WyU8TURzHGzVGE/Vf8OTNk1cXNJXazc5M2+fMtBYQY0gwatAQ6IxamFcEUdCDR08en3HDglgsi0ucYVGoxotR1LjADLhGjHH5mamBtJ1pFS1GE7/J9/Yy38/7LTNjsfzXvypRfLlcxONxEWujgqQNilgL/bHw/dK4V8DqZxFrkG4Bj52Z8/BIBBYJWJvKDp92uOG5f/qsp/z6UppXRJpTTlJsP1sQgDCe3JErPFUFSRvUzxUV9SygeXmA5hWYMSeHfxtAxFo0P4D6UD9H8zfXZITzClCc/Pz3K3BgzJoPIIwnOvRz3sDA6mwAmlee5nwwQmQ+V3YtypX1EVTSR1Col/iD3cQb6CYMlyAU10Uotot4UBcJlivvg9v7Yee++1lDqH2plt6smG4BxclKRgUCSk1OAK70qp0ruwpbSvoAhXrBv7UHfIFuYPgE0NwVoNgr4EFd4PbHweW7DE6mE1y+eHrvp8INr+jMS/UsoXhZ0IeQCSgob2nZsmtoNuEO+hJsojr08GgtHt+GCCycfUPTxIZ6UXp4xe4bcOT4HWjW3ZqEptYRaGoZgc3+yzPhNk87WAolf6gXpd/80JFhGH30DsbVD6Dr4ejblKkt8ZnwYncMKqsG2mrrXpwWJY1Me5/wbLhy74N7FK+cpjiFZJiXsT5vpgA+k7I3H0+mALJvrodvdF3UASBc/8J0I7buSGZvQcoMp9iNAIEEMut587GRFIDb12kItzrb8gKUVNw1BzAbSCaQQGYDd7j1O4DTe8kQvsFxoYAAbAKZTfvhluEUgIPpMISv33S+cAAeNoHMVq3x6O0UgJ1qN4QX2QoJ4I8jsz0PlicANw1BsdsYvq74XOEAXP44yg4363l6+Brr2V8CoFnZZgBwMp322Yav3Th7AIqXX9uD8jIDAEJkvp3ukGxUO7F52kmxO0asrjZidbSR9Y4LxO2NfXJ5Y+BkYuCgL6bMlsRhV3UShPqxHO+BO1kA8leaU0otv6KdVYNyZVU/zHjvAOyuTkL1gdGcn+ZA+a1jNC8/pnj5I80pg6al/1nVHHy8pybyFNJdW/cMREk1/zHB2i1LIVXV8mSxiLUH+X5GMgCiqstSaAlRdZWA1Vc/DJfURstcKdwwuVKUtCHTcEl9KWKtwjLXikRgXrhes+o3FST1lCCpJ0Q8URqJTBjX67/+dn0DtEza+r41ePAAAAAASUVORK5CYII=" alt="Icon" width="32" height="32">
+ Rejoindre</button>`;
         }
         const attendees = Array.isArray(meeting.attendees)
           ? meeting.attendees.join(', ')
@@ -431,13 +432,24 @@
     
     // Function to join a meeting using the meeting ID entered
     async function joinMeetingWithId() {
-      const meetingId = document.getElementById('meeting-id').value.trim();
+      const meetingIdField = document.getElementById('meeting-id');
+      const meetingId = meetingIdField.value.trim();
       if (!meetingId) {
         alert("Veuillez entrer l'ID de la réunion.");
         return;
       }
+      
+      // Récupérer le bouton (supposé être le sibling suivant de l'input)
+      const joinButton = meetingIdField.nextElementSibling;
+      const originalButtonText = joinButton.innerHTML;
+      
+      // Désactiver le champ et afficher le message de chargement
+      meetingIdField.disabled = true;
+      joinButton.disabled = true;
+      joinButton.innerHTML = "Connexion en cours, merci de patienter…";
+      
       try {
-        const response = await fetch('/getJoinUrl?meetingId=' + encodeURIComponent(meetingId));
+        const response = await fetch('/lookupMeeting?meetingId=' + encodeURIComponent(meetingId));
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération du lien de réunion.");
         }
@@ -445,11 +457,15 @@
         if (data.joinUrl) {
           window.open(data.joinUrl, "_blank");
         } else {
-          alert("Le lien de réunion n'a pas pu être récupéré.");
+          alert("Le lien de réunion n'a pas pu être récupéré : " + (data.error || "inconnu"));
         }
       } catch (err) {
         console.error(err);
         alert("Une erreur s'est produite lors de la récupération du lien.");
+      } finally {
+        meetingIdField.disabled = false;
+        joinButton.disabled = false;
+        joinButton.innerHTML = originalButtonText;
       }
     }
     
