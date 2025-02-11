@@ -29,7 +29,7 @@ import pytz
 import re
 from datetime import datetime, timedelta, timezone
 from dateutil import parser  # Nécessite python-dateutil
-from flask import Flask, render_template, jsonify, request, send_from_directory  
+from flask import Flask, render_template, jsonify, request, send_from_directory, abort
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Pour forcer l'utilisation du fuseau horaire de Paris (si supporté)
@@ -50,8 +50,16 @@ SALLES = {}
 config = configparser.ConfigParser()
 config.read('config.ini')
 
+# Chargement de la configuration des salles
 if config.has_section('SALLES'):
     SALLES = dict(config.items('SALLES'))
+
+# --- FILTRAGE PAR ADRESSE IP ---
+# Les adresses IP autorisées seront définies dans le fichier config.ini dans la section [ALLOWED_IPS]
+ALLOWED_IPS = []
+if config.has_section('ALLOWED_IPS'):
+    # On récupère toutes les valeurs de la section et on supprime les éventuels espaces superflus
+    ALLOWED_IPS = [ip.strip() for key, ip in config.items('ALLOWED_IPS') if ip.strip()]
 
 # Définition du fuseau horaire de Paris
 PARIS_TZ = pytz.timezone('Europe/Paris')
@@ -231,6 +239,20 @@ def background_updater():
         except Exception as e:
             print(f"Erreur critique du thread: {str(e)}")
             time.sleep(5)
+
+# --- Filtrage par adresse IP ---
+@app.before_request
+def limit_remote_addr():
+    """
+    Filtre les requêtes selon l'adresse IP du client.
+    Si la liste ALLOWED_IPS n'est pas vide, seule une IP autorisée pourra accéder aux endpoints.
+    """
+    # Récupération de l'IP client via l'en-tête X-Forwarded-For (déployé derrière un proxy) ou remote_addr
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip:
+        ip = ip.split(',')[0].strip()  # Si plusieurs IP sont présentes, on prend la première
+    if ALLOWED_IPS and ip not in ALLOWED_IPS:
+        return jsonify({"error": "Accès refusé depuis cette adresse IP."}), 403
 
 # --- Nouvelle route pour interroger Graph et récupérer le lien de réunion via son ID ---
 @app.route('/lookupMeeting')
