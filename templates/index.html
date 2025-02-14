@@ -2,36 +2,44 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta id="salle-name" name="salle-name" content="{{ salle_name | default('') }}">
+  <meta id="salle-name" name="salle-name" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salle de Réunion Tramontane</title>
+  <title>Salle de Réunion</title>
+
   <style>
-    /* Global styles */
+    /* =============================
+       1) Styles de base et global
+       ============================= */
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      overflow: hidden;
+      overflow-x: hidden; /* Autorise le scroll vertical, pas horizontal */
+      overflow-y: auto;
       font-family: 'Segoe UI', sans-serif;
     }
-    /* Background container */
+
+    /* =============================
+       2) Arrière-plan animé allégé
+       ============================= */
     #background-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: -1;
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
-      animation: zoomBackground 20s infinite alternate ease-in-out;
+      /* Animation plus légère : de 1 à 1.005 */
+      animation: zoomBackground 30s infinite alternate ease-in-out;
     }
     @keyframes zoomBackground {
-      0% { transform: scale(1); filter: brightness(1); }
-      50% { transform: scale(1.02); filter: brightness(1.1); }
-      100% { transform: scale(1); filter: brightness(1); }
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.005); }
+      100% { transform: scale(1); }
     }
+
+    /* Dégradé léger par-dessus l'image */
     body::before {
       content: "";
       position: absolute;
@@ -40,11 +48,13 @@
       pointer-events: none;
       z-index: 0;
     }
-    /* Manual join interface */
+
+    /* =============================
+       3) Barre de saisie "Rejoindre"
+       ============================= */
     .meeting-join {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 20px; right: 20px;
       display: flex;
       gap: 10px;
       align-items: center;
@@ -87,11 +97,13 @@
       background-color: #218838;
       transform: scale(1.05);
     }
-    /* Header (date/time) */
+
+    /* =============================
+       4) Header (date/heure)
+       ============================= */
     .header {
       position: absolute;
-      top: 20px;
-      left: 20px;
+      top: 20px; left: 20px;
       background-color: rgba(0,0,0,0.5);
       backdrop-filter: blur(4px);
       border-radius: 10px;
@@ -105,13 +117,17 @@
       font-weight: bold;
       color: #f1f1f1;
     }
-    /* Title */
+
+    /* =============================
+       5) Titre principal (adapté)
+       ============================= */
     .title {
       position: absolute;
-      top: 20px;
-      left: 50%;
+      top: 20px; left: 50%;
       transform: translateX(-50%);
-      font-size: 2.4rem;
+      /* Limite la largeur pour éviter le chevauchement */
+      max-width: calc(100% - 500px);
+      font-size: 2.2rem;
       font-weight: bold;
       text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
       color: #fff;
@@ -119,14 +135,18 @@
       padding: 8px 20px;
       border-radius: 10px;
       z-index: 10;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    /* Main content */
+
+    /* =============================
+       6) Contenu principal
+       ============================= */
     .content {
       position: absolute;
-      top: 120px;
-      bottom: 40px;
-      left: 20px;
-      right: 20px;
+      top: 120px; bottom: 40px;
+      left: 20px; right: 20px;
       display: flex;
       justify-content: flex-end;
       align-items: flex-start;
@@ -173,7 +193,6 @@
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    /* Meeting cards */
     .meeting-item {
       background-color: rgba(255,255,255,0.1);
       border-radius: 10px;
@@ -200,9 +219,19 @@
       color: #bbb;
       background-color: rgba(255,255,255,0.08);
     }
+    /* Affiche la salle si on est sur "Toutes les salles" */
+    .meeting-salle {
+      font-weight: bold;
+      margin: 4px 0;
+      color: #ddd;
+    }
+
+    /* =============================
+       7) Bouton Rejoindre style "🔗 Rejoindre"
+       ============================= */
     .meeting-item button {
       align-self: center;
-      background-color: #2828a7;
+      background-color: #2828a7; /* Couleur de fond (bleu foncé) */
       border: none;
       border-radius: 10px;
       color: white;
@@ -212,22 +241,25 @@
       font-weight: bold;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 6px; /* Espace entre l’icône et le texte */
       transition: background-color 0.3s, transform 0.2s;
       margin-top: 1px;
     }
     .meeting-item button:hover {
-      background-color: #218838;
+      background-color: #218838; /* Couleur au survol (vert) */
       transform: translateY(-1px);
     }
-    /* Footer buttons */
+
+    /* =============================
+       8) Boutons en bas
+       ============================= */
     .footer-buttons {
       position: fixed;
-      bottom: 20px;
-      left: 20px;
+      bottom: 20px; left: 20px;
       display: flex;
       gap: 12px;
       z-index: 10;
+      flex-wrap: wrap;
     }
     .footer-buttons button {
       padding: 12px 20px;
@@ -251,11 +283,13 @@
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(255,255,255,0.4);
     }
-    /* Fullscreen exit hint */
+
+    /* =============================
+       9) Indication sortie plein écran
+       ============================= */
     .exit-hint {
       position: fixed;
-      bottom: 85px;
-      left: 20px;
+      bottom: 85px; left: 20px;
       z-index: 10;
       font-size: 0.9rem;
       font-weight: bold;
@@ -269,106 +303,177 @@
       min-height: 30px;
       line-height: 1.2;
     }
+
+    /* =============================
+       10) Responsive
+       ============================= */
+    @media (max-width: 768px) {
+      .header {
+        position: static;
+        margin: 10px auto 0 auto;
+        text-align: center;
+        width: fit-content;
+      }
+      .header p {
+        font-size: 1.3rem;
+      }
+      .meeting-join {
+        position: static;
+        margin: 10px auto;
+        flex-direction: column;
+        align-items: stretch;
+        width: 90%;
+        max-width: 400px;
+      }
+      .title {
+        position: static;
+        transform: none;
+        margin: 10px auto;
+        max-width: 90%;
+        font-size: 1.8rem;
+        white-space: normal;
+      }
+      .content {
+        position: static;
+        margin: 20px auto;
+        width: 90%;
+      }
+      .meetings {
+        height: auto; 
+        max-height: 600px;
+      }
+      .footer-buttons {
+        position: static;
+        margin: 10px auto;
+        justify-content: center;
+      }
+      .footer-buttons button {
+        margin: 5px;
+      }
+      .exit-hint {
+        position: static;
+        margin: 5px auto 20px auto;
+        text-align: center;
+      }
+    }
+    @media (max-width: 480px) {
+      .header p {
+        font-size: 1.1rem;
+      }
+      .title {
+        font-size: 1.4rem;
+      }
+      .meeting-join button {
+        font-size: 0.9rem;
+      }
+      .meeting-join input {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Manual join interface -->
+  <!-- Barre "Rejoindre" -->
   <div class="meeting-join">
     <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
     <button onclick="joinMeetingWithId()">🚀 Rejoindre</button>
   </div>
-  
+
+  <!-- Arrière-plan -->
   <div id="background-container"></div>
-  
-  <!-- Header (date/time) -->
+
+  <!-- Header (date/heure) -->
   <div class="header">
     <p id="current-date"></p>
     <p id="current-time"></p>
   </div>
-  
-  <!-- Titre -->
-  <div class="title">Salle de Réunion {{ salle_name | default('Toutes les salles') }}</div>
-  
-  <!-- Main content for meetings -->
+
+  <!-- Titre principal -->
+  <div class="title" id="salle-title">Salle de Réunion</div>
+
+  <!-- Contenu (réunions) -->
   <div class="content">
     <div class="meetings">
       <h2>Réunions d'aujourd'hui</h2>
       <div id="meetings-container">Chargement des réunions...</div>
     </div>
   </div>
-  
-  <!-- Footer buttons -->
+
+  <!-- Boutons bas de page -->
   <div class="footer-buttons">
     <button onclick="document.documentElement.requestFullscreen()">🔲 Plein écran</button>
     <button onclick="document.exitFullscreen()">❎ Réduire</button>
     <button onclick="fetchMeetings()">🔄 Rafraîchir</button>
   </div>
-  
-  <!-- Fullscreen exit hint -->
+
+  <!-- Indication sortie plein écran -->
   <div class="exit-hint">
     <p>🔔 Maintenez <strong>Échap</strong> pour quitter le mode plein écran</p>
   </div>
-  
+
   <script>
-    // Update date and time
+    /* =========================
+       A) Date/Heure
+       ========================= */
     function updateDateTime() {
       const now = new Date();
       document.getElementById('current-date').textContent =
         now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      document.getElementById('current-time').textContent = now.toLocaleTimeString('fr-FR');
+      document.getElementById('current-time').textContent =
+        now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
     setInterval(updateDateTime, 1000);
     updateDateTime();
-    
-    // Variable pour éviter les mises à jour inutiles
+
+    /* =========================
+       B) Nom de la salle
+       ========================= */
+    let salleName = (window.location.pathname.split('/')[1] || '').trim().toLowerCase();
+    if (!salleName) salleName = 'toutes les salles';
+    document.getElementById('salle-title').textContent =
+      "Salle de Réunion " + salleName.charAt(0).toUpperCase() + salleName.slice(1);
+    const isAllRooms = (salleName === 'toutes les salles');
+
+    /* =========================
+       C) Gestion des réunions
+       ========================= */
     let previousMeetings = JSON.stringify([]);
-    
-    // Fetch meetings and update display
+
     async function fetchMeetings() {
       try {
-        // 🔍 Récupérer la salle actuelle depuis l'URL
-        let salleName = window.location.pathname.split('/')[1] || '';
-        salleName = salleName.toLowerCase(); // Normalisation
-        
-        // 🔄 Charger les réunions depuis le fichier JSON
+        // Charger la liste
         const response = await fetch(`/meetings.json?t=${Date.now()}`);
         let meetings = await response.json();
-        
-        // 🎯 FILTRAGE : Garder uniquement les réunions de la salle demandée
-        if (salleName) {
-          meetings = meetings.filter(m => m.salle.toLowerCase() === salleName);
+
+        // Filtrer par salle si ce n'est pas "toutes les salles"
+        if (!isAllRooms) {
+          meetings = meetings.filter(m => (m.salle || '').toLowerCase() === salleName);
         }
-        
-        // 🔍 FILTRAGE SUPPLÉMENTAIRE : Ne conserver que les réunions du jour
+        // Filtrer pour ne garder que celles du jour
         const today = new Date().toDateString();
-        meetings = meetings.filter(m => {
-          const meetingDate = new Date(m.start).toDateString();
-          return meetingDate === today;
-        });
-        
-        // ✅ Vérifier si les réunions ont changé avant d'actualiser l'affichage
+        meetings = meetings.filter(m => new Date(m.start).toDateString() === today);
+
         const currentMeetingsString = JSON.stringify(meetings);
         if (previousMeetings === currentMeetingsString) return;
         previousMeetings = currentMeetingsString;
-        
-        // ✅ Mettre à jour l'affichage des réunions
+
         updateMeetingsDisplay(meetings);
-        
       } catch (error) {
         console.error("❌ Erreur lors du chargement des réunions :", error);
         document.getElementById('meetings-container').innerHTML =
-          '<p style="color: red; font-weight: bold; text-align: center;">⚠️ Impossible de récupérer les réunions. Vérifiez la connexion.</p>';
+          '<p style="color: red; font-weight: bold; text-align: center;">⚠️ Impossible de récupérer les réunions.</p>';
       }
     }
-    
-    // Update meetings display
+
     function updateMeetingsDisplay(meetings) {
       const container = document.getElementById('meetings-container');
       container.innerHTML = '';
       const now = new Date();
+
       const pastMeetings = [];
       const currentMeetings = [];
       const upcomingMeetings = [];
+
       meetings.forEach(m => {
         const start = new Date(m.start);
         const end = new Date(m.end);
@@ -380,57 +485,77 @@
           upcomingMeetings.push(m);
         }
       });
+
       function createMeetingItem(meeting, category) {
         const start = new Date(meeting.start);
         const end = new Date(meeting.end);
         const startTime = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const endTime = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
         let extraInfo = '';
         if (category === 'En cours') {
           const diffMin = Math.floor((end - now) / 60000);
           extraInfo = `<p>⏳ Temps restant : ${diffMin} min</p>`;
         }
+
+        // Afficher la salle si "Toutes les salles"
+        let salleHTML = '';
+        if (isAllRooms && meeting.salle) {
+          salleHTML = `<p class="meeting-salle">📍 Salle : ${meeting.salle}</p>`;
+        }
+
+        // Bouton "🔗 Rejoindre"
         let joinButton = '';
         if (meeting.joinUrl) {
-          joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAADgElEQVR4nO2WyU8TURzHGzVGE/Vf8OTNk1cXNJXazc5M2+fMtBYQY0gwatAQ6IxamFcEUdCDR08en3HDglgsi0ucYVGoxotR1LjADLhGjHH5mamBtJ1pFS1GE7/J9/Yy38/7LTNjsfzXvypRfLlcxONxEWujgqQNilgL/bHw/dK4V8DqZxFrkG4Bj52Z8/BIBBYJWJvKDp92uOG5f/qsp/z6UppXRJpTTlJsP1sQgDCe3JErPFUFSRvUzxUV9SygeXmA5hWYMSeHfxtAxFo0P4D6UD9H8zfXZITzClCc/Pz3K3BgzJoPIIwnOvRz3sDA6mwAmlee5nwwQmQ+V3YtypX1EVTSR1Col/iD3cQb6CYMlyAU10Uotot4UBcJlivvg9v7Yee++1lDqH2plt6smG4BxclKRgUCSk1OAK70qp0ruwpbSvoAhXrBv7UHfIFuYPgE0NwVoNgr4EFd4PbHweW7DE6mE1y+eHrvp8INr+jMS/UsoXhZ0IeQCSgob2nZsmtoNuEO+hJsojr08GgtHt+GCCycfUPTxIZ6UXp4xe4bcOT4HWjW3ZqEptYRaGoZgc3+yzPhNk87WAolf6gXpd/80JFhGH30DsbVD6Dr4ejblKkt8ZnwYncMKqsG2mrrXpwWJY1Me5/wbLhy74N7FK+cpjiFZJiXsT5vpgA+k7I3H0+mALJvrodvdF3UASBc/8J0I7buSGZvQcoMp9iNAIEEMut587GRFIDb12kItzrb8gKUVNw1BzAbSCaQQGYDd7j1O4DTe8kQvsFxoYAAbAKZTfvhluEUgIPpMISv33S+cAAeNoHMVq3x6O0UgJ1qN4QX2QoJ4I8jsz0PlicANw1BsdsYvq74XOEAXP44yg4363l6+Brr2V8CoFnZZgBwMp322Yav3Th7AIqXX9uD8jIDAEJkvp3ukGxUO7F52kmxO0asrjZidbSR9Y4LxO2NfXJ5Y+BkYuCgL6bMlsRhV3UShPqxHO+BO1kA8leaU0otv6KdVYNyZVU/zHjvAOyuTkL1gdGcn+ZA+a1jNC8/pnj5I80pg6al/1nVHHy8pybyFNJdW/cMREk1/zHB2i1LIVXV8mSxiLUH+X5GMgCiqstSaAlRdZWA1Vc/DJfURstcKdwwuVKUtCHTcEl9KWKtwjLXikRgXrhes+o3FST1lCCpJ0Q8URqJTBjX67/+dn0DtEza+r41ePAAAAAASUVORK5CYII=" alt="Icon" width="32" height="32">
- Rejoindre</button>`;
+          joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')">🔗 Rejoindre</button>`;
         }
-        const attendees = Array.isArray(meeting.attendees)
-          ? meeting.attendees.join(', ')
-          : meeting.attendees || 'Aucun invité spécifié';
-        return `<div class="meeting-item ${category === 'Terminée' ? 'past' : ''}">
-                  <h3>${meeting.subject}</h3>
-                  <p>🕒 ${startTime} - ${endTime}</p>
-                  ${extraInfo}
-                  <p>👥 Invités : ${attendees}</p>
-                  ${joinButton}
-                </div>`;
+
+        return `
+          <div class="meeting-item ${category === 'Terminée' ? 'past' : ''}">
+            <h3>${meeting.subject || 'Réunion sans titre'}</h3>
+            <p>🕒 ${startTime} - ${endTime}</p>
+            ${category === 'En cours' ? extraInfo : ''}
+            ${salleHTML}
+            <p>👥 ${Array.isArray(meeting.attendees) ? meeting.attendees.join(', ') : (meeting.attendees || 'Aucun invité')}</p>
+            ${joinButton}
+          </div>
+        `;
       }
+
+      // EN COURS
       if (currentMeetings.length > 0) {
         container.innerHTML += `<h4 class="status-current">🟢 En cours</h4>`;
         currentMeetings.forEach(m => {
           container.innerHTML += createMeetingItem(m, 'En cours');
         });
       }
+      // À venir
       if (upcomingMeetings.length > 0) {
         container.innerHTML += `<h4>🔵 À venir</h4>`;
         upcomingMeetings.forEach(m => {
           container.innerHTML += createMeetingItem(m, 'À venir');
         });
       }
+      // Terminées
       if (pastMeetings.length > 0) {
         container.innerHTML += `<h4>⚪ Terminées</h4>`;
         pastMeetings.forEach(m => {
           container.innerHTML += createMeetingItem(m, 'Terminée');
         });
       }
+      // Aucune réunion
+      if (!currentMeetings.length && !upcomingMeetings.length && !pastMeetings.length) {
+        container.innerHTML = "<p>Aucune réunion prévue aujourd'hui.</p>";
+      }
     }
-    
-    // Refresh meetings every 10 seconds
-    setInterval(fetchMeetings, 10000);
+
+    // Rafraîchit la liste toutes les 30 secondes (au lieu de 10 pour alléger)
+    setInterval(fetchMeetings, 30000);
     fetchMeetings();
-    
-    // Function to join a meeting using the meeting ID entered
+
+    /* =========================
+       D) Rejoindre par ID
+       ========================= */
     async function joinMeetingWithId() {
       const meetingIdField = document.getElementById('meeting-id');
       const meetingId = meetingIdField.value.trim();
@@ -438,38 +563,36 @@
         alert("Veuillez entrer l'ID de la réunion.");
         return;
       }
-      
-      // Récupérer le bouton (supposé être le sibling suivant de l'input)
       const joinButton = meetingIdField.nextElementSibling;
-      const originalButtonText = joinButton.innerHTML;
-      
-      // Désactiver le champ et afficher le message de chargement
+      const originalText = joinButton.innerHTML;
       meetingIdField.disabled = true;
       joinButton.disabled = true;
-      joinButton.innerHTML = "Connexion en cours, merci de patienter…";
-      
+      joinButton.innerHTML = "Connexion…";
+
       try {
         const response = await fetch('/lookupMeeting?meetingId=' + encodeURIComponent(meetingId));
         if (!response.ok) {
-          throw new Error("Erreur lors de la récupération du lien de réunion.");
+          throw new Error("Erreur serveur.");
         }
         const data = await response.json();
         if (data.joinUrl) {
           window.open(data.joinUrl, "_blank");
         } else {
-          alert("Le lien de réunion n'a pas pu être récupéré : " + (data.error || "inconnu"));
+          alert("Lien de réunion introuvable : " + (data.error || "inconnu"));
         }
       } catch (err) {
         console.error(err);
-        alert("Une erreur s'est produite lors de la récupération du lien.");
+        alert("Erreur lors de la récupération du lien.");
       } finally {
         meetingIdField.disabled = false;
         joinButton.disabled = false;
-        joinButton.innerHTML = originalButtonText;
+        joinButton.innerHTML = originalText;
       }
     }
-    
-    // Background rotation of the image every 30 minutes
+
+    /* =========================
+       E) Rotation de l'arrière-plan
+       ========================= */
     const backgrounds = [
       '/static/Images/iStock-1137376794.jpg',
       '/static/Images/iStock-1512013316.jpg',
@@ -482,11 +605,13 @@
       '/static/Images/iStock-2187797860.jpg',
       '/static/Images/iStock-2188982874.jpg'
     ];
+
     function changeBackground() {
       const randomImage = backgrounds[Math.floor(Math.random() * backgrounds.length)];
       document.getElementById('background-container').style.backgroundImage = `url('${randomImage}')`;
     }
-    setInterval(changeBackground, 1800000);
+    // Toutes les 60 minutes + immédiatement (pour moins de charge)
+    setInterval(changeBackground, 3600000);
     changeBackground();
   </script>
 </body>
