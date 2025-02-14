@@ -28,11 +28,9 @@ def is_admin():
 # GESTION DE L'ELEVATION (pour éviter les boucles en EXE)
 # ---------------------------------------------------------------------------
 if not is_admin():
-    # Si on est déjà dans un exécutable "gelé" (PyInstaller), on ne relance pas pour éviter la boucle.
     if getattr(sys, 'frozen', False):
         pass
     elif "--elevated" not in sys.argv:
-        # On relance en mode admin
         params = " ".join(sys.argv[1:]) + " --elevated"
         ctypes.windll.shell32.ShellExecuteW(
             None, "runas", sys.executable, f'"{sys.argv[0]}" {params}', None, 1
@@ -105,13 +103,11 @@ MEETING_ROOMS = [
     "Mimosa", "Pivoine", "Renoncule", "Tramontane", "Massane"
 ]
 
-# Chemin local par défaut vers le dépôt
 DEFAULT_GITHUB_REPO = "https://github.com/kaizen2025/teamsrooms.git"
-DEFAULT_LOCAL_PATH = r"C:\teamsrooms"  # Pour éviter d’avoir "C:\teamsrooms\teamsrooms"
+DEFAULT_LOCAL_PATH = r"C:\teamsrooms"
 
 OVH_ENDPOINT = "https://eu.api.ovh.com/1.0"
 
-# Identifiants Heroku
 HEROKU_EMAIL   = "kevin.bivia@gmail.com"
 HEROKU_API_KEY = "HRKU-0292b207-4833-4251-a822-2f6b2fabbbe4"
 
@@ -120,40 +116,30 @@ HEROKU_API_KEY = "HRKU-0292b207-4833-4251-a822-2f6b2fabbbe4"
 # ---------------------------------------------------------------------------
 class AllInOneManager(ttkb.Window):
     def __init__(self):
-        # On choisit un thème plus moderne (ex: flatly). Vous pouvez essayer: 'pulse', 'journal', 'litera', etc.
         super().__init__(themename="flatly")
         self.title("All-in-One Manager - OVH/Certbot/Heroku/Git/Kiosk")
         self.geometry("1200x800")
 
-        # Variables OVH
         self.ovh_app_key       = ttkb.StringVar(value=OVH_APP_KEY)
         self.ovh_app_secret    = ttkb.StringVar(value=OVH_APP_SECRET)
         self.ovh_consumerkey   = ttkb.StringVar(value=OVH_CONSUMERKEY)
-        # Laisser "votre_service" si vous n'utilisez pas l'API OVH pour les certificats
         self.ovh_hosting_service = ttkb.StringVar(value="votre_service")
 
-        # Variables Kiosk / Salles
         self.selected_room = ttkb.StringVar(value="Tramontane")
         self.heroku_app_var = ttkb.StringVar(value=DEFAULT_HEROKU_APP)
 
-        # Variables Git
         self.github_repo_url = ttkb.StringVar(value=DEFAULT_GITHUB_REPO)
         self.local_repo_path = ttkb.StringVar(value=DEFAULT_LOCAL_PATH)
 
-        # Chemin Chrome
         self.chrome_path = ttkb.StringVar(value=r"C:\Program Files\Google\Chrome\Application\chrome.exe")
         self.kiosk_task_name = ttkb.StringVar(value="ChromeKiosk")
 
-        # Domaine SSL
         self.ssl_domain = ttkb.StringVar(value=MAIN_DOMAIN)
 
-        # Labels de statut
         self.certbot_status = "Inconnu"
         self.ssl_status = "N/A"
 
-        # Création des onglets et widgets
         self.create_widgets()
-        # Vérification de certbot après un court délai
         self.after(300, self.ensure_certbot_installed)
 
     # ----------------------------------------------------------------
@@ -175,14 +161,12 @@ class AllInOneManager(ttkb.Window):
         self.notebook.add(tab_git,       text="GitHub & Heroku")
         self.notebook.add(tab_kiosk,     text="Chrome Kiosk")
 
-        # Onglets
         self.build_dashboard_tab(tab_dashboard)
         self.build_config_tab(tab_config)
         self.build_ssl_tab(tab_ssl)
         self.build_git_tab(tab_git)
         self.build_kiosk_tab(tab_kiosk)
 
-        # Zone de logs en bas de la fenêtre
         self.log_box = ScrolledText(self, autohide=True, padding=10, height=8)
         self.log_box.pack(fill=BOTH, expand=YES, padx=10, pady=5)
 
@@ -190,28 +174,20 @@ class AllInOneManager(ttkb.Window):
     # TAB : Dashboard (amélioré)
     # ----------------------------------------------------------------
     def build_dashboard_tab(self, parent):
-        # Frame principal pour l'onglet
         main_frame = ttkb.Frame(parent)
         main_frame.pack(fill=BOTH, expand=YES)
 
-        # Titre de la page
         lbl_title = ttkb.Label(
             main_frame,
             text="All-in-One Manager - Tableau de bord",
-            bootstyle="inverse-primary",    # Couleur de fond (thème bootstrap)
+            bootstyle="inverse-primary",
             font="-size 16 -weight bold"
         )
         lbl_title.pack(fill=X, padx=10, pady=10)
 
-        # ----------------------------------------------------------------
-        # Frame du haut (regroupe le statut et les actions rapides côte à côte)
-        # ----------------------------------------------------------------
         top_frame = ttkb.Frame(main_frame)
         top_frame.pack(fill=X, padx=10, pady=(0, 10))
 
-        # ----------------------------------------------------------------
-        # Section Statut actuel
-        # ----------------------------------------------------------------
         status_frame = ttkb.Labelframe(top_frame, text="Statut actuel", padding=10, bootstyle="info")
         status_frame.pack(side=LEFT, fill=BOTH, expand=YES, padx=(0, 10))
 
@@ -221,13 +197,9 @@ class AllInOneManager(ttkb.Window):
         self.lbl_ssl_status = ttkb.Label(status_frame, text="SSL : N/A", font="-size 10")
         self.lbl_ssl_status.pack(anchor="w", padx=5, pady=5)
 
-        # ----------------------------------------------------------------
-        # Section Actions rapides (en grille)
-        # ----------------------------------------------------------------
         actions_frame = ttkb.Labelframe(top_frame, text="Actions rapides", padding=10, bootstyle="secondary")
         actions_frame.pack(side=LEFT, fill=BOTH, expand=YES)
 
-        # On place les boutons en grille pour un rendu plus propre
         btn_check_ssl = ttkb.Button(actions_frame, text="Vérifier SSL", command=self.check_expiration)
         btn_check_ssl.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
         ToolTip(btn_check_ssl, text="Vérifie la date d'expiration du certificat (via OVH API ou SSL)")
@@ -260,19 +232,13 @@ class AllInOneManager(ttkb.Window):
         btn_open_page.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
         ToolTip(btn_open_page, text="Ouvre la salle sélectionnée (http://127.0.0.1:5000/<salle>)")
 
-        # Permet d'étendre chaque colonne de manière égale
         actions_frame.grid_columnconfigure(0, weight=1)
         actions_frame.grid_columnconfigure(1, weight=1)
 
-        # ----------------------------------------------------------------
-        # Label d'information ou d'instructions
-        # ----------------------------------------------------------------
         info_label = ttkb.Label(
             main_frame,
-            text=(
-                "Gérez OVH (DNS & Certbot), Heroku, GitHub & Heroku, et Chrome Kiosk.\n"
-                "Utilisez les onglets ci-dessus pour plus de détails et de configuration."
-            ),
+            text=("Gérez OVH (DNS & Certbot), Heroku, GitHub & Heroku, et Chrome Kiosk.\n"
+                  "Utilisez les onglets ci-dessus pour plus de détails et de configuration."),
             font="-size 10"
         )
         info_label.pack(fill=X, padx=10, pady=10)
@@ -504,10 +470,6 @@ class AllInOneManager(ttkb.Window):
             self.lbl_ssl_status.configure(text="SSL : Erreur de traitement")
 
     def check_expiration_remote(self):
-        """
-        Vérification de l'expiration SSL sans passer par l'API OVH
-        (en se connectant directement au port 443 du domaine).
-        """
         domain = self.ssl_domain.get().strip()
         self.log(f"Vérification du certificat pour {domain} en se connectant en SSL...")
 
@@ -693,14 +655,11 @@ class AllInOneManager(ttkb.Window):
             self.log("❌ Dossier introuvable.")
             return
 
-        # 1) git add .
+        # 1) git add, commit, push vers origin
         cmds = [
             ["git", "-C", path, "add", "."],
-            ["git", "-C", path, "commit", "-m", "Update from AllInOneManager"],
-            ["git", "-C", path, "push", "origin", "main"]
+            ["git", "-C", path, "commit", "-m", "Update from AllInOneManager"]
         ]
-
-        # Effectue add/commit/push (vers origin) successivement
         for c in cmds:
             p = subprocess.run(c, capture_output=True, text=True)
             self.log(p.stdout)
@@ -709,10 +668,36 @@ class AllInOneManager(ttkb.Window):
                 self.log(f"❌ Echec (code {p.returncode}) sur {' '.join(c)}")
                 return
 
+        # Tentative du push vers origin
+        cmd_push_origin = ["git", "-C", path, "push", "origin", "main"]
+        p_push_origin = subprocess.run(cmd_push_origin, capture_output=True, text=True)
+        self.log(p_push_origin.stdout)
+        self.log(p_push_origin.stderr)
+        if p_push_origin.returncode != 0:
+            # Vérifier si c'est un rejet dû à un historique distant plus avancé
+            if ("non-fast-forward" in p_push_origin.stderr) or ("behind" in p_push_origin.stderr):
+                self.log("⚠️ Le remote GitHub est en avance. Tentative de pull/rebase depuis GitHub.")
+                p_pull_origin = subprocess.run(["git", "-C", path, "pull", "origin", "main", "--rebase"], capture_output=True, text=True)
+                self.log(p_pull_origin.stdout)
+                self.log(p_pull_origin.stderr)
+                if p_pull_origin.returncode == 0:
+                    self.log("Nouvelle tentative de push GitHub après pull --rebase...")
+                    p_push_origin = subprocess.run(cmd_push_origin, capture_output=True, text=True)
+                    self.log(p_push_origin.stdout)
+                    self.log(p_push_origin.stderr)
+                    if p_push_origin.returncode != 0:
+                        self.log(f"❌ Echec push vers origin (code {p_push_origin.returncode}) après pull.")
+                        return
+                else:
+                    self.log(f"❌ Echec pull origin main (code {p_pull_origin.returncode}). Conflit ?")
+                    return
+            else:
+                self.log(f"❌ Echec push vers origin (code {p_push_origin.returncode}).")
+                return
+
         # 2) Vérifier si le remote heroku existe
         p_remote = subprocess.run(["git", "-C", path, "remote"], capture_output=True, text=True)
         remotes = p_remote.stdout.strip().splitlines()
-
         if "heroku" not in remotes:
             heroku_remote_url = f"https://git.heroku.com/{self.heroku_app_var.get().strip()}.git"
             self.log(f"Ajout du remote heroku ({heroku_remote_url})")
@@ -724,26 +709,23 @@ class AllInOneManager(ttkb.Window):
                 return
 
         # 3) Push vers Heroku
-        p_push = subprocess.run(["git", "-C", path, "push", "heroku", "main"], capture_output=True, text=True)
-        self.log(p_push.stdout)
-        self.log(p_push.stderr)
-
-        if p_push.returncode != 0:
-            # Vérifier si c'est un rejet à cause d'un historique plus récent côté Heroku
-            if ("Updates were rejected" in p_push.stderr) or ("fetch first" in p_push.stderr):
+        cmd_push_heroku = ["git", "-C", path, "push", "heroku", "main"]
+        p_push_heroku = subprocess.run(cmd_push_heroku, capture_output=True, text=True)
+        self.log(p_push_heroku.stdout)
+        self.log(p_push_heroku.stderr)
+        if p_push_heroku.returncode != 0:
+            if ("Updates were rejected" in p_push_heroku.stderr) or ("fetch first" in p_push_heroku.stderr):
                 self.log("⚠️ Le remote Heroku est en avance. Tentative de pull/rebase depuis Heroku.")
-                # Tenter un pull --rebase depuis Heroku
                 p_pull_heroku = subprocess.run(["git", "-C", path, "pull", "heroku", "main", "--rebase"], capture_output=True, text=True)
                 self.log(p_pull_heroku.stdout)
                 self.log(p_pull_heroku.stderr)
                 if p_pull_heroku.returncode == 0:
-                    # Retenter le push
                     self.log("Nouvelle tentative de push Heroku après pull --rebase...")
-                    p_push_again = subprocess.run(["git", "-C", path, "push", "heroku", "main"], capture_output=True, text=True)
-                    self.log(p_push_again.stdout)
-                    self.log(p_push_again.stderr)
-                    if p_push_again.returncode != 0:
-                        self.log(f"❌ Echec push vers heroku (code {p_push_again.returncode}) après pull.")
+                    p_push_heroku = subprocess.run(cmd_push_heroku, capture_output=True, text=True)
+                    self.log(p_push_heroku.stdout)
+                    self.log(p_push_heroku.stderr)
+                    if p_push_heroku.returncode != 0:
+                        self.log(f"❌ Echec push vers heroku (code {p_push_heroku.returncode}) après pull.")
                         return
                     else:
                         self.log("✅ Push et déploiement GitHub & Heroku réussis (après pull).")
@@ -751,31 +733,23 @@ class AllInOneManager(ttkb.Window):
                 else:
                     self.log(f"❌ Echec pull heroku main (code {p_pull_heroku.returncode}). Conflit ?")
                     return
-            # Si c'est un autre type d'erreur
-            self.log(f"❌ Echec push vers heroku (code {p_push.returncode}).")
-            return
+            else:
+                self.log(f"❌ Echec push vers heroku (code {p_push_heroku.returncode}).")
+                return
 
         self.log("✅ Push et déploiement GitHub & Heroku réussis!")
 
     def heroku_clone(self):
-        """
-        Clonage du code Heroku dans le même dossier local (évite de créer un sous-dossier).
-        """
         app_name = self.heroku_app_var.get().strip()
         base_path = self.local_repo_path.get().strip()
-
-        # On clone directement dans base_path
         repo_path = base_path
         self.log(f"Cloner Heroku app '{app_name}' => {repo_path}")
-
         if not app_name:
             self.log("❌ Nom de l'application Heroku manquant.")
             return
         if not base_path:
             self.log("❌ Chemin local manquant.")
             return
-
-        # Si le dossier existe déjà, on le supprime pour un clone complet
         if os.path.exists(repo_path):
             try:
                 force_remove(repo_path)
@@ -783,13 +757,9 @@ class AllInOneManager(ttkb.Window):
             except Exception as e:
                 self.log(f"❌ Erreur lors de la suppression du dossier '{repo_path}' : {e}")
                 return
-
         os.makedirs(repo_path, exist_ok=True)
-
-        # Encoder l'e-mail pour l'URL
         encoded_email = quote(HEROKU_EMAIL)
         heroku_url = f"https://{encoded_email}:{HEROKU_API_KEY}@git.heroku.com/{app_name}.git"
-
         cmd = ["git", "clone", heroku_url, repo_path]
         p = subprocess.run(cmd, capture_output=True, text=True)
         self.log(p.stdout)
@@ -805,7 +775,6 @@ class AllInOneManager(ttkb.Window):
     def create_kiosk_task(self):
         room = self.selected_room.get().lower()
         url = f"https://{MAIN_DOMAIN}/{room}"
-
         vbs_content = f'''Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run """{self.chrome_path.get().strip()}"" --profile-directory=Default --app={url}", 0, True
 ' Attendre 5 secondes pour être certain que Chrome est bien chargé
@@ -816,10 +785,8 @@ WScript.Sleep 500
 ' Envoyer F11 pour passer en plein écran
 WshShell.SendKeys "{{F11}}"
 '''
-
         script_dir = os.path.dirname(os.path.abspath(__file__))
         vbs_path = os.path.join(script_dir, "launchChromeKiosk.vbs")
-
         try:
             with open(vbs_path, "w", encoding="utf-8") as f:
                 f.write(vbs_content)
@@ -827,10 +794,8 @@ WshShell.SendKeys "{{F11}}"
         except Exception as e:
             self.log(f"Erreur lors de la création du VBScript : {e}")
             return
-
         task_name = self.kiosk_task_name.get().strip()
         tr_command = f'"wscript.exe" "{vbs_path}"'
-
         schtasks_cmd = [
             "schtasks", "/create",
             "/tn", task_name,
@@ -839,7 +804,6 @@ WshShell.SendKeys "{{F11}}"
             "/rl", "HIGHEST",
             "/f"
         ]
-
         self.log("Création Tâche Planifiée : " + " ".join(schtasks_cmd))
         p = subprocess.run(schtasks_cmd, capture_output=True, text=True)
         self.log(p.stdout)
@@ -853,28 +817,19 @@ WshShell.SendKeys "{{F11}}"
     # NOUVELLES FONCTIONS : Lancer le serveur local et ouvrir la page
     # ----------------------------------------------------------------
     def start_local_server(self):
-        """
-        Lance 'app.py' dans le dossier local (si présent).
-        """
         path = self.local_repo_path.get().strip()
         app_path = os.path.join(path, "app.py")
-
         if not os.path.isfile(app_path):
             self.log(f"❌ 'app.py' introuvable dans {path}")
             return
-
         self.log(f"Lancement du serveur Python: {app_path}")
         try:
-            # On lance en arrière-plan
             subprocess.Popen([sys.executable, app_path], cwd=path, shell=True)
             self.log("✅ Serveur lancé (vérifiez la console).")
         except Exception as e:
             self.log(f"❌ Erreur lors du lancement du serveur : {e}")
 
     def open_local_page(self):
-        """
-        Ouvre la page locale de la salle sélectionnée, ex: http://127.0.0.1:5000/tramontane
-        """
         room = self.selected_room.get().lower()
         url = f"http://127.0.0.1:5000/{room}"
         self.log(f"Ouverture de la page: {url}")
