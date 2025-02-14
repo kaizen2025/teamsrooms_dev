@@ -102,7 +102,7 @@ DEFAULT_HEROKU_APP = "teamsrooms"
 
 MEETING_ROOMS = [
     "Canigou", "Castillet", "Florensud", "Mallorca",
-    "Mimosa", "Pivoine", "Renoncule", "Tramontane"
+    "Mimosa", "Pivoine", "Renoncule", "Tramontane", "Massane"
 ]
 
 # Chemin local par défaut vers le dépôt
