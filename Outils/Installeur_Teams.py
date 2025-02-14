@@ -693,13 +693,14 @@ class AllInOneManager(ttkb.Window):
             self.log("❌ Dossier introuvable.")
             return
 
-        # git add .
+        # 1) git add .
         cmds = [
             ["git", "-C", path, "add", "."],
             ["git", "-C", path, "commit", "-m", "Update from AllInOneManager"],
             ["git", "-C", path, "push", "origin", "main"]
         ]
 
+        # Effectue add/commit/push (vers origin) successivement
         for c in cmds:
             p = subprocess.run(c, capture_output=True, text=True)
             self.log(p.stdout)
@@ -708,7 +709,7 @@ class AllInOneManager(ttkb.Window):
                 self.log(f"❌ Echec (code {p.returncode}) sur {' '.join(c)}")
                 return
 
-        # Vérifier si le remote heroku existe
+        # 2) Vérifier si le remote heroku existe
         p_remote = subprocess.run(["git", "-C", path, "remote"], capture_output=True, text=True)
         remotes = p_remote.stdout.strip().splitlines()
 
@@ -722,10 +723,35 @@ class AllInOneManager(ttkb.Window):
                 self.log("❌ Echec lors de l'ajout du remote heroku.")
                 return
 
+        # 3) Push vers Heroku
         p_push = subprocess.run(["git", "-C", path, "push", "heroku", "main"], capture_output=True, text=True)
         self.log(p_push.stdout)
         self.log(p_push.stderr)
+
         if p_push.returncode != 0:
+            # Vérifier si c'est un rejet à cause d'un historique plus récent côté Heroku
+            if ("Updates were rejected" in p_push.stderr) or ("fetch first" in p_push.stderr):
+                self.log("⚠️ Le remote Heroku est en avance. Tentative de pull/rebase depuis Heroku.")
+                # Tenter un pull --rebase depuis Heroku
+                p_pull_heroku = subprocess.run(["git", "-C", path, "pull", "heroku", "main", "--rebase"], capture_output=True, text=True)
+                self.log(p_pull_heroku.stdout)
+                self.log(p_pull_heroku.stderr)
+                if p_pull_heroku.returncode == 0:
+                    # Retenter le push
+                    self.log("Nouvelle tentative de push Heroku après pull --rebase...")
+                    p_push_again = subprocess.run(["git", "-C", path, "push", "heroku", "main"], capture_output=True, text=True)
+                    self.log(p_push_again.stdout)
+                    self.log(p_push_again.stderr)
+                    if p_push_again.returncode != 0:
+                        self.log(f"❌ Echec push vers heroku (code {p_push_again.returncode}) après pull.")
+                        return
+                    else:
+                        self.log("✅ Push et déploiement GitHub & Heroku réussis (après pull).")
+                        return
+                else:
+                    self.log(f"❌ Echec pull heroku main (code {p_pull_heroku.returncode}). Conflit ?")
+                    return
+            # Si c'est un autre type d'erreur
             self.log(f"❌ Echec push vers heroku (code {p_push.returncode}).")
             return
 
