@@ -614,9 +614,6 @@
     setInterval(changeBackground, 3600000);
     changeBackground();
   </script>
-  <!-- Script d'amélioration à ajouter à la fin du fichier index.html -->
-  // Ce script doit être ajouté à la fin du fichier index.html, juste avant la fermeture de la balise </body>
-
 <script>
   /* =========================
      STYLES CSS ADDITIONNELS
@@ -681,25 +678,26 @@
       
       /* Styles pour la réservation rapide */
       .quick-booking-button {
-        background: linear-gradient(135deg, #6264A7 0%, #494AB5 100%);
+        background-color: #6264A7; /* Couleur Teams */
         color: white;
         border: none;
-        border-radius: 10px;
-        padding: 10px 18px;
+        border-radius: 8px;
+        padding: 8px 12px;
         cursor: pointer;
+        font-size: 0.9rem;
         font-weight: bold;
-        box-shadow: 0 3px 10px rgba(98, 100, 167, 0.4);
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 15px auto;
+        margin: 10px auto;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         transition: all 0.3s ease;
+        width: fit-content;
       }
 
       .quick-booking-button:hover {
+        background-color: #494AB5;
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(98, 100, 167, 0.6);
-        background: linear-gradient(135deg, #7073CC 0%, #5456C7 100%);
       }
 
       .booking-modal {
@@ -831,59 +829,27 @@
         font-weight: bold;
       }
       
-      /* Conteneur principal avec toggle */
+      /* Styles pour le statut des salles - MODIFIÉ POUR LE POSITIONNEMENT À GAUCHE */
       .room-status-container {
         position: fixed;
-        top: 75px;
-        left: 0;
-        right: 0;
+        left: 20px;
+        top: 130px; /* Sous l'horloge */
+        bottom: 95px; /* Au-dessus du texte "Maintenez Échap" */
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-        padding: 10px;
+        flex-direction: column;
+        gap: 6px;
+        width: 130px; /* Taille fixe plus étroite */
+        overflow-y: auto; /* Permet de scroller si beaucoup de salles */
+        transition: all 0.3s ease;
         z-index: 5;
-        transition: all 0.3s ease-in-out;
-        max-height: 80px;
-        overflow: hidden;
       }
 
-      /* État replié */
-      .room-status-container.collapsed {
-        max-height: 35px;
-      }
-
-      /* Bouton pour afficher/masquer les salles */
-      .rooms-toggle-button {
-        position: absolute;
-        top: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(30, 30, 30, 0.8);
-        color: white;
-        border: none;
-        border-radius: 15px;
-        padding: 2px 15px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        z-index: 12;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-
-      .rooms-toggle-button:hover {
-        background-color: rgba(50, 50, 50, 0.9);
-      }
-
-      /* Cartes de statut des salles */
       .room-status-card {
-        background: rgba(30, 30, 30, 0.8);
-        border-radius: 6px;
-        padding: 5px 10px;
-        height: 60px;
-        width: 120px;
+        width: 100%;
+        height: 80px; /* Plus petit en hauteur */
+        background: rgba(30,30,30,0.8);
+        border-radius: 8px;
+        padding: 6px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -892,25 +858,21 @@
         overflow: hidden;
         transition: all 0.3s ease;
         cursor: pointer;
-        opacity: 0.8;
-        margin: 0 2px;
-        flex-shrink: 0;
+        font-size: 0.9rem;
       }
 
       .room-status-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        opacity: 1;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.3);
       }
 
-      /* États des salles */
       .room-status-card::before {
         content: "";
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        height: 3px;
+        height: 4px;
       }
 
       .room-status-card.available::before {
@@ -925,20 +887,18 @@
         background-color: #ffc107;
       }
 
-      /* Textes dans les cartes */
       .room-name {
         font-weight: bold;
-        font-size: 0.9rem;
-        margin-bottom: 2px;
+        font-size: 0.95rem;
+        margin-bottom: 3px;
         color: white;
       }
 
       .room-status {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         display: flex;
         align-items: center;
         gap: 3px;
-        white-space: nowrap;
       }
 
       .status-icon {
@@ -946,78 +906,50 @@
         height: 8px;
         border-radius: 50%;
         display: inline-block;
+        margin-right: 3px;
+      }
+
+      .status-icon.available {
+        background-color: #28a745;
+        box-shadow: 0 0 10px #28a745;
+      }
+
+      .status-icon.occupied {
+        background-color: #dc3545;
+        box-shadow: 0 0 10px #dc3545;
+      }
+
+      .status-icon.soon {
+        background-color: #ffc107;
+        box-shadow: 0 0 10px #ffc107;
       }
 
       .room-time {
-        font-size: 0.7rem;
-        margin-top: 2px;
+        font-size: 0.75rem;
+        margin-top: 3px;
         color: #aaa;
       }
 
       .room-next {
-        font-size: 0.65rem;
+        font-size: 0.7rem;
+        margin-top: 2px;
         color: #999;
+        text-align: center;
+        max-width: 120px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 110px;
       }
 
       /* Animation de pulsation pour les salles occupées */
       @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.3); }
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
         70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
         100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
       }
 
       .room-status-card.occupied {
         animation: pulse 2s infinite;
-      }
-
-      /* Ajustements pour le titre principal */
-      .title {
-        margin-top: 55px;
-      }
-
-      /* Responsive : adapte la taille des cartes selon l'espace disponible */
-      @media (max-width: 900px) {
-        .room-status-card {
-          width: 90px;
-          height: 50px;
-          padding: 4px 5px;
-        }
-        
-        .room-name {
-          font-size: 0.8rem;
-        }
-        
-        .room-status, .room-time, .room-next {
-          font-size: 0.65rem;
-        }
-      }
-
-      @media (max-width: 600px) {
-        .room-status-container {
-          position: relative;
-          top: 0;
-          margin-bottom: 10px;
-          max-height: 150px;
-          overflow-x: auto;
-          flex-wrap: nowrap;
-          justify-content: flex-start;
-        }
-        
-        .room-status-container::-webkit-scrollbar {
-          height: 4px;
-        }
-
-        .room-status-card {
-          min-width: 100px;
-        }
-        
-        .title {
-          margin-top: 10px;
-        }
       }
       
       /* Zone de IDs récents */
@@ -1049,39 +981,31 @@
         background: rgba(98, 100, 167, 0.8);
       }
 
-      /* Amélioration du bouton Rejoindre */
-      .meeting-join button, 
-      .meeting-item button {
-        background: linear-gradient(135deg, #6264A7 0%, #494AB5 100%);
-        border: none;
-        border-radius: 8px;
+      /* Bouton pour masquer/afficher les salles */
+      .toggle-rooms-button {
+        position: fixed;
+        left: 20px;
+        top: 100px;
+        background-color: rgba(0,0,0,0.5);
         color: white;
-        padding: 10px 20px;
-        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
         cursor: pointer;
-        box-shadow: 0 2px 10px rgba(98, 100, 167, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.3s ease;
+        z-index: 10;
+        transition: all 0.3s;
       }
 
-      .meeting-join button:hover,
-      .meeting-item button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(98, 100, 167, 0.6);
-        background: linear-gradient(135deg, #7073CC 0%, #5456C7 100%);
+      .toggle-rooms-button:hover {
+        background-color: rgba(0,0,0,0.7);
       }
 
-      .meeting-join button:active,
-      .meeting-item button:active {
-        transform: translateY(0px);
-        box-shadow: 0 2px 5px rgba(98, 100, 167, 0.4);
-      }
-
-      .meeting-item button {
-        padding: 6px 15px;
-        font-size: 0.85rem;
+      /* État caché des salles */
+      .room-status-container.hidden {
+        opacity: 0;
+        transform: translateX(-100px);
+        pointer-events: none;
       }
     `;
     document.head.appendChild(styleElement);
@@ -1259,7 +1183,7 @@
   }
 
   /* =========================
-     STATUT VISUEL DES SALLES AMÉLIORÉ
+     STATUT VISUEL DES SALLES
      ========================= */
   function createRoomStatusSection() {
     // Ne pas créer le conteneur s'il existe déjà
@@ -1270,44 +1194,31 @@
     container.className = 'room-status-container';
     container.id = 'roomStatusContainer';
     
-    // Ajouter le bouton de toggle
+    // Ajouter le bouton toggle pour masquer/afficher les salles
     const toggleButton = document.createElement('button');
-    toggleButton.className = 'rooms-toggle-button';
-    toggleButton.innerHTML = '<span>▼</span> Salles';
+    toggleButton.textContent = '👁️ Masquer les salles';
+    toggleButton.className = 'toggle-rooms-button';
     toggleButton.onclick = toggleRoomsVisibility;
-    container.appendChild(toggleButton);
+    document.body.appendChild(toggleButton);
     
-    // Ajouter le conteneur au début du body
-    document.body.insertBefore(container, document.body.firstChild);
+    // Ajouter le conteneur au body
+    document.body.appendChild(container);
     
     // Mettre à jour le statut des salles immédiatement
     updateRoomStatus();
-    
-    // Charger l'état sauvegardé (replié ou déplié)
-    const isCollapsed = localStorage.getItem('roomsCollapsed') === 'true';
-    if (isCollapsed) {
-      container.classList.add('collapsed');
-      toggleButton.innerHTML = '<span>▲</span> Salles';
-    }
   }
 
-  // Fonction pour basculer l'affichage des salles
+  // Fonction pour masquer/afficher les salles
   function toggleRoomsVisibility() {
     const container = document.getElementById('roomStatusContainer');
-    const toggleButton = document.querySelector('.rooms-toggle-button');
+    const button = document.querySelector('.toggle-rooms-button');
     
-    if (!container) return;
-    
-    // Basculer la classe 'collapsed'
-    container.classList.toggle('collapsed');
-    
-    // Mettre à jour le texte du bouton et sauvegarder l'état
-    if (container.classList.contains('collapsed')) {
-      toggleButton.innerHTML = '<span>▲</span> Salles';
-      localStorage.setItem('roomsCollapsed', 'true');
+    if (container.classList.contains('hidden')) {
+      container.classList.remove('hidden');
+      button.textContent = '👁️ Masquer les salles';
     } else {
-      toggleButton.innerHTML = '<span>▼</span> Salles';
-      localStorage.setItem('roomsCollapsed', 'false');
+      container.classList.add('hidden');
+      button.textContent = '👁️ Afficher les salles';
     }
   }
 
@@ -1316,9 +1227,6 @@
     if (!container) return;
     
     try {
-      // Préserver le bouton de toggle
-      const toggleButton = container.querySelector('.rooms-toggle-button');
-      
       // Obtenir les données des réunions
       const response = await fetch(`/meetings.json?t=${Date.now()}`);
       if (!response.ok) throw new Error('Impossible de récupérer les données');
@@ -1350,23 +1258,8 @@
         }
       });
       
-      // Vider le conteneur mais conserver le bouton toggle
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-      }
-      
-      // Remettre le bouton toggle
-      if (toggleButton) {
-        container.appendChild(toggleButton);
-      } else {
-        // Créer le bouton s'il n'existe pas
-        const newToggleButton = document.createElement('button');
-        newToggleButton.className = 'rooms-toggle-button';
-        newToggleButton.innerHTML = container.classList.contains('collapsed') ? 
-          '<span>▲</span> Salles' : '<span>▼</span> Salles';
-        newToggleButton.onclick = toggleRoomsVisibility;
-        container.appendChild(newToggleButton);
-      }
+      // Vider le conteneur
+      container.innerHTML = '';
       
       // Créer les cartes de statut pour chaque salle
       for (const room in roomMeetings) {
@@ -1414,14 +1307,14 @@
           
           if (minutesUntilNext <= 30) {
             status = 'soon';
-            statusText = 'Bientôt';
+            statusText = 'Bientôt occupée';
             
             const nextStartTime = nextMeeting.start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             timeText = `Dans ${minutesUntilNext} min`;
             nextText = `${nextStartTime}: ${nextMeeting.subject}`;
           } else {
             const nextStartTime = nextMeeting.start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            nextText = `Prochaine: ${nextStartTime}`;
+            nextText = `À ${nextStartTime}`;
           }
         }
         
@@ -1456,14 +1349,16 @@
      RÉSERVATION RAPIDE DE RÉUNIONS
      ========================= */
   function addQuickBookingElements() {
-    // Ajouter le bouton de création rapide
-    const container = document.querySelector('.meetings h2');
-    if (container) {
+    // Ajouter le bouton de création rapide à la fin du conteneur des réunions
+    const meetingsContainer = document.querySelector('.meetings');
+    if (meetingsContainer) {
       const button = document.createElement('button');
       button.className = 'quick-booking-button';
       button.innerHTML = '➕ Créer une réunion Teams';
       button.onclick = openBookingModal;
-      container.insertAdjacentElement('afterend', button);
+      
+      // Ajouter le bouton après le conteneur des réunions
+      meetingsContainer.appendChild(button);
     }
     
     // Ajouter le modal
