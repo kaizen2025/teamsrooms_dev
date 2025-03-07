@@ -244,13 +244,21 @@ def background_updater():
 def limit_remote_addr():
     """
     Filtre les requêtes selon l'adresse IP du client.
-    Si ALLOWED_IPS n'est pas vide, seule une IP autorisée pourra accéder aux endpoints.
+    Ignore le filtre pour la route de diagnostic /ip-check.
     """
+    # Toujours autoriser l'accès à la page de diagnostic
+    if request.path == '/ip-check':
+        return None
+        
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
         ip = ip.split(',')[0].strip()
-    if ALLOWED_IPS and ip not in ALLOWED_IPS:
-        return jsonify({"error": "Accès refusé depuis cette adresse IP."}), 403
+    
+    # Si ALLOWED_IPS est vide ou si l'IP est dans la liste
+    if not ALLOWED_IPS or ip in ALLOWED_IPS:
+        return None
+    
+    return jsonify({"error": "Accès refusé depuis cette adresse IP."}), 403
 
 # --- Route pour interroger Graph et récupérer le lien de réunion via son ID ---
 @app.route('/lookupMeeting')
