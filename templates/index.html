@@ -241,7 +241,7 @@
       font-weight: bold;
       display: flex;
       align-items: center;
-      gap: 6px; /* Espace entre l’icône et le texte */
+      gap: 6px; /* Espace entre l'icône et le texte */
       transition: background-color 0.3s, transform 0.2s;
       margin-top: 1px;
     }
@@ -554,41 +554,95 @@
     fetchMeetings();
 
     /* =========================
-       D) Rejoindre par ID
+       D) Rejoindre par ID - AMÉLIORÉ
        ========================= */
     async function joinMeetingWithId() {
       const meetingIdField = document.getElementById('meeting-id');
-      const meetingId = meetingIdField.value.trim();
+      let meetingId = meetingIdField.value.trim();
+      
       if (!meetingId) {
         alert("Veuillez entrer l'ID de la réunion.");
         return;
       }
+      
+      // Préparation de l'interface
       const joinButton = meetingIdField.nextElementSibling;
       const originalText = joinButton.innerHTML;
       meetingIdField.disabled = true;
       joinButton.disabled = true;
       joinButton.innerHTML = "Connexion…";
-
+      
       try {
-        const response = await fetch('/lookupMeeting?meetingId=' + encodeURIComponent(meetingId));
-        if (!response.ok) {
-          throw new Error("Erreur serveur.");
+        // AMÉLIORATION 1: Nettoyage de l'ID
+        // Enlever tous les espaces, tirets, et autres caractères non numériques
+        // si l'ID ressemble à un ID numérique Teams
+        if (meetingId.match(/[\d\s\-]+/)) {
+          meetingId = meetingId.replace(/[^\d]/g, '');
         }
-        const data = await response.json();
-        if (data.joinUrl) {
-          window.open(data.joinUrl, "_blank");
-        } else {
-          alert("Lien de réunion introuvable : " + (data.error || "inconnu"));
+        
+        // AMÉLIORATION 2: Vérifier si c'est déjà une URL Teams
+        if (meetingId.startsWith('https://teams.microsoft.com/')) {
+          window.open(meetingId, "_blank");
+          return;
         }
+        
+        // AMÉLIORATION 3: Log pour débogage
+        console.log("Tentative de connexion avec l'ID:", meetingId);
+        
+        // AMÉLIORATION 4: Essayer différentes méthodes
+        // Méthode 1: Vérifier dans les réunions locales
+        const response1 = await fetch(`/meetings.json?t=${Date.now()}`);
+        if (response1.ok) {
+          const meetings = await response1.json();
+          // Chercher l'ID dans les réunions existantes
+          const foundMeeting = meetings.find(m => 
+            m.id && m.id.includes(meetingId) && m.joinUrl
+          );
+          
+          if (foundMeeting && foundMeeting.joinUrl) {
+            console.log("Réunion trouvée localement:", foundMeeting);
+            window.open(foundMeeting.joinUrl, "_blank");
+            return;
+          }
+        }
+        
+        // Méthode 2: Utiliser l'API lookupMeeting
+        const response2 = await fetch('/lookupMeeting?meetingId=' + encodeURIComponent(meetingId));
+        if (response2.ok) {
+          const data = await response2.json();
+          if (data.joinUrl) {
+            window.open(data.joinUrl, "_blank");
+            return;
+          }
+        }
+        
+        // Méthode 3: Construire une URL Teams directe (pour les IDs numériques)
+        if (meetingId.match(/^\d+$/)) {
+          const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19:meeting_${meetingId}@thread.v2/0`;
+          console.log("Tentative avec l'URL construite:", teamsUrl);
+          window.open(teamsUrl, "_blank");
+          return;
+        }
+        
+        // Si toutes les méthodes ont échoué
+        alert("Impossible de trouver la réunion. Vérifiez l'ID et réessayez.");
+        
       } catch (err) {
-        console.error(err);
-        alert("Erreur lors de la récupération du lien.");
+        console.error("Erreur lors de la connexion:", err);
+        alert("Erreur lors de la récupération du lien de réunion.");
       } finally {
         meetingIdField.disabled = false;
         joinButton.disabled = false;
         joinButton.innerHTML = originalText;
       }
     }
+
+    // Ajouter l'événement pour la touche Entrée
+    document.getElementById('meeting-id').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        joinMeetingWithId();
+      }
+    });
 
     /* =========================
        E) Rotation de l'arrière-plan
