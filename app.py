@@ -329,6 +329,100 @@ def salle_redirect(salle):
 def index():
     return render_template('index.html')
 
+# Ajoutez ce code à la fin de votre fichier app.py, juste avant la section if __name__ == '__main__':
+
+# --- Route de diagnostic pour l'IP ---
+@app.route('/ip-check', methods=['GET'])
+def ip_check():
+    """
+    Affiche les informations de connexion pour diagnostiquer les problèmes d'IP.
+    Cette route ignore intentionnellement les restrictions d'IP.
+    """
+    # Collecter toutes les IP possibles
+    forwarded_for = request.headers.get('X-Forwarded-For', '')
+    cf_ip = request.headers.get('CF-Connecting-IP', '')
+    true_client_ip = request.headers.get('True-Client-IP', '')
+    remote_addr = request.remote_addr or ''
+    
+    # Collecter tous les en-têtes pour diagnostic
+    headers = dict(request.headers)
+    
+    # Préparer les données à afficher
+    ip_data = {
+        'votre_ip_probable': forwarded_for.split(',')[0].strip() if forwarded_for else remote_addr,
+        'remote_addr': remote_addr,
+        'x_forwarded_for': forwarded_for,
+        'cf_connecting_ip': cf_ip,
+        'true_client_ip': true_client_ip,
+        'tous_les_headers': headers,
+        'allowed_ips_config': ALLOWED_IPS,
+        'instructions': "Ajoutez votre IP dans le fichier config.ini sous [ALLOWED_IPS]"
+    }
+    
+    # Retourner en format JSON et en page HTML
+    if request.headers.get('Accept', '').find('application/json') >= 0:
+        return jsonify(ip_data)
+    
+    # Sinon, retourner une page HTML
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Diagnostic IP</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
+            h1 {{ color: #333; }}
+            .data-box {{ background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 4px; margin: 15px 0; }}
+            .important {{ font-weight: bold; color: #d9534f; }}
+            pre {{ background: #eee; padding: 10px; overflow-x: auto; }}
+        </style>
+    </head>
+    <body>
+        <h1>Diagnostic d'IP pour l'application de salles</h1>
+        
+        <div class="data-box">
+            <h2>Votre adresse IP</h2>
+            <p class="important">Votre IP probable: {ip_data['votre_ip_probable']}</p>
+            <p>C'est cette adresse que vous devez ajouter à votre configuration.</p>
+        </div>
+        
+        <div class="data-box">
+            <h2>Instructions</h2>
+            <p>Pour autoriser votre IP, ajoutez la ligne suivante dans votre fichier config.ini:</p>
+            <pre>[ALLOWED_IPS]
+...
+ip_new = {ip_data['votre_ip_probable']}</pre>
+        </div>
+        
+        <div class="data-box">
+            <h2>Configuration actuelle</h2>
+            <p>IPs actuellement autorisées:</p>
+            <pre>{', '.join(ALLOWED_IPS) if ALLOWED_IPS else 'Aucune'}</pre>
+        </div>
+        
+        <div class="data-box">
+            <h2>Détails techniques</h2>
+            <p>Remote Address: {ip_data['remote_addr']}</p>
+            <p>X-Forwarded-For: {ip_data['x_forwarded_for']}</p>
+            <p>CF-Connecting-IP: {ip_data['cf_connecting_ip']}</p>
+            <p>True-Client-IP: {ip_data['true_client_ip']}</p>
+        </div>
+        
+        <details>
+            <summary>Tous les en-têtes HTTP</summary>
+            <pre>{json.dumps(ip_data['tous_les_headers'], indent=2)}</pre>
+        </details>
+    </body>
+    </html>
+    """
+    return html
+
+# Important: cette route ne doit pas être bloquée par le filtre IP
+# Ajoutez ce code dans la fonction limit_remote_addr() avant le return final:
+# if request.path == '/ip-check':
+#     return None
+
 # --- Exécution principale ---
 if __name__ == '__main__':
     # Lancement du thread d'arrière-plan pour mettre à jour les réunions
