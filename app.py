@@ -41,7 +41,7 @@ except AttributeError:
 
 # Création de l'application Flask et configuration de ProxyFix
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_proto=1, x_host=1, x_prefix=1)
 
 # Configuration
 MEETINGS_FILE = 'meetings.json'
@@ -284,38 +284,115 @@ def limit_remote_addr():
     # Si ALLOWED_IPS est vide ou pas d'IP détectée, autoriser l'accès
     return None
 
-# --- Route pour interroger Graph et récupérer le lien de réunion via son ID ---
 @app.route('/lookupMeeting')
 def lookup_meeting():
     """
     Interroge Microsoft Graph pour récupérer l'URL de connexion (joinUrl)
     d'une réunion Teams à partir de son identifiant.
+    Version améliorée avec plusieurs méthodes de recherche.
     """
-    meeting_id = request.args.get('meetingId')
+    meeting_id = request.args.get('meetingId', '').strip()
     if not meeting_id:
         return jsonify({'error': "Le paramètre 'meetingId' est requis."}), 400
-
+    
+    # Journalisation pour débogage
+    print(f"Recherche de la réunion avec ID: {meeting_id}")
+    
+    # AMÉLIORATION 1: Nettoyer l'ID (enlever espaces, tirets, etc.)
+    cleaned_id = ''.join(c for c in meeting_id if c.isdigit())
+    
+    # AMÉLIORATION 2: Chercher d'abord dans les réunions locales
+    try:
+        if os.path.exists(MEETINGS_FILE):
+            with open(MEETINGS_FILE, 'r', encoding='utf-8') as f:
+                all_meetings = json.load(f)
+                
+            # Chercher par ID ou par contenus de l'ID
+            for meeting in all_meetings:
+                # Vérifier si l'ID de la réunion contient l'ID recherché
+                if (meeting.get('id') and (meeting_id in meeting['id'] or cleaned_id in meeting['id'])) and meeting.get('joinUrl'):
+                    print(f"Réunion trouvée localement: {meeting['subject']}")
+                    return jsonify({"joinUrl": meeting['joinUrl']})
+                    
+                # Chercher dans les attendees (peut aider si on cherche par email)
+                if meeting.get('attendees') and meeting.get('joinUrl'):
+                    if any(meeting_id in attendee for attendee in meeting['attendees']):
+                        print(f"Réunion trouvée via participant: {meeting['subject']}")
+                        return jsonify({"joinUrl": meeting['joinUrl']})
+    except Exception as e:
+        print(f"Erreur lors de la recherche locale: {str(e)}")
+    
+    # AMÉLIORATION 3: Essayer différentes API Graph
     token = get_token()
     if not token:
-        return jsonify({'error': "Erreur d'authentification."}), 500
-
-    url = f"https://graph.microsoft.com/beta/communications/onlineMeetings/{meeting_id}"
+        return jsonify({'error': "Erreur d'authentification avec Microsoft Graph."}), 500
+    
     headers = {"Authorization": f"Bearer {token}"}
-
+    
+    # Méthode 1: API standard pour les réunions
     try:
-        response = requests.get(url, headers=headers, timeout=15)
+        url1 = f"https://graph.microsoft.com/v1.0/communications/onlineMeetings/{cleaned_id}"
+        response1 = requests.get(url1, headers=headers, timeout=15)
+        if response1.status_code == 200:
+            data = response1.json()
+            if data.get("joinUrl"):
+                print(f"Réunion trouvée via API v1.0: {cleaned_id}")
+                return jsonify({"joinUrl": data["joinUrl"]})
     except Exception as e:
-        return jsonify({'error': f"Erreur lors de l'appel à Graph: {str(e)}"}), 500
-
-    if response.status_code == 200:
-        data = response.json()
-        joinUrl = data.get("joinUrl")
-        if joinUrl:
-            return jsonify({"joinUrl": joinUrl})
-        else:
-            return jsonify({'error': "Join URL non disponible pour cette réunion."}), 404
-    else:
-        return jsonify({'error': "Réunion non trouvée sur Graph."}), 404
+        print(f"Erreur API v1.0: {str(e)}")
+    
+    # Méthode 2: API beta
+    try:
+        url2 = f"https://graph.microsoft.com/beta/communications/onlineMeetings/{cleaned_id}"
+        response2 = requests.get(url2, headers=headers, timeout=15)
+        if response2.status_code == 200:
+            data = response2.json()
+            if data.get("joinUrl"):
+                print(f"Réunion trouvée via API beta: {cleaned_id}")
+                return jsonify({"joinUrl": data["joinUrl"]})
+    except Exception as e:
+        print(f"Erreur API beta: {str(e)}")
+    
+    # Méthode 3: Recherche par ID dans tous les calendriers des salles
+    try:
+        for salle, email in SALLES.items():
+            # Obtenir les réunions du jour
+            now_utc = datetime.now(timezone.utc)
+            now_paris = now_utc.astimezone(PARIS_TZ)
+            start = (now_paris - timedelta(hours=24)).isoformat()
+            end = (now_paris + timedelta(hours=48)).isoformat()
+            
+            search_url = f"https://graph.microsoft.com/v1.0/users/{email}/calendarview"
+            params = {
+                'startDateTime': start,
+                'endDateTime': end,
+                '$select': 'id,subject,onlineMeeting,body'
+            }
+            
+            response = requests.get(search_url, headers=headers, params=params, timeout=15)
+            if response.status_code == 200:
+                calendar_data = response.json().get('value', [])
+                for event in calendar_data:
+                    event_id = event.get('id', '')
+                    if cleaned_id in event_id or meeting_id in event_id:
+                        # Trouver joinUrl dans onlineMeeting ou body
+                        join_url = (event.get('onlineMeeting') or {}).get('joinUrl', '')
+                        if join_url:
+                            print(f"Réunion trouvée via calendrier de {salle}")
+                            return jsonify({"joinUrl": join_url})
+                        
+                        # Chercher dans le corps du message
+                        body_content = event.get('body', {}).get('content', '')
+                        pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
+                        match = re.search(pattern, body_content)
+                        if match:
+                            print(f"Réunion trouvée via contenu de {salle}")
+                            return jsonify({"joinUrl": match.group(0)})
+    except Exception as e:
+        print(f"Erreur lors de la recherche dans les calendriers: {str(e)}")
+    
+    # Aucune méthode n'a fonctionné
+    return jsonify({'error': "Impossible de trouver le lien de cette réunion. Vérifiez l'ID."}), 404
 
 # --- Route pour servir le fichier meetings.json ---
 @app.route('/meetings.json')
@@ -360,8 +437,6 @@ def salle_redirect(salle):
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# Ajoutez ce code à la fin de votre fichier app.py, juste avant la section if __name__ == '__main__':
 
 # --- Route de diagnostic pour l'IP ---
 @app.route('/ip-check', methods=['GET'])
@@ -449,11 +524,6 @@ ip_new = {ip_data['votre_ip_probable']}</pre>
     </html>
     """
     return html
-
-# Important: cette route ne doit pas être bloquée par le filtre IP
-# Ajoutez ce code dans la fonction limit_remote_addr() avant le return final:
-# if request.path == '/ip-check':
-#     return None
 
 # --- Exécution principale ---
 if __name__ == '__main__':
