@@ -25,13 +25,13 @@
     .main-container {
       display: grid;
       height: 100vh;
-      grid-template-columns: 1fr 500px;
+      grid-template-columns: 1fr 450px;
       grid-template-rows: auto auto 1fr auto;
       grid-template-areas:
         "header header"
-        "topcontrols topcontrols"
+        "rooms rooms"
         "content meetings"
-        "footer footer";
+        "controls controls";
       gap: 5px;
       padding: 10px;
       box-sizing: border-box;
@@ -96,16 +96,15 @@
       color: #f1f1f1;
     }
 
-    /* Titre principal */
+    /* Titre principal (réduit en largeur) */
     .title-container {
-      flex-grow: 1;
+      width: 50%;
       display: flex;
       justify-content: center;
-      padding: 0 15px;
     }
     .title {
       text-align: center;
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: bold;
       text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
       color: #fff;
@@ -118,18 +117,6 @@
       width: 100%;
     }
 
-    /* =============================
-       5) Contrôles supérieurs (compact)
-       ============================= */
-    .top-controls {
-      grid-area: topcontrols;
-      display: flex;
-      justify-content: flex-end;
-      gap: 15px;
-      margin-bottom: 15px;
-      position: relative;
-    }
-
     /* Barre de recherche compacte */
     .meeting-join {
       display: flex;
@@ -140,7 +127,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       backdrop-filter: blur(5px);
       transition: all 0.3s ease;
-      max-width: 400px;
+      max-width: 350px;
     }
     .meeting-join input {
       padding: 6px 10px;
@@ -149,7 +136,7 @@
       font-size: 0.9rem;
       background: rgba(255,255,255,0.8);
       outline: none;
-      width: 200px;
+      width: 220px;
     }
     .meeting-join button {
       background-color: #28a745;
@@ -166,34 +153,44 @@
       gap: 5px;
       white-space: nowrap;
     }
+    .meeting-join button:hover {
+      background-color: #218838;
+      transform: scale(1.02);
+    }
+
+    /* =============================
+       5) Section des salles optimisée
+       ============================= */
+    .rooms-section {
+      grid-area: rooms;
+      position: relative;
+      margin-bottom: 5px;
+    }
     
-    /* Toggle des salles (discret) */
+    /* Toggle des salles (sous la liste des salles) */
     .toggle-rooms-button {
       position: absolute;
-      top: 15px;
-      right: 15px;
+      bottom: -35px;
+      left: 10px;
       background-color: rgba(0,0,0,0.5);
       color: white;
       border: none;
       border-radius: 5px;
-      padding: 5px;
+      padding: 5px 8px;
       font-size: 0.75rem;
       cursor: pointer;
       transition: all 0.3s;
       z-index: 20;
     }
+    .toggle-rooms-button:hover {
+      background-color: rgba(0,0,0,0.7);
+    }
 
-    /* =============================
-       6) Section des salles optimisée
-       ============================= */
     .rooms-container {
-      position: absolute;
-      top: 125px;
-      left: 10px;
-      right: 520px; /* Pour s'arrêter avant le bloc des réunions */
-      height: 80px;
+      max-width: calc(100% - 450px); /* Pour s'arrêter avant le bloc des réunions */
       overflow-x: auto;
       overflow-y: hidden;
+      max-height: 80px;
       z-index: 20;
       
       /* Scrollbar stylisée et discrète */
@@ -310,7 +307,7 @@
     }
 
     /* =============================
-       7) Contenu principal (zone centrale)
+       6) Contenu principal (zone centrale)
        ============================= */
     .content {
       grid-area: content;
@@ -321,13 +318,13 @@
     }
 
     /* =============================
-       8) Bloc des réunions (optimisé)
+       7) Bloc des réunions (optimisé)
        ============================= */
     .meetings-container {
       grid-area: meetings;
       overflow: hidden;
-      max-width: 500px;
-      height: calc(100vh - 210px); /* Hauteur augmentée */
+      max-width: 450px;
+      height: 100%;
       justify-self: end;
     }
     .meetings {
@@ -345,7 +342,7 @@
     }
     .meetings h2 {
       margin-top: 0;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: bold;
       text-transform: uppercase;
       margin-bottom: 15px;
@@ -424,26 +421,28 @@
       margin: 4px 0;
       color: #ddd;
     }
-    /* Bouton Rejoindre */
+    /* Bouton Rejoindre amélioré */
     .meeting-item button {
       align-self: center;
-      background-color: #2828a7;
+      background-color: #5553b3; /* Plus doux que le bleu précédent */
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       color: white;
-      padding: 4px 30px;
+      padding: 6px 25px;
       cursor: pointer;
       font-size: 0.85rem;
       font-weight: bold;
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: background-color 0.3s, transform 0.2s;
+      transition: all 0.3s ease;
       margin-top: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .meeting-item button:hover {
-      background-color: #218838;
+      background-color: #6264A7;
       transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
     }
     /* Chronomètre visuel */
     .meeting-progress-container {
@@ -469,7 +468,7 @@
       background-color: #ffc107;
     }
     .meeting-progress-bar.ending {
-      background-color: #dc3545;
+      background-color: #e05667; /* Rouge légèrement moins vif */
     }
     .meeting-progress-text {
       font-size: 0.85rem;
@@ -491,10 +490,10 @@
     }
 
     /* =============================
-       9) Pied de page avec bouton de création
+       8) Contrôles en bas de page
        ============================= */
-    .footer {
-      grid-area: footer;
+    .controls-container {
+      grid-area: controls;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -502,12 +501,12 @@
       position: relative;
     }
     
-    /* Boutons bas de page (réduits) */
-    .footer-buttons {
+    /* Boutons de navigation */
+    .control-buttons {
       display: flex;
       gap: 10px;
     }
-    .footer-buttons button {
+    .control-buttons button {
       padding: 6px 12px;
       font-size: 0.85rem;
       font-weight: bold;
@@ -522,17 +521,15 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.3);
       transition: all 0.3s ease-in-out;
     }
-    .footer-buttons button:hover {
+    .control-buttons button:hover {
       background: rgba(255,255,255,0.5);
       color: black;
       transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(255,255,255,0.4);
     }
     
-    /* Bouton de création de réunion (redessiné et repositionné) */
+    /* Bouton de création de réunion (redessiné) */
     .quick-booking-button {
-      position: absolute;
-      right: 15px;
-      bottom: 10px;
       background-color: #6264A7; /* Couleur Teams */
       color: white;
       border: none;
@@ -554,7 +551,7 @@
     }
 
     /* =============================
-       10) Réservation rapide de réunions
+       9) Réservation rapide de réunions
        ============================= */
     .booking-modal {
       display: none; 
@@ -697,7 +694,7 @@
     }
 
     /* =============================
-       11) Responsive
+       10) Responsive
        ============================= */
     @media (max-width: 1200px) {
       .header {
@@ -723,9 +720,9 @@
         grid-template-columns: 1fr;
         grid-template-areas:
           "header"
-          "topcontrols"
+          "rooms"
           "meetings"
-          "footer";
+          "controls";
       }
       
       .meetings-container {
@@ -734,37 +731,28 @@
       }
       
       .rooms-container {
-        right: 10px;
+        max-width: 100%;
       }
     }
     
     @media (max-width: 768px) {
-      .top-controls {
-        flex-direction: column;
-        align-items: center;
-      }
-      
       .meeting-join {
         width: 100%;
+        max-width: none;
       }
       
       .meeting-join input {
         width: 100%;
       }
       
-      .footer {
+      .controls-container {
         flex-direction: column;
         gap: 10px;
       }
       
-      .footer-buttons {
+      .control-buttons {
         width: 100%;
         justify-content: center;
-      }
-      
-      .quick-booking-button {
-        position: static;
-        margin-top: 10px;
       }
     }
   </style>
@@ -783,29 +771,28 @@
         <p id="current-time"></p>
       </div>
       
-      <!-- Titre principal -->
+      <!-- Titre principal (réduit) -->
       <div class="title-container">
         <div class="title" id="salle-title">Salle de Réunion</div>
       </div>
-    </div>
-    
-    <!-- Contrôles compacts -->
-    <div class="top-controls">
-      <!-- Barre de recherche -->
+      
+      <!-- Barre de recherche d'ID -->
       <div class="meeting-join">
         <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
         <button onclick="joinMeetingWithId()">Rejoindre</button>
       </div>
+    </div>
+    
+    <!-- Section des salles (avec position corrigée) -->
+    <div class="rooms-section">
+      <div class="rooms-container" id="roomsContainer">
+        <div class="rooms" id="roomsList"></div>
+      </div>
       
-      <!-- Bouton pour masquer/afficher les salles -->
+      <!-- Bouton sous la liste des salles -->
       <button class="toggle-rooms-button" onclick="toggleRoomsVisibility()">
         👁️ Masquer les salles
       </button>
-    </div>
-    
-    <!-- Conteneur des salles avec scroll horizontal -->
-    <div class="rooms-container" id="roomsContainer">
-      <div class="rooms" id="roomsList"></div>
     </div>
     
     <!-- Zone centrale -->
@@ -819,15 +806,15 @@
       </div>
     </div>
     
-    <!-- Pied de page -->
-    <div class="footer">
-      <div class="footer-buttons">
+    <!-- Contrôles en bas de page -->
+    <div class="controls-container">
+      <div class="control-buttons">
         <button onclick="document.documentElement.requestFullscreen()">🔲 Plein écran</button>
         <button onclick="document.exitFullscreen()">❎ Réduire</button>
         <button onclick="fetchMeetings()">🔄 Rafraîchir</button>
       </div>
       
-      <!-- Bouton de création de réunion (redessiné) -->
+      <!-- Bouton de création de réunion (toujours visible) -->
       <button class="quick-booking-button" onclick="openBookingModal()">
         ➕ Créer une réunion Teams
       </button>
@@ -1059,7 +1046,7 @@
         salleHTML = `<p class="meeting-salle">📍 Salle : ${meeting.salle}</p>`;
       }
     
-      // Bouton "🔗 Rejoindre"
+      // Bouton "🔗 Rejoindre" amélioré
       let joinButton = '';
       if (meeting.joinUrl) {
         joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')">🔗 Rejoindre</button>`;
