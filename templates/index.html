@@ -25,7 +25,7 @@
     .main-container {
       display: grid;
       height: 100vh;
-      grid-template-columns: 1fr 450px;
+      grid-template-columns: 1fr 500px;
       grid-template-rows: auto auto 1fr auto;
       grid-template-areas:
         "header header"
@@ -96,7 +96,7 @@
       color: #f1f1f1;
     }
 
-    /* Titre principal (réduit en largeur) */
+    /* Titre principal (ajusté) */
     .title-container {
       width: 50%;
       display: flex;
@@ -187,7 +187,7 @@
     }
 
     .rooms-container {
-      max-width: calc(100% - 450px); /* Pour s'arrêter avant le bloc des réunions */
+      max-width: calc(100% - 530px); /* Largeur réduite avec espace accru */
       overflow-x: auto;
       overflow-y: hidden;
       max-height: 80px;
@@ -219,7 +219,7 @@
     }
     
     .room-card {
-      flex: 0 0 120px;
+      flex: 0 0 110px; /* Largeur réduite */
       height: 70px;
       background: rgba(30,30,30,0.8);
       border-radius: 8px;
@@ -323,9 +323,10 @@
     .meetings-container {
       grid-area: meetings;
       overflow: hidden;
-      max-width: 450px;
+      max-width: 500px;
       height: 100%;
       justify-self: end;
+      margin-top: -25px; /* Remonter pour s'aligner avec les salles */
     }
     .meetings {
       width: 100%;
@@ -340,17 +341,43 @@
       display: flex;
       flex-direction: column;
     }
+    
+    /* En-tête avec titre et bouton de création */
+    .meetings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 5px;
+    }
     .meetings h2 {
-      margin-top: 0;
+      margin: 0;
       font-size: 1.5rem;
       font-weight: bold;
       text-transform: uppercase;
-      margin-bottom: 15px;
-      color: #fff;
-      border-bottom: 2px solid rgba(255,255,255,0.2);
-      padding-bottom: 5px;
-      text-align: center;
     }
+    
+    /* Bouton de création dans l'en-tête des réunions */
+    .create-meeting-button {
+      background-color: #6264A7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .create-meeting-button:hover {
+      background-color: #494AB5;
+      transform: scale(1.05);
+    }
+    
     .meetings-list {
       flex: 1;
       overflow-y: auto;
@@ -372,9 +399,15 @@
       border-radius: 10px;
     }
     
-    .status-current {
+    /* En-tête de section avec bouton de création */
+    .status-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-top: 5px;
       margin-bottom: 10px;
+    }
+    .status-current {
       padding: 6px 12px;
       display: inline-block;
       border-radius: 8px;
@@ -383,12 +416,14 @@
       background-color: #28a745;
       color: white;
       animation: blink 1.5s infinite alternate;
+      margin: 0;
     }
     @keyframes blink {
       0% { opacity: 1; }
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
+    
     .meeting-item {
       background-color: rgba(255,255,255,0.1);
       border-radius: 10px;
@@ -495,7 +530,7 @@
     .controls-container {
       grid-area: controls;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start; /* Aligné à gauche maintenant */
       align-items: center;
       margin-top: 10px;
       position: relative;
@@ -526,28 +561,6 @@
       color: black;
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(255,255,255,0.4);
-    }
-    
-    /* Bouton de création de réunion (redessiné) */
-    .quick-booking-button {
-      background-color: #6264A7; /* Couleur Teams */
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 15px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-    }
-    .quick-booking-button:hover {
-      background-color: #494AB5;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
 
     /* =============================
@@ -728,6 +741,7 @@
       .meetings-container {
         max-width: none;
         width: 100%;
+        margin-top: 10px;
       }
       
       .rooms-container {
@@ -753,6 +767,16 @@
       .control-buttons {
         width: 100%;
         justify-content: center;
+      }
+      
+      .meetings-header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .status-section {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
   </style>
@@ -801,23 +825,23 @@
     <!-- Conteneur des réunions -->
     <div class="meetings-container">
       <div class="meetings">
-        <h2>RÉUNIONS D'AUJOURD'HUI</h2>
+        <!-- En-tête avec titre et bouton de création -->
+        <div class="meetings-header">
+          <h2>RÉUNIONS D'AUJOURD'HUI</h2>
+        </div>
+        
+        <!-- Liste des réunions avec le bouton à côté du statut -->
         <div class="meetings-list" id="meetings-container">Chargement des réunions...</div>
       </div>
     </div>
     
-    <!-- Contrôles en bas de page -->
+    <!-- Contrôles en bas de page (uniquement les boutons de navigation) -->
     <div class="controls-container">
       <div class="control-buttons">
         <button onclick="document.documentElement.requestFullscreen()">🔲 Plein écran</button>
         <button onclick="document.exitFullscreen()">❎ Réduire</button>
         <button onclick="fetchMeetings()">🔄 Rafraîchir</button>
       </div>
-      
-      <!-- Bouton de création de réunion (toujours visible) -->
-      <button class="quick-booking-button" onclick="openBookingModal()">
-        ➕ Créer une réunion Teams
-      </button>
     </div>
   </div>
   
@@ -961,13 +985,30 @@
         }
       });
 
-      // EN COURS
+      // EN COURS avec bouton de création
       if (currentMeetings.length > 0) {
-        container.innerHTML += `<h4 class="status-current">🟢 En cours</h4>`;
+        container.innerHTML += `
+          <div class="status-section">
+            <h4 class="status-current">🟢 En cours</h4>
+            <button class="create-meeting-button" onclick="openBookingModal()">
+              ➕ Créer une réunion Teams
+            </button>
+          </div>
+        `;
         currentMeetings.forEach(m => {
           container.innerHTML += createMeetingItem(m, 'En cours');
         });
+      } else {
+        // Si pas de réunion en cours, on met quand même le bouton de création
+        container.innerHTML += `
+          <div class="status-section">
+            <button class="create-meeting-button" onclick="openBookingModal()">
+              ➕ Créer une réunion Teams
+            </button>
+          </div>
+        `;
       }
+      
       // À venir
       if (upcomingMeetings.length > 0) {
         container.innerHTML += `<h4>🔵 À venir</h4>`;
@@ -984,7 +1025,7 @@
       }
       // Aucune réunion
       if (!currentMeetings.length && !upcomingMeetings.length && !pastMeetings.length) {
-        container.innerHTML = "<p>Aucune réunion prévue aujourd'hui.</p>";
+        container.innerHTML += "<p>Aucune réunion prévue aujourd'hui.</p>";
       }
       
       // Mettre à jour les chronomètres après création des éléments
