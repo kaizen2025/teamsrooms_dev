@@ -15,21 +15,29 @@
       padding: 0;
       height: 100%;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: hidden; /* Empêcher le scroll global */
       font-family: 'Segoe UI', sans-serif;
     }
 
     /* =============================
-       2) Structure principale
+       2) Structure principale améliorée
        ============================= */
     .main-container {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       height: 100vh;
+      grid-template-rows: auto auto auto 1fr auto;
+      grid-template-columns: 300px 1fr;
+      grid-template-areas:
+        "datetime title title"
+        "actions actions actions"
+        "rooms rooms rooms"
+        "empty meetings meetings"
+        "footer footer footer";
+      gap: 10px;
+      padding: 15px;
+      box-sizing: border-box;
       position: relative;
       z-index: 10;
-      padding: 20px;
-      box-sizing: border-box;
     }
 
     /* =============================
@@ -62,25 +70,19 @@
     }
 
     /* =============================
-       4) Section d'en-tête 
+       4) Section d'en-tête améliorée 
        ============================= */
-    .header-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    /* Date/Heure */
-    .header {
-      flex: 0 0 auto;
+    .datetime {
+      grid-area: datetime;
       background-color: rgba(0,0,0,0.5);
       backdrop-filter: blur(4px);
       border-radius: 10px;
       padding: 10px 18px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      align-self: start;
+      margin-right: 15px;
     }
-    .header p {
+    .datetime p {
       margin: 5px 0;
       font-size: 1.5rem;
       font-weight: bold;
@@ -89,7 +91,7 @@
 
     /* Titre principal */
     .title {
-      flex: 1;
+      grid-area: title;
       text-align: center;
       font-size: 2rem;
       font-weight: bold;
@@ -98,19 +100,44 @@
       background: rgba(0,0,0,0.3);
       padding: 8px 20px;
       border-radius: 10px;
-      margin: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     /* =============================
-       5) Section des fonctionnalités 
+       5) Section des actions 
        ============================= */
-    .features-section {
+    .actions {
+      grid-area: actions;
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 15px;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    /* Bouton de création de réunion */
+    .quick-booking-button {
+      background-color: #6264A7; /* Couleur Teams */
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+    .quick-booking-button:hover {
+      background-color: #494AB5;
+      transform: translateY(-2px);
     }
 
     /* Barre de saisie "Rejoindre" */
@@ -157,32 +184,15 @@
       transform: scale(1.05);
     }
 
-    /* Quick Booking Button */
-    .quick-booking-button {
-      background-color: #6264A7; /* Couleur Teams */
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-right: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-    }
-    .quick-booking-button:hover {
-      background-color: #494AB5;
-      transform: translateY(-2px);
-    }
-
     /* =============================
-       6) Section des salles
+       6) Section des salles optimisée
        ============================= */
     /* Bouton pour masquer/afficher les salles */
+    .rooms-header {
+      grid-area: rooms-header;
+      margin-bottom: 5px;
+    }
+    
     .toggle-rooms-button {
       background-color: rgba(0,0,0,0.5);
       color: white;
@@ -191,26 +201,25 @@
       padding: 5px 10px;
       font-size: 0.8rem;
       cursor: pointer;
-      margin-bottom: 10px;
       transition: all 0.3s;
-      align-self: flex-start;
     }
     .toggle-rooms-button:hover {
       background-color: rgba(0,0,0,0.7);
     }
 
-    .room-status-container {
+    .rooms {
+      grid-area: rooms;
       display: flex;
-      flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 15px;
       overflow-x: auto;
-      padding-bottom: 5px;
+      padding: 5px 0;
+      margin-bottom: 5px;
+      max-height: 80px; /* Hauteur réduite */
     }
     
-    .room-status-card {
-      flex: 0 0 100px;
-      height: 70px;
+    .room-card {
+      flex: 0 0 120px;
+      height: 70px; /* Hauteur réduite */
       background: rgba(30,30,30,0.8);
       border-radius: 8px;
       padding: 6px;
@@ -222,13 +231,13 @@
       overflow: hidden;
       transition: all 0.3s ease;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
-    .room-status-card:hover {
+    .room-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 5px 10px rgba(0,0,0,0.3);
     }
-    .room-status-card::before {
+    .room-card::before {
       content: "";
       position: absolute;
       top: 0;
@@ -236,26 +245,27 @@
       width: 100%;
       height: 4px;
     }
-    .room-status-card.available::before {
+    .room-card.available::before {
       background-color: #28a745;
     }
-    .room-status-card.occupied::before {
+    .room-card.occupied::before {
       background-color: #dc3545;
     }
-    .room-status-card.soon::before {
+    .room-card.soon::before {
       background-color: #ffc107;
     }
     .room-name {
       font-weight: bold;
       font-size: 0.95rem;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
       color: white;
     }
     .room-status {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
       gap: 3px;
+      color: #ddd;
     }
     .status-icon {
       width: 8px;
@@ -266,30 +276,20 @@
     }
     .status-icon.available {
       background-color: #28a745;
-      box-shadow: 0 0 10px #28a745;
+      box-shadow: 0 0 5px #28a745;
     }
     .status-icon.occupied {
       background-color: #dc3545;
-      box-shadow: 0 0 10px #dc3545;
+      box-shadow: 0 0 5px #dc3545;
     }
     .status-icon.soon {
       background-color: #ffc107;
-      box-shadow: 0 0 10px #ffc107;
+      box-shadow: 0 0 5px #ffc107;
     }
     .room-time {
-      font-size: 0.75rem;
-      margin-top: 3px;
-      color: #aaa;
-    }
-    .room-next {
       font-size: 0.7rem;
+      color: #aaa;
       margin-top: 2px;
-      color: #999;
-      text-align: center;
-      max-width: 95px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     /* Animation de pulsation pour les salles occupées */
     @keyframes pulse {
@@ -297,11 +297,11 @@
       70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
       100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
     }
-    .room-status-card.occupied {
+    .room-card.occupied {
       animation: pulse 2s infinite;
     }
     /* État caché des salles */
-    .room-status-container.hidden {
+    .rooms.hidden {
       height: 0;
       overflow: hidden;
       opacity: 0;
@@ -310,18 +310,19 @@
     }
 
     /* =============================
-       7) Contenu principal (réunions)
+       7) Contenu principal (réunions) optimisé
        ============================= */
-    .content {
-      flex: 1;
+    .meetings-container {
+      grid-area: meetings;
       display: flex;
-      justify-content: flex-end;
-      align-items: flex-start;
-      overflow-y: auto;
+      justify-content: center;
+      overflow: hidden;
+      height: 100%;
     }
     .meetings {
       width: 100%;
-      max-width: 550px;
+      max-width: 800px;
+      height: 100%;
       background: rgba(30,30,30,0.85);
       backdrop-filter: blur(10px);
       border-radius: 14px;
@@ -330,10 +331,12 @@
       padding: 20px;
       overflow-y: auto;
       color: #fff;
+      display: flex;
+      flex-direction: column;
     }
     .meetings h2 {
       margin-top: 0;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       font-weight: bold;
       text-transform: uppercase;
       margin-bottom: 0.8rem;
@@ -341,6 +344,11 @@
       border-bottom: 2px solid rgba(255,255,255,0.2);
       padding-bottom: 5px;
       text-align: center;
+    }
+    .meetings-list {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 5px;
     }
     .status-current {
       margin-top: 5px;
@@ -460,23 +468,24 @@
     /* =============================
        8) Pied de page
        ============================= */
-    .footer-section {
+    .footer {
+      grid-area: footer;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 15px;
+      margin-top: 10px;
     }
     /* Boutons bas de page */
     .footer-buttons {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
     .footer-buttons button {
-      padding: 8px 16px;
-      font-size: 0.9rem;
+      padding: 6px 12px;
+      font-size: 0.85rem;
       font-weight: bold;
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
       background: rgba(255,255,255,0.25);
       color: white;
       cursor: pointer;
@@ -494,7 +503,7 @@
     }
     /* Indication sortie plein écran */
     .exit-hint {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: bold;
       color: #fff;
       background-color: rgba(0,0,0,0.5);
@@ -503,7 +512,6 @@
       box-shadow: 0 3px 10px rgba(0,0,0,0.25);
       backdrop-filter: blur(4px);
       text-align: center;
-      min-height: 30px;
       line-height: 1.2;
     }
 
@@ -623,11 +631,14 @@
 
     /* Zone de IDs récents */
     #recent-ids {
+      position: absolute;
       background: rgba(30,30,30,0.7);
       padding: 8px;
       border-radius: 8px;
-      margin-top: 10px;
-      width: 100%;
+      margin-top: 5px;
+      width: 220px;
+      z-index: 15;
+      display: none;
     }
     #recent-ids h4 {
       margin: 0 0 8px 0;
@@ -652,44 +663,43 @@
        ============================= */
     @media (max-width: 768px) {
       .main-container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "datetime"
+          "title"
+          "actions"
+          "rooms"
+          "meetings"
+          "footer";
         padding: 10px;
       }
-      .header-section {
-        flex-direction: column;
-        gap: 10px;
-      }
-      .header {
+      .datetime {
         width: 100%;
         text-align: center;
+        margin-right: 0;
       }
       .title {
         width: 100%;
         margin: 0;
         font-size: 1.5rem;
       }
-      .features-section {
+      .actions {
         flex-direction: column;
         gap: 10px;
       }
-      .quick-booking-button {
-        margin-right: 0;
+      .quick-booking-button, .meeting-join {
         width: 100%;
-        justify-content: center;
-      }
-      .meeting-join {
-        width: 100%;
-        flex-direction: column;
       }
       .meeting-join input {
         width: 100%;
       }
-      .room-status-container {
+      .rooms {
         justify-content: center;
       }
-      .content {
-        justify-content: center;
+      .meetings-container {
+        height: 400px;
       }
-      .footer-section {
+      .footer {
         flex-direction: column;
         gap: 10px;
       }
@@ -701,14 +711,6 @@
         width: 100%;
       }
     }
-    @media (max-width: 480px) {
-      .header p {
-        font-size: 1rem;
-      }
-      .title {
-        font-size: 1.2rem;
-      }
-    }
   </style>
 </head>
 <body>
@@ -717,65 +719,65 @@
 
   <!-- Structure principale -->
   <div class="main-container">
-    <!-- Section d'en-tête -->
-    <div class="header-section">
-      <!-- Date/Heure -->
-      <div class="header">
-        <p id="current-date"></p>
-        <p id="current-time"></p>
-      </div>
-      
-      <!-- Titre principal -->
-      <div class="title" id="salle-title">Salle de Réunion</div>
+    <!-- Date/Heure -->
+    <div class="datetime">
+      <p id="current-date"></p>
+      <p id="current-time"></p>
     </div>
     
-    <!-- Section des fonctionnalités -->
-    <div class="features-section">
-      <!-- Bouton "Créer réunion" -->
+    <!-- Titre principal -->
+    <div class="title" id="salle-title">Salle de Réunion</div>
+    
+    <!-- Section des actions -->
+    <div class="actions">
+      <!-- Bouton de création de réunion -->
       <button class="quick-booking-button" onclick="openBookingModal()">
         ➕ Créer une réunion Teams
       </button>
       
-      <!-- Barre "Rejoindre" -->
+      <!-- Barre de recherche -->
       <div class="meeting-join">
         <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
         <button onclick="joinMeetingWithId()">🚀 Rejoindre</button>
-        <div id="recent-ids"></div>
       </div>
     </div>
     
-    <!-- Section des salles -->
-    <button class="toggle-rooms-button" onclick="toggleRoomsVisibility()">
-      👁️ Masquer les salles
-    </button>
+    <!-- Section de contrôle des salles -->
+    <div class="rooms-header">
+      <button class="toggle-rooms-button" onclick="toggleRoomsVisibility()">
+        👁️ Masquer les salles
+      </button>
+    </div>
     
-    <div class="room-status-container" id="roomStatusContainer"></div>
+    <!-- Liste des salles -->
+    <div class="rooms" id="roomsContainer"></div>
     
-    <!-- Contenu principal (réunions) -->
-    <div class="content">
+    <!-- Conteneur des réunions -->
+    <div class="meetings-container">
       <div class="meetings">
-        <h2>Réunions d'aujourd'hui</h2>
-        <div id="meetings-container">Chargement des réunions...</div>
+        <h2>RÉUNIONS D'AUJOURD'HUI</h2>
+        <div class="meetings-list" id="meetings-container">Chargement des réunions...</div>
       </div>
     </div>
     
-    <!-- Section de pied de page -->
-    <div class="footer-section">
-      <!-- Boutons bas de page -->
+    <!-- Pied de page -->
+    <div class="footer">
       <div class="footer-buttons">
         <button onclick="document.documentElement.requestFullscreen()">🔲 Plein écran</button>
         <button onclick="document.exitFullscreen()">❎ Réduire</button>
         <button onclick="fetchMeetings()">🔄 Rafraîchir</button>
       </div>
       
-      <!-- Indication sortie plein écran -->
       <div class="exit-hint">
         <p>🔔 Maintenez <strong>Échap</strong> pour quitter le mode plein écran</p>
       </div>
     </div>
   </div>
   
-  <!-- Modal de réservation rapide -->
+  <!-- Zone des IDs récents (flottante) -->
+  <div id="recent-ids"></div>
+  
+  <!-- Modal de réservation -->
   <div class="booking-modal" id="bookingModal">
     <div class="booking-modal-content">
       <h2>Créer une réunion Teams</h2>
@@ -1092,7 +1094,7 @@
 
     // Fonction pour masquer/afficher les salles
     function toggleRoomsVisibility() {
-      const container = document.getElementById('roomStatusContainer');
+      const container = document.getElementById('roomsContainer');
       const button = document.querySelector('.toggle-rooms-button');
       
       if (container.classList.contains('hidden')) {
@@ -1105,7 +1107,7 @@
     }
 
     async function updateRoomStatus() {
-      const container = document.getElementById('roomStatusContainer');
+      const container = document.getElementById('roomsContainer');
       if (!container) return;
       
       try {
@@ -1168,7 +1170,6 @@
           let status = 'available';
           let statusText = 'Disponible';
           let timeText = '';
-          let nextText = '';
           
           if (currentMeeting) {
             status = 'occupied';
@@ -1177,31 +1178,20 @@
             // Calculer le temps restant
             const remainingMinutes = Math.floor((currentMeeting.end - now) / 60000);
             timeText = `Fin dans ${remainingMinutes} min`;
-            
-            if (nextMeeting) {
-              const nextStartTime = nextMeeting.start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-              nextText = `${nextStartTime}: ${nextMeeting.subject}`;
-            }
           } else if (nextMeeting) {
             // Vérifier si la prochaine réunion est dans moins de 30 minutes
             const minutesUntilNext = Math.floor((nextMeeting.start - now) / 60000);
             
             if (minutesUntilNext <= 30) {
               status = 'soon';
-              statusText = 'Bientôt occupée';
-              
-              const nextStartTime = nextMeeting.start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+              statusText = 'Bientôt';
               timeText = `Dans ${minutesUntilNext} min`;
-              nextText = `${nextStartTime}: ${nextMeeting.subject}`;
-            } else {
-              const nextStartTime = nextMeeting.start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-              nextText = `À ${nextStartTime}`;
             }
           }
           
           // Créer la carte de statut
           const card = document.createElement('div');
-          card.className = `room-status-card ${status}`;
+          card.className = `room-card ${status}`;
           card.innerHTML = `
             <div class="room-name">${roomName}</div>
             <div class="room-status">
@@ -1209,7 +1199,6 @@
               ${statusText}
             </div>
             ${timeText ? `<div class="room-time">${timeText}</div>` : ''}
-            ${nextText ? `<div class="room-next">${nextText}</div>` : ''}
           `;
           
           // Ajouter un événement pour rediriger vers la page de la salle
@@ -1306,6 +1295,15 @@
       const recentIds = JSON.parse(localStorage.getItem('recentMeetingIds') || '[]');
       
       if (recentIds.length > 0) {
+        // Positionner la liste sous le champ de saisie
+        const inputField = document.getElementById('meeting-id');
+        if (inputField) {
+          const rect = inputField.getBoundingClientRect();
+          container.style.position = 'absolute';
+          container.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+          container.style.left = (rect.left + window.scrollX) + 'px';
+        }
+        
         container.innerHTML = '<h4>Récemment utilisés</h4>';
         recentIds.forEach(id => {
           container.innerHTML += `<div class="recent-id" onclick="document.getElementById('meeting-id').value='${id}'; joinMeetingWithId();">${id}</div>`;
@@ -1315,6 +1313,24 @@
         container.style.display = 'none';
       }
     }
+
+    // Afficher/cacher la liste des IDs récents lorsque le champ est sélectionné
+    document.addEventListener('DOMContentLoaded', function() {
+      const meetingIdField = document.getElementById('meeting-id');
+      if (meetingIdField) {
+        meetingIdField.addEventListener('focus', function() {
+          updateRecentIdsList();
+        });
+        
+        // Cacher la liste lorsque l'utilisateur clique ailleurs
+        document.addEventListener('click', function(e) {
+          if (e.target !== meetingIdField) {
+            const container = document.getElementById('recent-ids');
+            if (container) container.style.display = 'none';
+          }
+        });
+      }
+    });
 
     /* =========================
        H) Réservation rapide de réunions
