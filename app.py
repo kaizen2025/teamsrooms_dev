@@ -85,125 +85,6 @@ def get_token():
     except Exception as e:
         print(f"Erreur d'authentification: {str(e)}")
         return None
-# Ajouter cette route à votre fichier app.py
-
-@app.route('/api/create-meeting', methods=['POST'])
-def create_meeting():
-    """
-    Crée une réunion Teams en utilisant l'API Microsoft Graph.
-    """
-    # Récupérer les données envoyées depuis le front-end
-    data = request.json
-    
-    if not data:
-        return jsonify({'error': "Données manquantes"}), 400
-    
-    # Validation des données requises
-    required_fields = ['title', 'start', 'end', 'roomEmail']
-    for field in required_fields:
-        if field not in data or not data[field]:
-            return jsonify({'error': f"Le champ '{field}' est requis"}), 400
-    
-    # Obtenir un token d'accès
-    token = get_token()
-    if not token:
-        return jsonify({'error': "Erreur d'authentification avec Microsoft Graph."}), 500
-    
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-    
-    # Créer la liste des participants
-    room_email = data.get('roomEmail')
-    participants = data.get('participants', [])
-    
-    # Convertir les participants en format attendees de Graph API
-    attendees_list = []
-    
-    # Ajouter la salle comme ressource
-    if room_email:
-        attendees_list.append({
-            "emailAddress": {
-                "address": room_email
-            },
-            "type": "resource"
-        })
-    
-    # Ajouter les autres participants
-    for email in participants:
-        if email and '@' in email:  # Validation basique d'email
-            attendees_list.append({
-                "emailAddress": {
-                    "address": email
-                },
-                "type": "required"
-            })
-    
-    # Construire le corps de la requête
-    event_data = {
-        "subject": data.get('title'),
-        "start": {
-            "dateTime": data.get('start'),
-            "timeZone": "Europe/Paris"
-        },
-        "end": {
-            "dateTime": data.get('end'),
-            "timeZone": "Europe/Paris"
-        },
-        "location": {
-            "displayName": data.get('room', '')
-        },
-        "attendees": attendees_list,
-        "isOnlineMeeting": True,
-        "onlineMeetingProvider": "teamsForBusiness"
-    }
-    
-    # Journalisation pour débogage
-    print(f"Création de réunion: {json.dumps(event_data, indent=2)}")
-    
-    try:
-        # Utiliser l'email de la première salle comme organisateur (ou un compte dédié si disponible)
-        organizer_email = next(iter(SALLES.values())) if SALLES else None
-        
-        if not organizer_email:
-            return jsonify({'error': "Aucune salle configurée pour créer des réunions."}), 500
-        
-        # Créer l'événement dans le calendrier
-        url = f"https://graph.microsoft.com/v1.0/users/{organizer_email}/calendar/events"
-        response = requests.post(url, headers=headers, json=event_data, timeout=15)
-        
-        if response.status_code >= 400:
-            print(f"Erreur Graph API: {response.status_code} - {response.text}")
-            return jsonify({'error': f"Erreur lors de la création de la réunion: {response.text}"}), response.status_code
-        
-        # Récupérer les données de la réunion créée
-        meeting_data = response.json()
-        
-        # Récupérer le lien de la réunion
-        join_url = meeting_data.get('onlineMeeting', {}).get('joinUrl', '')
-        
-        # Si pas de lien direct, chercher dans le body
-        if not join_url and 'body' in meeting_data:
-            body_content = meeting_data.get('body', {}).get('content', '')
-            pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
-            match = re.search(pattern, body_content)
-            if match:
-                join_url = match.group(0)
-        
-        return jsonify({
-            'success': True,
-            'meetingId': meeting_data.get('id'),
-            'joinUrl': join_url,
-            'subject': meeting_data.get('subject'),
-            'start': meeting_data.get('start', {}).get('dateTime'),
-            'end': meeting_data.get('end', {}).get('dateTime'),
-            'room': data.get('room')
-        })
-    
-    except Exception as e:
-        print(f"Erreur lors de la création de la réunion: {str(e)}")
-        return jsonify({'error': f"Erreur lors de la création de la réunion: {str(e)}"}), 500
 
 def convert_to_paris_time(iso_str):
     """
@@ -643,6 +524,125 @@ ip_new = {ip_data['votre_ip_probable']}</pre>
     </html>
     """
     return html
+
+# --- Endpoint pour créer des réunions Teams ---
+@app.route('/api/create-meeting', methods=['POST'])
+def create_meeting():
+    """
+    Crée une réunion Teams en utilisant l'API Microsoft Graph.
+    """
+    # Récupérer les données envoyées depuis le front-end
+    data = request.json
+    
+    if not data:
+        return jsonify({'error': "Données manquantes"}), 400
+    
+    # Validation des données requises
+    required_fields = ['title', 'start', 'end', 'roomEmail']
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return jsonify({'error': f"Le champ '{field}' est requis"}), 400
+    
+    # Obtenir un token d'accès
+    token = get_token()
+    if not token:
+        return jsonify({'error': "Erreur d'authentification avec Microsoft Graph."}), 500
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    # Créer la liste des participants
+    room_email = data.get('roomEmail')
+    participants = data.get('participants', [])
+    
+    # Convertir les participants en format attendees de Graph API
+    attendees_list = []
+    
+    # Ajouter la salle comme ressource
+    if room_email:
+        attendees_list.append({
+            "emailAddress": {
+                "address": room_email
+            },
+            "type": "resource"
+        })
+    
+    # Ajouter les autres participants
+    for email in participants:
+        if email and '@' in email:  # Validation basique d'email
+            attendees_list.append({
+                "emailAddress": {
+                    "address": email
+                },
+                "type": "required"
+            })
+    
+    # Construire le corps de la requête
+    event_data = {
+        "subject": data.get('title'),
+        "start": {
+            "dateTime": data.get('start'),
+            "timeZone": "Europe/Paris"
+        },
+        "end": {
+            "dateTime": data.get('end'),
+            "timeZone": "Europe/Paris"
+        },
+        "location": {
+            "displayName": data.get('room', '')
+        },
+        "attendees": attendees_list,
+        "isOnlineMeeting": True,
+        "onlineMeetingProvider": "teamsForBusiness"
+    }
+    
+    # Journalisation pour débogage
+    print(f"Création de réunion: {json.dumps(event_data, indent=2)}")
+    
+    try:
+        # Utiliser l'email de la première salle comme organisateur (ou un compte dédié si disponible)
+        organizer_email = next(iter(SALLES.values())) if SALLES else None
+        
+        if not organizer_email:
+            return jsonify({'error': "Aucune salle configurée pour créer des réunions."}), 500
+        
+        # Créer l'événement dans le calendrier
+        url = f"https://graph.microsoft.com/v1.0/users/{organizer_email}/calendar/events"
+        response = requests.post(url, headers=headers, json=event_data, timeout=15)
+        
+        if response.status_code >= 400:
+            print(f"Erreur Graph API: {response.status_code} - {response.text}")
+            return jsonify({'error': f"Erreur lors de la création de la réunion: {response.text}"}), response.status_code
+        
+        # Récupérer les données de la réunion créée
+        meeting_data = response.json()
+        
+        # Récupérer le lien de la réunion
+        join_url = meeting_data.get('onlineMeeting', {}).get('joinUrl', '')
+        
+        # Si pas de lien direct, chercher dans le body
+        if not join_url and 'body' in meeting_data:
+            body_content = meeting_data.get('body', {}).get('content', '')
+            pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
+            match = re.search(pattern, body_content)
+            if match:
+                join_url = match.group(0)
+        
+        return jsonify({
+            'success': True,
+            'meetingId': meeting_data.get('id'),
+            'joinUrl': join_url,
+            'subject': meeting_data.get('subject'),
+            'start': meeting_data.get('start', {}).get('dateTime'),
+            'end': meeting_data.get('end', {}).get('dateTime'),
+            'room': data.get('room')
+        })
+    
+    except Exception as e:
+        print(f"Erreur lors de la création de la réunion: {str(e)}")
+        return jsonify({'error': f"Erreur lors de la création de la réunion: {str(e)}"}), 500
 
 # --- Exécution principale ---
 if __name__ == '__main__':
