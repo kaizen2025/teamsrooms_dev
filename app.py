@@ -243,22 +243,46 @@ def background_updater():
 @app.before_request
 def limit_remote_addr():
     """
-    Filtre les requêtes selon l'adresse IP du client.
-    Ignore le filtre pour la route de diagnostic /ip-check.
+    Filtre les requêtes selon l'adresse IP du client avec une meilleure détection pour Render.
     """
     # Toujours autoriser l'accès à la page de diagnostic
     if request.path == '/ip-check':
         return None
+    
+    # Amélioration de la détection d'IP pour Render
+    # Vérifier plusieurs en-têtes dans l'ordre de priorité
+    ip = None
+    
+    # 1. X-Forwarded-For (standard pour les proxies)
+    forwarded_for = request.headers.get('X-Forwarded-For')
+    if forwarded_for:
+        # Prendre la première IP (celle du client d'origine)
+        ip = forwarded_for.split(',')[0].strip()
+    
+    # 2. Si pas trouvé, essayer X-Real-IP (utilisé par nginx)
+    if not ip:
+        ip = request.headers.get('X-Real-IP')
+    
+    # 3. Enfin, utiliser l'IP distante directe
+    if not ip:
+        ip = request.remote_addr
+    
+    # Si nous avons une IP et que ALLOWED_IPS n'est pas vide
+    if ip and ALLOWED_IPS:
+        # Vérifier si 'ALL' est dans la liste des IPs autorisées
+        if 'ALL' in ALLOWED_IPS:
+            return None
         
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if ip:
-        ip = ip.split(',')[0].strip()
+        # Vérifier si l'IP est dans la liste
+        if ip in ALLOWED_IPS:
+            return None
+        
+        # Pour le débogage, enregistrer l'IP bloquée
+        print(f"IP bloquée: {ip}, Headers: {dict(request.headers)}")
+        return jsonify({"error": "Accès refusé depuis cette adresse IP."}), 403
     
-    # Si ALLOWED_IPS est vide ou si l'IP est dans la liste
-    if not ALLOWED_IPS or ip in ALLOWED_IPS:
-        return None
-    
-    return jsonify({"error": "Accès refusé depuis cette adresse IP."}), 403
+    # Si ALLOWED_IPS est vide ou pas d'IP détectée, autoriser l'accès
+    return None
 
 # --- Route pour interroger Graph et récupérer le lien de réunion via son ID ---
 @app.route('/lookupMeeting')
