@@ -615,7 +615,9 @@
     changeBackground();
   </script>
   <!-- Script d'amélioration à ajouter à la fin du fichier index.html -->
-  <script>
+  // Ce script doit être ajouté à la fin du fichier index.html, juste avant la fermeture de la balise </body>
+
+<script>
   /* =========================
      STYLES CSS ADDITIONNELS
      ========================= */
@@ -679,25 +681,25 @@
       
       /* Styles pour la réservation rapide */
       .quick-booking-button {
-        background-color: #6264A7; /* Couleur Teams */
+        background: linear-gradient(135deg, #6264A7 0%, #494AB5 100%);
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 10px 16px;
+        border-radius: 10px;
+        padding: 10px 18px;
         cursor: pointer;
-        font-size: 1rem;
         font-weight: bold;
+        box-shadow: 0 3px 10px rgba(98, 100, 167, 0.4);
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 10px 0;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        margin: 15px auto;
         transition: all 0.3s ease;
       }
 
       .quick-booking-button:hover {
-        background-color: #494AB5;
         transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(98, 100, 167, 0.6);
+        background: linear-gradient(135deg, #7073CC 0%, #5456C7 100%);
       }
 
       .booking-modal {
@@ -829,21 +831,59 @@
         font-weight: bold;
       }
       
-      /* Styles pour le statut des salles */
+      /* Conteneur principal avec toggle */
       .room-status-container {
-        margin: 20px 0;
+        position: fixed;
+        top: 75px;
+        left: 0;
+        right: 0;
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
         justify-content: center;
+        gap: 8px;
+        padding: 10px;
+        z-index: 5;
+        transition: all 0.3s ease-in-out;
+        max-height: 80px;
+        overflow: hidden;
       }
 
+      /* État replié */
+      .room-status-container.collapsed {
+        max-height: 35px;
+      }
+
+      /* Bouton pour afficher/masquer les salles */
+      .rooms-toggle-button {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(30, 30, 30, 0.8);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 2px 15px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        z-index: 12;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .rooms-toggle-button:hover {
+        background-color: rgba(50, 50, 50, 0.9);
+      }
+
+      /* Cartes de statut des salles */
       .room-status-card {
-        width: 150px;
-        height: 100px;
-        background: rgba(30,30,30,0.8);
-        border-radius: 10px;
-        padding: 12px;
+        background: rgba(30, 30, 30, 0.8);
+        border-radius: 6px;
+        padding: 5px 10px;
+        height: 60px;
+        width: 120px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -852,20 +892,25 @@
         overflow: hidden;
         transition: all 0.3s ease;
         cursor: pointer;
+        opacity: 0.8;
+        margin: 0 2px;
+        flex-shrink: 0;
       }
 
       .room-status-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        opacity: 1;
       }
 
+      /* États des salles */
       .room-status-card::before {
         content: "";
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        height: 5px;
+        height: 3px;
       }
 
       .room-status-card.available::before {
@@ -880,69 +925,99 @@
         background-color: #ffc107;
       }
 
+      /* Textes dans les cartes */
       .room-name {
         font-weight: bold;
-        font-size: 1.1rem;
-        margin-bottom: 5px;
+        font-size: 0.9rem;
+        margin-bottom: 2px;
         color: white;
       }
 
       .room-status {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 3px;
+        white-space: nowrap;
       }
 
       .status-icon {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         display: inline-block;
-        margin-right: 5px;
-      }
-
-      .status-icon.available {
-        background-color: #28a745;
-        box-shadow: 0 0 10px #28a745;
-      }
-
-      .status-icon.occupied {
-        background-color: #dc3545;
-        box-shadow: 0 0 10px #dc3545;
-      }
-
-      .status-icon.soon {
-        background-color: #ffc107;
-        box-shadow: 0 0 10px #ffc107;
       }
 
       .room-time {
-        font-size: 0.8rem;
-        margin-top: 5px;
+        font-size: 0.7rem;
+        margin-top: 2px;
         color: #aaa;
       }
 
       .room-next {
-        font-size: 0.7rem;
-        margin-top: 3px;
+        font-size: 0.65rem;
         color: #999;
-        text-align: center;
-        max-width: 130px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 110px;
       }
 
       /* Animation de pulsation pour les salles occupées */
       @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.3); }
+        70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
         100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
       }
 
       .room-status-card.occupied {
         animation: pulse 2s infinite;
+      }
+
+      /* Ajustements pour le titre principal */
+      .title {
+        margin-top: 55px;
+      }
+
+      /* Responsive : adapte la taille des cartes selon l'espace disponible */
+      @media (max-width: 900px) {
+        .room-status-card {
+          width: 90px;
+          height: 50px;
+          padding: 4px 5px;
+        }
+        
+        .room-name {
+          font-size: 0.8rem;
+        }
+        
+        .room-status, .room-time, .room-next {
+          font-size: 0.65rem;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .room-status-container {
+          position: relative;
+          top: 0;
+          margin-bottom: 10px;
+          max-height: 150px;
+          overflow-x: auto;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+        }
+        
+        .room-status-container::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .room-status-card {
+          min-width: 100px;
+        }
+        
+        .title {
+          margin-top: 10px;
+        }
       }
       
       /* Zone de IDs récents */
@@ -972,6 +1047,41 @@
       
       .recent-id:hover {
         background: rgba(98, 100, 167, 0.8);
+      }
+
+      /* Amélioration du bouton Rejoindre */
+      .meeting-join button, 
+      .meeting-item button {
+        background: linear-gradient(135deg, #6264A7 0%, #494AB5 100%);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        padding: 10px 20px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(98, 100, 167, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+      }
+
+      .meeting-join button:hover,
+      .meeting-item button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(98, 100, 167, 0.6);
+        background: linear-gradient(135deg, #7073CC 0%, #5456C7 100%);
+      }
+
+      .meeting-join button:active,
+      .meeting-item button:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 5px rgba(98, 100, 167, 0.4);
+      }
+
+      .meeting-item button {
+        padding: 6px 15px;
+        font-size: 0.85rem;
       }
     `;
     document.head.appendChild(styleElement);
@@ -1149,7 +1259,7 @@
   }
 
   /* =========================
-     STATUT VISUEL DES SALLES
+     STATUT VISUEL DES SALLES AMÉLIORÉ
      ========================= */
   function createRoomStatusSection() {
     // Ne pas créer le conteneur s'il existe déjà
@@ -1160,19 +1270,45 @@
     container.className = 'room-status-container';
     container.id = 'roomStatusContainer';
     
-    // Ajouter le conteneur après le titre principal ou dans la barre de navigation
-    const titleElement = document.querySelector('.title');
-    if (titleElement && titleElement.parentNode) {
-      titleElement.parentNode.insertBefore(container, titleElement.nextSibling);
-    } else {
-      const headerElement = document.querySelector('.header');
-      if (headerElement && headerElement.parentNode) {
-        headerElement.parentNode.insertBefore(container, headerElement.nextSibling);
-      }
-    }
+    // Ajouter le bouton de toggle
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'rooms-toggle-button';
+    toggleButton.innerHTML = '<span>▼</span> Salles';
+    toggleButton.onclick = toggleRoomsVisibility;
+    container.appendChild(toggleButton);
+    
+    // Ajouter le conteneur au début du body
+    document.body.insertBefore(container, document.body.firstChild);
     
     // Mettre à jour le statut des salles immédiatement
     updateRoomStatus();
+    
+    // Charger l'état sauvegardé (replié ou déplié)
+    const isCollapsed = localStorage.getItem('roomsCollapsed') === 'true';
+    if (isCollapsed) {
+      container.classList.add('collapsed');
+      toggleButton.innerHTML = '<span>▲</span> Salles';
+    }
+  }
+
+  // Fonction pour basculer l'affichage des salles
+  function toggleRoomsVisibility() {
+    const container = document.getElementById('roomStatusContainer');
+    const toggleButton = document.querySelector('.rooms-toggle-button');
+    
+    if (!container) return;
+    
+    // Basculer la classe 'collapsed'
+    container.classList.toggle('collapsed');
+    
+    // Mettre à jour le texte du bouton et sauvegarder l'état
+    if (container.classList.contains('collapsed')) {
+      toggleButton.innerHTML = '<span>▲</span> Salles';
+      localStorage.setItem('roomsCollapsed', 'true');
+    } else {
+      toggleButton.innerHTML = '<span>▼</span> Salles';
+      localStorage.setItem('roomsCollapsed', 'false');
+    }
   }
 
   async function updateRoomStatus() {
@@ -1180,6 +1316,9 @@
     if (!container) return;
     
     try {
+      // Préserver le bouton de toggle
+      const toggleButton = container.querySelector('.rooms-toggle-button');
+      
       // Obtenir les données des réunions
       const response = await fetch(`/meetings.json?t=${Date.now()}`);
       if (!response.ok) throw new Error('Impossible de récupérer les données');
@@ -1211,8 +1350,23 @@
         }
       });
       
-      // Vider le conteneur
-      container.innerHTML = '';
+      // Vider le conteneur mais conserver le bouton toggle
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      
+      // Remettre le bouton toggle
+      if (toggleButton) {
+        container.appendChild(toggleButton);
+      } else {
+        // Créer le bouton s'il n'existe pas
+        const newToggleButton = document.createElement('button');
+        newToggleButton.className = 'rooms-toggle-button';
+        newToggleButton.innerHTML = container.classList.contains('collapsed') ? 
+          '<span>▲</span> Salles' : '<span>▼</span> Salles';
+        newToggleButton.onclick = toggleRoomsVisibility;
+        container.appendChild(newToggleButton);
+      }
       
       // Créer les cartes de statut pour chaque salle
       for (const room in roomMeetings) {
@@ -1260,7 +1414,7 @@
           
           if (minutesUntilNext <= 30) {
             status = 'soon';
-            statusText = 'Bientôt occupée';
+            statusText = 'Bientôt';
             
             const nextStartTime = nextMeeting.start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             timeText = `Dans ${minutesUntilNext} min`;
@@ -1761,7 +1915,6 @@
       setInterval(updateRoomStatus, 60000);
     }, 1000);
   });
-  </script>
-
+</script>
 </body>
 </html>
