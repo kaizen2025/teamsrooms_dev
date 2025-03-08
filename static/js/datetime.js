@@ -6,15 +6,17 @@
 function updateDateTime() {
   const now = new Date();
   
-  // Date: format long (ex. samedi 8 mars 2025)
+  // Date: format long avec majuscule (ex. Samedi 8 mars 2025)
   const dateElement = document.getElementById('current-date');
   if (dateElement) {
-    dateElement.textContent = now.toLocaleDateString('fr-FR', { 
+    let dateStr = now.toLocaleDateString('fr-FR', { 
       weekday: 'long', 
       day: 'numeric', 
       month: 'long', 
       year: 'numeric' 
     });
+    // Première lettre en majuscule
+    dateElement.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
   }
   
   // Heure: format HH:MM:SS
