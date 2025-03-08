@@ -1,0 +1,123 @@
+/* =============================
+   Variables CSS et styles de base
+   ============================= */
+:root {
+  /* Palette de couleurs principale */
+  --primary-color: #6264A7;
+  --primary-color-dark: #5553b3;
+  --primary-color-light: #7b7dc6;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  
+  /* Couleurs d'interface */
+  --bg-dark: rgba(30, 30, 30, 0.85);
+  --bg-medium: rgba(40, 40, 40, 0.85);
+  --bg-light: rgba(255, 255, 255, 0.15);
+  
+  /* Ombres */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+  
+  /* Espacements */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Bordures */
+  --border-radius-sm: 6px;
+  --border-radius-md: 10px;
+  --border-radius-lg: 15px;
+  --border-radius-full: 50%;
+  
+  /* Transitions */
+  --transition-fast: all 0.2s ease;
+  --transition-normal: all 0.3s ease;
+  --transition-slow: all 0.5s ease;
+  
+  /* Z-index layers */
+  --z-index-base: 1;
+  --z-index-above: 10;
+  --z-index-modal: 100;
+  --z-index-overlay: 1000;
+}
+
+/* Reset et styles généraux */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Arrière-plan avec animation */
+#background-container {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  animation: zoomBackground 30s infinite alternate ease-in-out;
+}
+
+@keyframes zoomBackground {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.005); }
+  100% { transform: scale(1); }
+}
+
+/* Utilitaires */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.d-flex { display: flex; }
+.flex-column { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
+.align-start { align-items: flex-start; }
+.align-end { align-items: flex-end; }
+
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
+.mt-3 { margin-top: var(--spacing-md); }
+.mt-4 { margin-top: var(--spacing-lg); }
+
+/* Indicateur de chargement */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  color: var(--light-color);
+}
+
+.loading-indicator i {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--primary-color);
+}

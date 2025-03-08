@@ -1,0 +1,152 @@
+/* =============================
+   Section des salles
+   ============================= */
+.rooms-section {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: 250px; /* Aligné avec le menu étendu */
+  z-index: var(--z-index-modal);
+  background: rgba(20, 20, 20, 0.8);
+  backdrop-filter: blur(8px);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  width: auto;
+  max-width: 600px;
+  transition: var(--transition-normal);
+}
+
+.rooms-section.visible {
+  display: block;
+}
+
+.rooms-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Stylisation des scrollbars pour Chrome/Safari */
+.rooms-container::-webkit-scrollbar {
+  height: 5px;
+}
+.rooms-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.rooms-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.rooms {
+  display: flex;
+  flex-wrap: wrap; /* Permet d'avoir plusieurs lignes pour une disposition plus équilibrée */
+  gap: 10px;
+  justify-content: center;
+  padding: var(--spacing-xs);
+}
+
+/* Cartes de salles */
+.room-card {
+  flex: 0 0 100px;
+  height: 60px;
+  background: var(--bg-medium);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.room-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Barre d'indicateur de statut en haut de la carte */
+.room-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+}
+
+.room-card.available::before {
+  background-color: var(--success-color);
+}
+
+.room-card.occupied::before {
+  background-color: var(--danger-color);
+}
+
+.room-card.soon::before {
+  background-color: var(--warning-color);
+}
+
+/* Contenu de la carte */
+.room-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+  color: white;
+}
+
+.room-status {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #ddd;
+}
+
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.status-icon.available {
+  background-color: var(--success-color);
+  box-shadow: 0 0 5px var(--success-color);
+}
+
+.status-icon.occupied {
+  background-color: var(--danger-color);
+  box-shadow: 0 0 5px var(--danger-color);
+}
+
+.status-icon.soon {
+  background-color: var(--warning-color);
+  box-shadow: 0 0 5px var(--warning-color);
+}
+
+.room-time {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 3px;
+}
+
+/* Animation de pulsation pour les salles occupées */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.room-card.occupied {
+  animation: pulse 2s infinite;
+}

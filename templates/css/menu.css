@@ -1,0 +1,179 @@
+/* =============================
+   Menu latéral
+   ============================= */
+.side-menu {
+  grid-area: menu;
+  background: var(--bg-dark);
+  backdrop-filter: blur(5px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-above);
+  width: 0;
+  overflow: hidden;
+  transition: var(--transition-normal);
+}
+
+.side-menu.expanded {
+  width: 250px;
+  padding: var(--spacing-lg) 0;
+}
+
+/* Bouton menu principal (toujours visible) */
+.menu-toggle-visible {
+  position: fixed;
+  left: 15px;
+  top: 15px;
+  background: rgba(98, 100, 167, 0.9);
+  border: none;
+  border-radius: var(--border-radius-full);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  z-index: var(--z-index-overlay);
+  box-shadow: var(--shadow-sm);
+  font-size: 1.2rem;
+  transition: var(--transition-fast);
+}
+
+.menu-toggle-visible:hover {
+  background: var(--primary-color);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+/* Logo conteneur */
+.menu-logo {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  padding: 0 var(--spacing-md);
+  opacity: 0;
+  transition: var(--transition-normal);
+}
+
+.side-menu.expanded .menu-logo {
+  opacity: 1;
+}
+
+.menu-logo img, .menu-logo svg {
+  max-width: 80%;
+  height: auto;
+}
+
+/* Titre du menu */
+.menu-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0;
+  transition: var(--transition-normal);
+  white-space: nowrap;
+}
+
+.side-menu.expanded .menu-title {
+  opacity: 1;
+}
+
+/* Items du menu */
+.menu-items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 var(--spacing-sm);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: #e0e0e0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item.active {
+  background: rgba(98, 100, 167, 0.6);
+  color: white;
+  font-weight: bold;
+}
+
+.menu-item-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+.menu-item-text {
+  font-size: 0.95rem;
+  opacity: 0;
+  transition: var(--transition-normal);
+}
+
+.side-menu.expanded .menu-item-text {
+  opacity: 1;
+}
+
+/* Séparateur */
+.menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: var(--spacing-md) var(--spacing-md);
+}
+
+/* Zone inférieure du menu */
+.menu-bottom {
+  margin-top: auto;
+  padding: 0 var(--spacing-md) var(--spacing-lg) var(--spacing-md);
+}
+
+/* Bouton pour afficher/masquer les salles */
+.toggle-rooms-button {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: white;
+  padding: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-size: 0.9rem;
+}
+
+.toggle-rooms-button span.button-text {
+  opacity: 0;
+  transition: var(--transition-normal);
+  white-space: nowrap;
+}
+
+.side-menu.expanded .toggle-rooms-button span.button-text {
+  opacity: 1;
+}
+
+.toggle-rooms-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
