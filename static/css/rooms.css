@@ -4,8 +4,8 @@
 .rooms-section {
   display: none;
   position: fixed;
-  top: 80px;
-  left: 250px; /* Aligné avec le menu étendu */
+  bottom: 80px;
+  left: 20px;
   z-index: var(--z-index-modal);
   background: rgba(20, 20, 20, 0.8);
   backdrop-filter: blur(8px);
@@ -13,7 +13,7 @@
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
   width: auto;
-  max-width: 600px;
+  max-width: 500px;
   transition: var(--transition-normal);
 }
 
