@@ -6,10 +6,10 @@
 .meetings-container {
   grid-area: meetings;
   overflow: hidden;
-  width: 95%;
-  height: 95%;
+  width: 98%;
+  height: 98%;
   padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
-  margin: var(--spacing-md) auto;
+  margin: 0 auto;
   justify-self: center;
 }
 
@@ -25,7 +25,7 @@
   color: white;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 80px);
 }
 
 /* En-tête avec titre et bouton */
@@ -40,9 +40,10 @@
 
 .meetings h2 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: bold;
   text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* Liste des réunions */
@@ -50,7 +51,7 @@
   flex: 1;
   overflow-y: auto;
   padding-right: var(--spacing-sm);
-  max-height: calc(100vh - 210px);
+  max-height: calc(100vh - 140px);
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
@@ -108,12 +109,17 @@
   color: #ccc;
 }
 
-/* Section de status */
+/* Section de status - Suppression de la redondance "Aujourd'hui" */
 .status-section {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  margin: var(--spacing-sm) 0;
+  margin: var(--spacing-sm) 0 var(--spacing-md) 0;
+}
+
+/* Suppression de l'affichage du texte redondant "Aujourd'hui" */
+.status-section h4:first-child {
+  display: none;
 }
 
 .status-current {
