@@ -41,11 +41,7 @@ except AttributeError:
 
 # Création de l'application Flask et configuration de ProxyFix
 app = Flask(__name__, 
-<<<<<<< HEAD
     static_folder='static',
-=======
-    static_folder='templates',
->>>>>>> 3357a505c82919599fd191acc6a7b30144825cb4
     template_folder='templates')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_proto=1, x_host=1, x_prefix=1)
 
