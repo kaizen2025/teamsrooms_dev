@@ -1,19 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Gestionnaire All-in-One pour Render/GitHub/Kiosk
+Permet de gérer les déploiements, synchroniser avec GitHub et configurer le mode kiosk.
+"""
+
 import ctypes
 import sys
 import os
 import subprocess
 import time
-import hashlib
-import json
 import tempfile
 import textwrap
 import shutil
 import stat
+import json
+import re
+import webbrowser
 from datetime import datetime
-from urllib.parse import quote  # Pour encoder l'e-mail
 
 def is_admin():
     """
@@ -41,6 +46,7 @@ if not is_admin():
 # FONCTION pour forcer la suppression d'un dossier (y compris fichiers verrouillés)
 # ---------------------------------------------------------------------------
 def force_remove(path):
+    """Force la suppression d'un dossier même avec des fichiers verrouillés."""
     def onerror(func, path, exc_info):
         try:
             os.chmod(path, stat.S_IWRITE)
@@ -52,7 +58,7 @@ def force_remove(path):
 # ---------------------------------------------------------------------------
 # INSTALLATION AUTOMATIQUE DES MODULES MANQUANTS
 # ---------------------------------------------------------------------------
-NEEDED_MODULES = ["requests", "ttkbootstrap", "certbot", "cryptography", "pyOpenSSL"]
+NEEDED_MODULES = ["requests", "ttkbootstrap"]
 missing_modules = []
 for mod in NEEDED_MODULES:
     try:
@@ -82,21 +88,15 @@ try:
     from ttkbootstrap.constants import *
     from ttkbootstrap.scrolled import ScrolledText
     from ttkbootstrap.tooltip import ToolTip
-    from cryptography import x509
-    from cryptography.hazmat.backends import default_backend
 except ImportError as e:
-    print("Certains modules sont toujours introuvables. Veuillez installer manuellement : requests, ttkbootstrap, certbot, cryptography, pyOpenSSL.")
+    print("Certains modules sont toujours introuvables. Veuillez installer manuellement : requests, ttkbootstrap.")
     sys.exit(1)
 
 # ---------------------------------------------------------------------------
 # CONFIGURATION PAR DEFAUT
 # ---------------------------------------------------------------------------
-OVH_APP_KEY = "b60648acbb77fc66"
-OVH_APP_SECRET = "59df49d4bf93e1631d2b58e425bd103c"
-OVH_CONSUMERKEY = "0f03673124bf62ef48bede4d3addf175"
-
 MAIN_DOMAIN = "salle.anecoop-france.com"
-DEFAULT_HEROKU_APP = "teamsrooms"
+DEFAULT_RENDER_APP = "teamsrooms"
 
 MEETING_ROOMS = [
     "Canigou", "Castillet", "Florensud", "Mallorca",
@@ -106,10 +106,8 @@ MEETING_ROOMS = [
 DEFAULT_GITHUB_REPO = "https://github.com/kaizen2025/teamsrooms.git"
 DEFAULT_LOCAL_PATH = r"C:\teamsrooms"
 
-OVH_ENDPOINT = "https://eu.api.ovh.com/1.0"
-
-HEROKU_EMAIL   = "kevin.bivia@gmail.com"
-HEROKU_API_KEY = "HRKU-0292b207-4833-4251-a822-2f6b2fabbbe4"
+# ID de service de Render pour le Web Service
+RENDER_SERVICE_ID = "cv4djpggph6c738uugh0"
 
 # ---------------------------------------------------------------------------
 # CLASSE PRINCIPALE DE L'APPLICATION
@@ -117,16 +115,12 @@ HEROKU_API_KEY = "HRKU-0292b207-4833-4251-a822-2f6b2fabbbe4"
 class AllInOneManager(ttkb.Window):
     def __init__(self):
         super().__init__(themename="flatly")
-        self.title("All-in-One Manager - OVH/Certbot/Heroku/Git/Kiosk")
+        self.title("All-in-One Manager - Render/Git/Kiosk")
         self.geometry("1200x800")
 
-        self.ovh_app_key       = ttkb.StringVar(value=OVH_APP_KEY)
-        self.ovh_app_secret    = ttkb.StringVar(value=OVH_APP_SECRET)
-        self.ovh_consumerkey   = ttkb.StringVar(value=OVH_CONSUMERKEY)
-        self.ovh_hosting_service = ttkb.StringVar(value="votre_service")
-
         self.selected_room = ttkb.StringVar(value="Tramontane")
-        self.heroku_app_var = ttkb.StringVar(value=DEFAULT_HEROKU_APP)
+        self.render_app_var = ttkb.StringVar(value=DEFAULT_RENDER_APP)
+        self.render_service_id = ttkb.StringVar(value=RENDER_SERVICE_ID)
 
         self.github_repo_url = ttkb.StringVar(value=DEFAULT_GITHUB_REPO)
         self.local_repo_path = ttkb.StringVar(value=DEFAULT_LOCAL_PATH)
@@ -134,13 +128,7 @@ class AllInOneManager(ttkb.Window):
         self.chrome_path = ttkb.StringVar(value=r"C:\Program Files\Google\Chrome\Application\chrome.exe")
         self.kiosk_task_name = ttkb.StringVar(value="ChromeKiosk")
 
-        self.ssl_domain = ttkb.StringVar(value=MAIN_DOMAIN)
-
-        self.certbot_status = "Inconnu"
-        self.ssl_status = "N/A"
-
         self.create_widgets()
-        self.after(300, self.ensure_certbot_installed)
 
     # ----------------------------------------------------------------
     # Création de tous les onglets
@@ -151,19 +139,16 @@ class AllInOneManager(ttkb.Window):
 
         tab_dashboard = ttkb.Frame(self.notebook)
         tab_config = ttkb.Frame(self.notebook)
-        tab_ssl = ttkb.Frame(self.notebook)
         tab_git = ttkb.Frame(self.notebook)
         tab_kiosk = ttkb.Frame(self.notebook)
 
         self.notebook.add(tab_dashboard, text="Dashboard")
-        self.notebook.add(tab_config,    text="Configuration")
-        self.notebook.add(tab_ssl,       text="SSL & Heroku")
-        self.notebook.add(tab_git,       text="GitHub & Heroku")
-        self.notebook.add(tab_kiosk,     text="Chrome Kiosk")
+        self.notebook.add(tab_config, text="Configuration")
+        self.notebook.add(tab_git, text="GitHub & Render")
+        self.notebook.add(tab_kiosk, text="Chrome Kiosk")
 
         self.build_dashboard_tab(tab_dashboard)
         self.build_config_tab(tab_config)
-        self.build_ssl_tab(tab_ssl)
         self.build_git_tab(tab_git)
         self.build_kiosk_tab(tab_kiosk)
 
@@ -171,7 +156,7 @@ class AllInOneManager(ttkb.Window):
         self.log_box.pack(fill=BOTH, expand=YES, padx=10, pady=5)
 
     # ----------------------------------------------------------------
-    # TAB : Dashboard (amélioré)
+    # TAB : Dashboard
     # ----------------------------------------------------------------
     def build_dashboard_tab(self, parent):
         main_frame = ttkb.Frame(parent)
@@ -191,53 +176,53 @@ class AllInOneManager(ttkb.Window):
         status_frame = ttkb.Labelframe(top_frame, text="Statut actuel", padding=10, bootstyle="info")
         status_frame.pack(side=LEFT, fill=BOTH, expand=YES, padx=(0, 10))
 
-        self.lbl_certbot_status = ttkb.Label(status_frame, text="Certbot : Inconnu", font="-size 10")
-        self.lbl_certbot_status.pack(anchor="w", padx=5, pady=5)
+        self.lbl_render_status = ttkb.Label(status_frame, text="Render : Non vérifié", font="-size 10")
+        self.lbl_render_status.pack(anchor="w", padx=5, pady=5)
 
-        self.lbl_ssl_status = ttkb.Label(status_frame, text="SSL : N/A", font="-size 10")
-        self.lbl_ssl_status.pack(anchor="w", padx=5, pady=5)
+        self.lbl_git_status = ttkb.Label(status_frame, text="Git : Non vérifié", font="-size 10")
+        self.lbl_git_status.pack(anchor="w", padx=5, pady=5)
 
         actions_frame = ttkb.Labelframe(top_frame, text="Actions rapides", padding=10, bootstyle="secondary")
         actions_frame.pack(side=LEFT, fill=BOTH, expand=YES)
 
-        btn_check_ssl = ttkb.Button(actions_frame, text="Vérifier SSL", command=self.check_expiration)
-        btn_check_ssl.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-        ToolTip(btn_check_ssl, text="Vérifie la date d'expiration du certificat (via OVH API ou SSL)")
+        btn_check_render = ttkb.Button(actions_frame, text="Vérifier Render", command=self.check_render_status)
+        btn_check_render.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        ToolTip(btn_check_render, text="Vérifie le statut de l'application sur Render")
 
-        btn_renew_ssl = ttkb.Button(actions_frame, text="Renouveler SSL", command=self.run_renewal)
-        btn_renew_ssl.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        ToolTip(btn_renew_ssl, text="Renouvelle le certificat Let’s Encrypt via DNS OVH")
-
-        btn_deploy_heroku = ttkb.Button(actions_frame, text="Déployer Cert Heroku", command=self.deploy_heroku)
-        btn_deploy_heroku.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-        ToolTip(btn_deploy_heroku, text="Déploie le certificat sur une application Heroku")
+        btn_deploy_render = ttkb.Button(actions_frame, text="Déployer sur Render", command=self.deploy_to_render)
+        btn_deploy_render.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        ToolTip(btn_deploy_render, text="Déclenche un nouveau déploiement sur Render")
 
         btn_pull = ttkb.Button(actions_frame, text="Git Pull", command=self.git_pull)
-        btn_pull.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        btn_pull.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
         ToolTip(btn_pull, text="Récupère les dernières modifications du dépôt Git local")
 
         btn_push = ttkb.Button(actions_frame, text="Git Push", command=self.git_push)
-        btn_push.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
-        ToolTip(btn_push, text="Envoie les modifications locales vers GitHub et Heroku")
+        btn_push.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        ToolTip(btn_push, text="Envoie les modifications locales vers GitHub (déclenche auto-déploiement sur Render)")
 
         btn_kiosk = ttkb.Button(actions_frame, text="Kiosk Task", command=self.create_kiosk_task)
-        btn_kiosk.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        btn_kiosk.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
         ToolTip(btn_kiosk, text="Crée ou met à jour la tâche planifiée pour le mode Kiosk Chrome")
 
         btn_start_server = ttkb.Button(actions_frame, text="Serveur Python", command=self.start_local_server)
-        btn_start_server.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
+        btn_start_server.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
         ToolTip(btn_start_server, text="Lance 'app.py' dans le répertoire local")
 
-        btn_open_page = ttkb.Button(actions_frame, text="Ouvrir Page Salle", command=self.open_local_page)
-        btn_open_page.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
-        ToolTip(btn_open_page, text="Ouvre la salle sélectionnée (http://127.0.0.1:5000/<salle>)")
+        btn_open_page = ttkb.Button(actions_frame, text="Ouvrir Page Locale", command=self.open_local_page)
+        btn_open_page.grid(row=3, column=0, padx=5, pady=5, sticky="ew")
+        ToolTip(btn_open_page, text="Ouvre la salle sélectionnée en local (http://127.0.0.1:5000/<salle>)")
+
+        btn_open_render = ttkb.Button(actions_frame, text="Ouvrir Page Render", command=self.open_render_page)
+        btn_open_render.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
+        ToolTip(btn_open_render, text="Ouvre la salle sélectionnée sur Render (https://salle.anecoop-france.com/<salle>)")
 
         actions_frame.grid_columnconfigure(0, weight=1)
         actions_frame.grid_columnconfigure(1, weight=1)
 
         info_label = ttkb.Label(
             main_frame,
-            text=("Gérez OVH (DNS & Certbot), Heroku, GitHub & Heroku, et Chrome Kiosk.\n"
+            text=("Gérez vos déploiements Render, GitHub et le mode Chrome Kiosk.\n"
                   "Utilisez les onglets ci-dessus pour plus de détails et de configuration."),
             font="-size 10"
         )
@@ -250,80 +235,124 @@ class AllInOneManager(ttkb.Window):
         frame = ttkb.Frame(parent, padding=10)
         frame.pack(fill=BOTH, expand=YES)
 
-        lbl = ttkb.Label(frame, text="Configuration OVH (DNS - Certbot)", font="-size 11 -weight bold")
-        lbl.pack(anchor='w', pady=(5,2))
+        ttkb.Label(frame, text="Configuration de l'application", 
+                  font="-size 11 -weight bold").pack(anchor='w', pady=(5,10))
 
-        ovh_frm = ttkb.Frame(frame)
-        ovh_frm.pack(anchor='w', pady=5)
-        ttkb.Label(ovh_frm, text="OVH App Key:").pack(side=LEFT, padx=5)
-        ttkb.Entry(ovh_frm, textvariable=self.ovh_app_key, width=40).pack(side=LEFT, padx=5)
+        # Render Configuration
+        render_frame = ttkb.Labelframe(frame, text="Configuration Render", padding=10)
+        render_frame.pack(fill=X, pady=10)
 
-        ovh_frm2 = ttkb.Frame(frame)
-        ovh_frm2.pack(anchor='w', pady=5)
-        ttkb.Label(ovh_frm2, text="OVH App Secret:").pack(side=LEFT, padx=5)
-        ttkb.Entry(ovh_frm2, textvariable=self.ovh_app_secret, width=40).pack(side=LEFT, padx=5)
+        render_frm1 = ttkb.Frame(render_frame)
+        render_frm1.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(render_frm1, text="Nom de l'application Render:").pack(side=LEFT, padx=5)
+        ttkb.Entry(render_frm1, textvariable=self.render_app_var, width=30).pack(side=LEFT, padx=5)
 
-        ovh_frm3 = ttkb.Frame(frame)
-        ovh_frm3.pack(anchor='w', pady=5)
-        ttkb.Label(ovh_frm3, text="OVH Consumer Key:").pack(side=LEFT, padx=5)
-        ttkb.Entry(ovh_frm3, textvariable=self.ovh_consumerkey, width=40).pack(side=LEFT, padx=5)
+        render_frm2 = ttkb.Frame(render_frame)
+        render_frm2.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(render_frm2, text="ID du service Render:").pack(side=LEFT, padx=5)
+        ttkb.Entry(render_frm2, textvariable=self.render_service_id, width=30).pack(side=LEFT, padx=5)
+        
+        # Room Selection
+        room_frame = ttkb.Labelframe(frame, text="Sélection de la salle", padding=10)
+        room_frame.pack(fill=X, pady=10)
+        
+        room_frm = ttkb.Frame(room_frame)
+        room_frm.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(room_frm, text="Salle active:").pack(side=LEFT, padx=5)
+        combo = ttkb.Combobox(room_frm, textvariable=self.selected_room, 
+                             values=MEETING_ROOMS, state="readonly", width=30)
+        combo.pack(side=LEFT, padx=5)
 
-        ovh_frm4 = ttkb.Frame(frame)
-        ovh_frm4.pack(anchor='w', pady=5)
-        ttkb.Label(ovh_frm4, text="OVH Hosting Service:").pack(side=LEFT, padx=5)
-        ttkb.Entry(ovh_frm4, textvariable=self.ovh_hosting_service, width=40).pack(side=LEFT, padx=5)
-
-        ttkb.Label(frame, text="Sélection de la salle:", font="-size 11 -weight bold").pack(anchor='w', pady=(10,2))
-        combo = ttkb.Combobox(frame, textvariable=self.selected_room, values=MEETING_ROOMS, state="readonly")
-        combo.pack(anchor='w', padx=10, pady=5)
-
-        ttkb.Label(frame, text="Nom de l'application Heroku:", font="-size 11 -weight bold").pack(anchor='w', pady=(10,2))
-        ttkb.Entry(frame, textvariable=self.heroku_app_var, width=30).pack(anchor='w', padx=10, pady=5)
+        # Paths Configuration
+        paths_frame = ttkb.Labelframe(frame, text="Chemins", padding=10)
+        paths_frame.pack(fill=X, pady=10)
+        
+        paths_frm1 = ttkb.Frame(paths_frame)
+        paths_frm1.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(paths_frm1, text="URL du repo GitHub:").pack(side=LEFT, padx=5)
+        ttkb.Entry(paths_frm1, textvariable=self.github_repo_url, width=60).pack(side=LEFT, padx=5)
+        
+        paths_frm2 = ttkb.Frame(paths_frame)
+        paths_frm2.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(paths_frm2, text="Dossier local pour GitHub:").pack(side=LEFT, padx=5)
+        ttkb.Entry(paths_frm2, textvariable=self.local_repo_path, width=60).pack(side=LEFT, padx=5)
+        
+        paths_frm3 = ttkb.Frame(paths_frame)
+        paths_frm3.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(paths_frm3, text="Chemin Chrome (chrome.exe):").pack(side=LEFT, padx=5)
+        ttkb.Entry(paths_frm3, textvariable=self.chrome_path, width=60).pack(side=LEFT, padx=5)
 
     # ----------------------------------------------------------------
-    # TAB : SSL & Heroku
-    # ----------------------------------------------------------------
-    def build_ssl_tab(self, parent):
-        frame = ttkb.Frame(parent, padding=10)
-        frame.pack(fill=BOTH, expand=YES)
-        ttkb.Label(frame, text="Gestion du certificat Let’s Encrypt (DNS OVH) et déploiement sur Heroku", font="-size 11 -weight bold").pack(anchor='w', pady=5)
-
-        ssl_frm = ttkb.Frame(frame)
-        ssl_frm.pack(anchor='w', pady=5)
-        ttkb.Label(ssl_frm, text="Domaine SSL:").pack(side=LEFT, padx=5)
-        ttkb.Entry(ssl_frm, textvariable=self.ssl_domain, width=40).pack(side=LEFT, padx=5)
-
-        ttkb.Button(frame, text="Vérifier Expiration SSL", command=self.check_expiration).pack(anchor='w', pady=5)
-        ttkb.Button(frame, text="Renouveler Certificat (DNS-01)", command=self.run_renewal).pack(anchor='w', pady=5)
-        ttkb.Button(frame, text="Déployer Cert sur Heroku", command=self.deploy_heroku).pack(anchor='w', pady=5)
-
-    # ----------------------------------------------------------------
-    # TAB : GitHub & Heroku
+    # TAB : GitHub & Render
     # ----------------------------------------------------------------
     def build_git_tab(self, parent):
         frame = ttkb.Frame(parent, padding=10)
         frame.pack(fill=BOTH, expand=YES)
-        ttkb.Label(frame, text="Gestion du dépôt GitHub et déploiement vers Heroku", font="-size 11 -weight bold").pack(anchor='w', pady=5)
-
-        ttkb.Label(frame, text="URL du repo GitHub:").pack(anchor='w', pady=2)
-        ttkb.Entry(frame, textvariable=self.github_repo_url, width=70).pack(anchor='w', padx=15, pady=2)
-
-        ttkb.Label(frame, text="Dossier local pour GitHub/Heroku:").pack(anchor='w', pady=2)
-        ttkb.Entry(frame, textvariable=self.local_repo_path, width=70).pack(anchor='w', padx=15, pady=2)
-
-        ttkb.Label(frame, text=(
-            "Clone: télécharge le dépôt GitHub pour la première fois\n"
-            "Pull: récupère les dernières modifications distantes\n"
-            "Push: envoie vos modifications locales vers GitHub et Heroku\n"
-            "Clone Heroku: récupère le code de l'app Heroku en local"
-        )).pack(anchor='w', pady=10)
-
-        bf = ttkb.Frame(frame)
-        bf.pack(anchor='w', pady=5)
-        ttkb.Button(bf, text="Cloner Repo GitHub", command=self.git_clone).pack(side=LEFT, padx=5)
-        ttkb.Button(bf, text="Pull (GitHub)", command=self.git_pull).pack(side=LEFT, padx=5)
-        ttkb.Button(bf, text="Push (GitHub + Heroku)", command=self.git_push).pack(side=LEFT, padx=5)
-        ttkb.Button(bf, text="Cloner Heroku", command=self.heroku_clone).pack(side=LEFT, padx=5)
+        
+        header_frame = ttkb.Frame(frame)
+        header_frame.pack(fill=X, pady=10)
+        
+        ttkb.Label(header_frame, 
+                  text="Gestion du dépôt GitHub et déploiement sur Render", 
+                  font="-size 12 -weight bold").pack(side=LEFT)
+        
+        # GitHub Section
+        github_frame = ttkb.Labelframe(frame, text="GitHub", padding=10, bootstyle="info")
+        github_frame.pack(fill=X, pady=10)
+        
+        info_text = (
+            "• Clone: Télécharge le dépôt GitHub pour la première fois\n"
+            "• Pull: Récupère les dernières modifications distantes\n"
+            "• Commit: Enregistre les modifications locales\n"
+            "• Push: Envoie vos modifications locales vers GitHub"
+        )
+        
+        ttkb.Label(github_frame, text=info_text, justify="left").pack(anchor='w', pady=10)
+        
+        git_buttons_frame = ttkb.Frame(github_frame)
+        git_buttons_frame.pack(fill=X, pady=5)
+        
+        ttkb.Button(git_buttons_frame, text="Cloner Repo GitHub", 
+                   command=self.git_clone, bootstyle="info").pack(side=LEFT, padx=5)
+        ttkb.Button(git_buttons_frame, text="Pull (GitHub)", 
+                   command=self.git_pull, bootstyle="info").pack(side=LEFT, padx=5)
+        ttkb.Button(git_buttons_frame, text="Commit Changes",
+                   command=self.git_commit, bootstyle="info").pack(side=LEFT, padx=5)
+        ttkb.Button(git_buttons_frame, text="Push (GitHub)", 
+                   command=self.git_push, bootstyle="info").pack(side=LEFT, padx=5)
+        
+        # Render Section
+        render_frame = ttkb.Labelframe(frame, text="Render", padding=10, bootstyle="success")
+        render_frame.pack(fill=X, pady=10)
+        
+        render_info = (
+            "Render est configuré pour se déployer automatiquement depuis GitHub.\n"
+            "Un push vers GitHub déclenchera automatiquement un nouveau déploiement."
+        )
+        
+        ttkb.Label(render_frame, text=render_info, justify="left").pack(anchor='w', pady=10)
+        
+        render_buttons_frame = ttkb.Frame(render_frame)
+        render_buttons_frame.pack(fill=X, pady=5)
+        
+        ttkb.Button(render_buttons_frame, text="Vérifier Statut Render", 
+                   command=self.check_render_status, bootstyle="success").pack(side=LEFT, padx=5)
+        ttkb.Button(render_buttons_frame, text="Déclencher Déploiement", 
+                   command=self.deploy_to_render, bootstyle="success").pack(side=LEFT, padx=5)
+        ttkb.Button(render_buttons_frame, text="Ouvrir Dashboard Render", 
+                   command=self.open_render_dashboard, bootstyle="success").pack(side=LEFT, padx=5)
+        
+        # Local Development Section
+        local_frame = ttkb.Labelframe(frame, text="Développement Local", padding=10, bootstyle="warning")
+        local_frame.pack(fill=X, pady=10)
+        
+        local_buttons_frame = ttkb.Frame(local_frame)
+        local_buttons_frame.pack(fill=X, pady=5)
+        
+        ttkb.Button(local_buttons_frame, text="Lancer Serveur Python",
+                   command=self.start_local_server, bootstyle="warning").pack(side=LEFT, padx=5)
+        ttkb.Button(local_buttons_frame, text="Ouvrir Page Locale",
+                   command=self.open_local_page, bootstyle="warning").pack(side=LEFT, padx=5)
 
     # ----------------------------------------------------------------
     # TAB : Chrome Kiosk
@@ -331,293 +360,88 @@ class AllInOneManager(ttkb.Window):
     def build_kiosk_tab(self, parent):
         frame = ttkb.Frame(parent, padding=10)
         frame.pack(fill=BOTH, expand=YES)
-        ttkb.Label(frame, text="Chrome Kiosk (Tâche planifiée)", font="-size 11 -weight bold").pack(anchor='w', pady=5)
-
-        ttkb.Label(frame, text="Chemin Chrome (chrome.exe):").pack(anchor='w', pady=2)
-        ttkb.Entry(frame, textvariable=self.chrome_path, width=70).pack(anchor='w', padx=15, pady=2)
-
-        ttkb.Label(frame, text="Nom de la tâche:").pack(anchor='w', pady=2)
-        ttkb.Entry(frame, textvariable=self.kiosk_task_name, width=30).pack(anchor='w', padx=15, pady=2)
-
-        ttkb.Label(frame, text=(
-            "Au logon, Chrome s'ouvrira en mode app (sans barre d'adresse ni onglets) et enverra la touche F11 pour passer en plein écran.\n"
-            "Si le plein écran n'apparaît pas, vous pouvez augmenter le délai dans le script VBScript généré."
-        )).pack(anchor='w', pady=10)
-
-        ttkb.Button(frame, text="Créer Tâche Planifiée", command=self.create_kiosk_task).pack(anchor='w', padx=15, pady=5)
+        
+        header_frame = ttkb.Frame(frame)
+        header_frame.pack(fill=X, pady=10)
+        
+        ttkb.Label(header_frame, 
+                  text="Configuration du Mode Kiosk Chrome", 
+                  font="-size 12 -weight bold").pack(side=LEFT)
+        
+        # Configuration Section
+        config_frame = ttkb.Labelframe(frame, text="Configuration", padding=10)
+        config_frame.pack(fill=X, pady=10)
+        
+        kiosk_frm1 = ttkb.Frame(config_frame)
+        kiosk_frm1.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(kiosk_frm1, text="Chemin Chrome (chrome.exe):").pack(side=LEFT, padx=5)
+        ttkb.Entry(kiosk_frm1, textvariable=self.chrome_path, width=60).pack(side=LEFT, padx=5)
+        
+        kiosk_frm2 = ttkb.Frame(config_frame)
+        kiosk_frm2.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(kiosk_frm2, text="Nom de la tâche planifiée:").pack(side=LEFT, padx=5)
+        ttkb.Entry(kiosk_frm2, textvariable=self.kiosk_task_name, width=30).pack(side=LEFT, padx=5)
+        
+        kiosk_frm3 = ttkb.Frame(config_frame)
+        kiosk_frm3.pack(anchor='w', fill=X, pady=5)
+        ttkb.Label(kiosk_frm3, text="Salle à afficher:").pack(side=LEFT, padx=5)
+        room_combo = ttkb.Combobox(kiosk_frm3, textvariable=self.selected_room, 
+                                  values=MEETING_ROOMS, state="readonly", width=30)
+        room_combo.pack(side=LEFT, padx=5)
+        
+        # Instructions Section
+        info_frame = ttkb.Labelframe(frame, text="Instructions", padding=10, bootstyle="info")
+        info_frame.pack(fill=X, pady=10)
+        
+        kiosk_info = (
+            "Au démarrage de Windows, Chrome s'ouvrira en mode app (sans barre d'adresse ni onglets)\n"
+            "et enverra la touche F11 pour passer en plein écran.\n\n"
+            "Si le plein écran n'apparaît pas automatiquement, vous pouvez :\n"
+            "1. Augmenter le délai dans le script VBScript généré (actuellement 5 secondes)\n"
+            "2. Appuyer manuellement sur F11 la première fois\n"
+            "3. Vérifier que Chrome est bien configuré pour mémoriser le mode plein écran"
+        )
+        
+        ttkb.Label(info_frame, text=kiosk_info, justify="left").pack(anchor='w', pady=10)
+        
+        # Action Buttons
+        buttons_frame = ttkb.Frame(frame)
+        buttons_frame.pack(fill=X, pady=10)
+        
+        ttkb.Button(buttons_frame, text="Créer Tâche Planifiée", 
+                   command=self.create_kiosk_task, 
+                   bootstyle="success").pack(side=LEFT, padx=5)
+        
+        ttkb.Button(buttons_frame, text="Tester Mode Kiosk", 
+                   command=self.test_kiosk_mode,
+                   bootstyle="info").pack(side=LEFT, padx=5)
+        
+        ttkb.Button(buttons_frame, text="Supprimer Tâche Planifiée", 
+                   command=self.delete_kiosk_task,
+                   bootstyle="danger").pack(side=LEFT, padx=5)
 
     # ----------------------------------------------------------------
     # LOG
     # ----------------------------------------------------------------
     def log(self, msg):
-        self.log_box.insert("end", msg + "\n")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.log_box.insert("end", f"[{timestamp}] {msg}\n")
         self.log_box.see("end")
         self.log_box.update_idletasks()
 
     # ----------------------------------------------------------------
-    # Vérification de certbot
-    # ----------------------------------------------------------------
-    def ensure_certbot_installed(self):
-        self.log("Vérification de certbot...")
-        cmd = ["certbot", "--version"]
-        try:
-            proc = subprocess.run(cmd, capture_output=True, text=True)
-            if proc.returncode == 0:
-                version_str = proc.stdout.strip()
-                self.log(f"Certbot déjà présent : {version_str}")
-                self.certbot_status = version_str
-                self.lbl_certbot_status.configure(text=f"Certbot : {version_str}")
-            else:
-                self.log("Installation via pip (certbot)...")
-                p2 = subprocess.run([sys.executable, "-m", "pip", "install", "certbot"], capture_output=True, text=True)
-                self.log(p2.stdout)
-                self.log(p2.stderr)
-                self.certbot_status = "Installation terminée (vérifier logs)"
-                self.lbl_certbot_status.configure(text="Certbot : installation en cours...")
-        except FileNotFoundError:
-            self.log("certbot introuvable, pip introuvable ? Installation manuelle requise.")
-            self.certbot_status = "Introuvable"
-            self.lbl_certbot_status.configure(text="Certbot : Introuvable")
-
-    # ----------------------------------------------------------------
-    # Requête signée OVH
-    # ----------------------------------------------------------------
-    def ovh_signed_request(self, method, path, body=None):
-        ak = self.ovh_app_key.get().strip()
-        asec = self.ovh_app_secret.get().strip()
-        ckey = self.ovh_consumerkey.get().strip()
-        if not (ak and asec and ckey):
-            self.log("❌ Clés OVH incomplètes. Impossible de signer la requête.")
-            return None
-
-        body_str = json.dumps(body, separators=(',', ':')) if body else ""
-        try:
-            resp_time = requests.get(OVH_ENDPOINT + "/auth/time", timeout=5)
-            server_time = int(resp_time.text.strip())
-        except Exception:
-            server_time = int(time.time())
-
-        url = OVH_ENDPOINT + path
-        to_sign = asec + "+" + ckey + "+" + method.upper() + "+" + url + "+" + body_str + "+" + str(server_time)
-        sha = hashlib.sha1(to_sign.encode('utf-8')).hexdigest()
-        signature = "$1$" + sha
-
-        headers = {
-            "X-Ovh-Application": ak,
-            "X-Ovh-Consumer": ckey,
-            "X-Ovh-Signature": signature,
-            "X-Ovh-Timestamp": str(server_time),
-            "Content-Type": "application/json"
-        }
-
-        try:
-            if method.upper() == "GET":
-                r = requests.get(url, headers=headers, timeout=10)
-            elif method.upper() == "POST":
-                r = requests.post(url, headers=headers, data=body_str, timeout=10)
-            elif method.upper() == "DELETE":
-                r = requests.delete(url, headers=headers, timeout=10)
-            else:
-                r = requests.request(method.upper(), url, headers=headers, data=body_str, timeout=10)
-            return r
-        except requests.RequestException as e:
-            self.log(f"Erreur requête OVH signée: {e}")
-            return None
-
-    # ----------------------------------------------------------------
-    # Vérification Expiration SSL
-    # ----------------------------------------------------------------
-    def check_expiration(self):
-        domain = self.ssl_domain.get().strip()
-        hosting_service = self.ovh_hosting_service.get().strip()
-
-        if hosting_service == "votre_service" or hosting_service == "":
-            self.log("Aucun service OVH configuré, utilisation de la vérification via SSL.")
-            self.check_expiration_remote()
-            return
-
-        api_path = f"/hosting/web/{hosting_service}/ssl/domains/{domain}"
-        self.log(f"Vérification du certificat pour {domain} via OVH API (Service: {hosting_service})")
-        response = self.ovh_signed_request("GET", api_path)
-        if response is None:
-            self.log("❌ Erreur lors de l'appel OVH API.")
-            self.ssl_status = "Erreur"
-            self.lbl_ssl_status.configure(text="SSL : Erreur API")
-            return
-        if response.status_code != 200:
-            self.log(f"❌ Erreur OVH API : Code {response.status_code}, {response.text}")
-            self.ssl_status = "Erreur"
-            self.lbl_ssl_status.configure(text=f"SSL : Erreur ({response.status_code})")
-            return
-
-        try:
-            data = response.json()
-            valid_until_str = data.get("certificateValidUntil")
-            if not valid_until_str:
-                self.log("❌ La date d'expiration n'est pas disponible dans la réponse OVH API.")
-                self.ssl_status = "Erreur"
-                self.lbl_ssl_status.configure(text="SSL : Date exp. manquante")
-                return
-            expiration_date = datetime.strptime(valid_until_str, "%Y-%m-%dT%H:%M:%S")
-            days_remaining = (expiration_date - datetime.now()).days
-            msg = f"✅ Certificat pour {domain} expire le {expiration_date.strftime('%Y-%m-%d %H:%M:%S')} ({days_remaining} jours restants)"
-            self.log(msg)
-            self.ssl_status = f"OK - {days_remaining} j restants"
-            self.lbl_ssl_status.configure(text=f"SSL : {days_remaining} jours restant(s)")
-        except Exception as e:
-            self.log(f"❌ Erreur lors du traitement de la réponse OVH API : {e}")
-            self.ssl_status = "Erreur"
-            self.lbl_ssl_status.configure(text="SSL : Erreur de traitement")
-
-    def check_expiration_remote(self):
-        domain = self.ssl_domain.get().strip()
-        self.log(f"Vérification du certificat pour {domain} en se connectant en SSL...")
-
-        try:
-            import ssl
-            import socket
-            context = ssl.create_default_context()
-            with socket.create_connection((domain, 443)) as sock:
-                with context.wrap_socket(sock, server_hostname=domain) as ssock:
-                    der_cert = ssock.getpeercert(True)
-            pem_cert = ssl.DER_cert_to_PEM_cert(der_cert)
-
-            from OpenSSL import crypto
-            cert = crypto.load_certificate(crypto.FILETYPE_PEM, pem_cert)
-            notAfter = cert.get_notAfter().decode('ascii')
-            expiration_date = datetime.strptime(notAfter, '%Y%m%d%H%M%SZ')
-            days_remaining = (expiration_date - datetime.now()).days
-            msg = f"✅ Certificat pour {domain} expire le {expiration_date.strftime('%Y-%m-%d %H:%M:%S')} ({days_remaining} jours restants)"
-            self.log(msg)
-            self.ssl_status = f"OK - {days_remaining} j restants"
-            self.lbl_ssl_status.configure(text=f"SSL : {days_remaining} jours restant(s)")
-        except Exception as e:
-            self.log(f"❌ Erreur lors de la récupération du certificat via SSL : {e}")
-            self.ssl_status = "Erreur"
-            self.lbl_ssl_status.configure(text="SSL : Erreur de connexion")
-
-    # ----------------------------------------------------------------
-    # Renouvellement Certificat via Certbot (DNS OVH)
-    # ----------------------------------------------------------------
-    def run_renewal(self):
-        domain = self.ssl_domain.get().strip()
-        self.log(f"Renouvellement Certbot DNS pour {domain}...")
-        temp_dir = tempfile.mkdtemp(prefix="ovh_dns_")
-        auth_file = os.path.join(temp_dir, "ovh_auth.py")
-        clean_file = os.path.join(temp_dir, "ovh_clean.py")
-
-        ak = self.ovh_app_key.get().strip()
-        ck = self.ovh_consumerkey.get().strip()
-
-        auth_script = textwrap.dedent(f"""
-            #!/usr/bin/env python
-            import os, requests, sys
-            AK="{ak}"
-            CK="{ck}"
-            endpoint="https://eu.api.ovh.com/1.0"
-            domain="{domain}"
-            val = os.getenv("CERTBOT_VALIDATION")
-            headers = {{
-                "X-Ovh-Application": "{ak}",
-                "X-Ovh-Consumer": CK
-            }}
-            b = {{
-                "fieldType": "TXT",
-                "subDomain": "_acme-challenge." + domain.split('.')[0],
-                "target": val,
-                "ttl": 600
-            }}
-            r = requests.post(f"{{endpoint}}/domain/zone/{{domain.split('.', 1)[1]}}/record", json=b, headers=headers)
-            if r.status_code not in (200,201):
-                print("Auth-Hook error:", r.status_code, r.text)
-                sys.exit(1)
-            rid = r.json()["id"]
-            with open("ovh_dns_record_id.txt","w") as f:
-                f.write(str(rid))
-            requests.post(f"{{endpoint}}/domain/zone/{{domain.split('.', 1)[1]}}/refresh", headers=headers)
-        """)
-
-        clean_script = textwrap.dedent(f"""
-            import os, requests
-            AK="{ak}"
-            CK="{ck}"
-            endpoint="https://eu.api.ovh.com/1.0"
-            domain="{domain}"
-            headers = {{
-                "X-Ovh-Application": "{ak}",
-                "X-Ovh-Consumer": CK
-            }}
-            if os.path.exists("ovh_dns_record_id.txt"):
-                rid = open("ovh_dns_record_id.txt").read().strip()
-                requests.delete(f"{{endpoint}}/domain/zone/{{domain.split('.', 1)[1]}}/record/{{rid}}", headers=headers)
-                requests.post(f"{{endpoint}}/domain/zone/{{domain.split('.', 1)[1]}}/refresh", headers=headers)
-        """)
-
-        with open(auth_file, "w", encoding="utf-8") as f:
-            f.write(auth_script)
-        with open(clean_file, "w", encoding="utf-8") as f:
-            f.write(clean_script)
-
-        cmd = [
-            "certbot", "certonly",
-            "--manual",
-            "--manual-auth-hook", auth_file,
-            "--manual-cleanup-hook", clean_file,
-            "--preferred-challenges", "dns",
-            "--agree-tos",
-            "--non-interactive",
-            "--manual-public-ip-logging-ok",
-            "-d", domain
-        ]
-
-        self.log("Commande Certbot: " + " ".join(cmd))
-        try:
-            p = subprocess.run(cmd, capture_output=True, text=True)
-            self.log(p.stdout)
-            self.log(p.stderr)
-            if p.returncode == 0:
-                self.log("✅ Renouvellement OK")
-            else:
-                self.log(f"❌ Echec (code {p.returncode}).")
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-    # ----------------------------------------------------------------
-    # Déploiement du certificat sur Heroku
-    # ----------------------------------------------------------------
-    def deploy_heroku(self):
-        domain = self.ssl_domain.get().strip()
-        cert_path = os.path.join(r"C:\Certbot\live", domain, "fullchain.pem")
-        key_path = os.path.join(r"C:\Certbot\live", domain, "privkey.pem")
-
-        if not os.path.exists(cert_path) or not os.path.exists(key_path):
-            self.log("❌ Certificat introuvable. Faites le renouvellement ?")
-            return
-
-        app_name = self.heroku_app_var.get().strip()
-        cmd = ["heroku", "certs:add", cert_path, key_path, "--app", app_name]
-        self.log("Commande Heroku : " + " ".join(cmd))
-        p = subprocess.run(cmd, capture_output=True, text=True)
-        self.log(p.stdout)
-        self.log(p.stderr)
-        if p.returncode == 0:
-            self.log("✅ Certificat déployé sur Heroku.")
-        else:
-            self.log(f"❌ Echec (code {p.returncode}).")
-
-    # ----------------------------------------------------------------
-    # GIT : clone / pull / push / heroku_clone
+    # GitHub : clone / pull / commit / push
     # ----------------------------------------------------------------
     def git_clone(self):
         url = self.github_repo_url.get().strip()
         path = self.local_repo_path.get().strip()
-        self.log(f"Cloner {url} => {path}")
+        self.log(f"Clonage du dépôt {url} => {path}")
 
         if not url or not path:
             self.log("❌ URL ou chemin vide.")
             return
         if os.path.exists(path) and os.listdir(path):
-            self.log("❌ Dossier non vide, annulation clone.")
+            self.log("❌ Dossier non vide, annulation du clonage.")
             return
 
         os.makedirs(path, exist_ok=True)
@@ -626,16 +450,17 @@ class AllInOneManager(ttkb.Window):
         self.log(p.stdout)
         self.log(p.stderr)
         if p.returncode == 0:
-            self.log("✅ Clone GitHub OK.")
+            self.log("✅ Clone GitHub réussi.")
+            self.update_git_status()
         else:
-            self.log(f"❌ Echec clone (code {p.returncode}).")
+            self.log(f"❌ Échec du clonage (code {p.returncode}).")
 
     def git_pull(self):
         path = self.local_repo_path.get().strip()
-        self.log(f"Git Pull dans {path}")
+        self.log(f"Récupération des modifications depuis GitHub dans {path}")
 
         if not os.path.isdir(path):
-            self.log("❌ Dossier introuvable.")
+            self.log("❌ Dossier local introuvable.")
             return
 
         cmd = ["git", "-C", path, "pull"]
@@ -643,144 +468,157 @@ class AllInOneManager(ttkb.Window):
         self.log(p.stdout)
         self.log(p.stderr)
         if p.returncode == 0:
-            self.log("✅ Pull OK.")
+            self.log("✅ Pull GitHub réussi.")
+            self.update_git_status()
         else:
-            self.log(f"❌ Echec pull (code {p.returncode}).")
+            self.log(f"❌ Échec du pull (code {p.returncode}).")
+
+    def git_commit(self):
+        path = self.local_repo_path.get().strip()
+        self.log(f"Commit des modifications locales dans {path}")
+
+        if not os.path.isdir(path):
+            self.log("❌ Dossier local introuvable.")
+            return
+
+        # Vérifier s'il y a des modifications à commiter
+        status_cmd = ["git", "-C", path, "status", "--porcelain"]
+        status_result = subprocess.run(status_cmd, capture_output=True, text=True)
+        
+        if not status_result.stdout.strip():
+            self.log("ℹ️ Aucune modification à commiter.")
+            return
+
+        # Ajouter toutes les modifications
+        add_cmd = ["git", "-C", path, "add", "."]
+        add_result = subprocess.run(add_cmd, capture_output=True, text=True)
+        
+        if add_result.returncode != 0:
+            self.log(f"❌ Échec de l'ajout des fichiers (code {add_result.returncode}).")
+            self.log(add_result.stderr)
+            return
+
+        # Créer le commit
+        commit_msg = f"Mise à jour depuis All-in-One Manager - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        commit_cmd = ["git", "-C", path, "commit", "-m", commit_msg]
+        commit_result = subprocess.run(commit_cmd, capture_output=True, text=True)
+        
+        self.log(commit_result.stdout)
+        self.log(commit_result.stderr)
+        
+        if commit_result.returncode == 0:
+            self.log("✅ Commit des modifications réussi.")
+            self.update_git_status()
+        else:
+            self.log(f"❌ Échec du commit (code {commit_result.returncode}).")
 
     def git_push(self):
         path = self.local_repo_path.get().strip()
-        self.log(f"Git Push depuis {path}")
+        self.log(f"Push des modifications vers GitHub depuis {path}")
 
         if not os.path.isdir(path):
-            self.log("❌ Dossier introuvable.")
+            self.log("❌ Dossier local introuvable.")
             return
 
-        # 1) git add, commit, push vers origin
-        cmds = [
-            ["git", "-C", path, "add", "."],
-            ["git", "-C", path, "commit", "-m", "Update from AllInOneManager"]
-        ]
-        for c in cmds:
-            p = subprocess.run(c, capture_output=True, text=True)
-            self.log(p.stdout)
-            self.log(p.stderr)
-            if p.returncode != 0:
-                self.log(f"❌ Echec (code {p.returncode}) sur {' '.join(c)}")
-                return
-
-        # Tentative du push vers origin
-        cmd_push_origin = ["git", "-C", path, "push", "origin", "main"]
-        p_push_origin = subprocess.run(cmd_push_origin, capture_output=True, text=True)
-        self.log(p_push_origin.stdout)
-        self.log(p_push_origin.stderr)
-        if p_push_origin.returncode != 0:
-            # Vérifier si c'est un rejet dû à un historique distant plus avancé
-            if ("non-fast-forward" in p_push_origin.stderr) or ("behind" in p_push_origin.stderr):
-                self.log("⚠️ Le remote GitHub est en avance. Tentative de pull/rebase depuis GitHub.")
-                p_pull_origin = subprocess.run(["git", "-C", path, "pull", "origin", "main", "--rebase"], capture_output=True, text=True)
-                self.log(p_pull_origin.stdout)
-                self.log(p_pull_origin.stderr)
-                if p_pull_origin.returncode == 0:
-                    self.log("Nouvelle tentative de push GitHub après pull --rebase...")
-                    p_push_origin = subprocess.run(cmd_push_origin, capture_output=True, text=True)
-                    self.log(p_push_origin.stdout)
-                    self.log(p_push_origin.stderr)
-                    if p_push_origin.returncode != 0:
-                        self.log(f"❌ Echec push vers origin (code {p_push_origin.returncode}) après pull.")
-                        return
-                else:
-                    self.log(f"❌ Echec pull origin main (code {p_pull_origin.returncode}). Conflit ?")
-                    return
-            else:
-                self.log(f"❌ Echec push vers origin (code {p_push_origin.returncode}).")
-                return
-
-        # 2) Vérifier si le remote heroku existe
-        p_remote = subprocess.run(["git", "-C", path, "remote"], capture_output=True, text=True)
-        remotes = p_remote.stdout.strip().splitlines()
-        if "heroku" not in remotes:
-            heroku_remote_url = f"https://git.heroku.com/{self.heroku_app_var.get().strip()}.git"
-            self.log(f"Ajout du remote heroku ({heroku_remote_url})")
-            p_add = subprocess.run(["git", "-C", path, "remote", "add", "heroku", heroku_remote_url], capture_output=True, text=True)
-            self.log(p_add.stdout)
-            self.log(p_add.stderr)
-            if p_add.returncode != 0:
-                self.log("❌ Echec lors de l'ajout du remote heroku.")
-                return
-
-        # 3) Push vers Heroku
-        cmd_push_heroku = ["git", "-C", path, "push", "heroku", "main"]
-        p_push_heroku = subprocess.run(cmd_push_heroku, capture_output=True, text=True)
-        self.log(p_push_heroku.stdout)
-        self.log(p_push_heroku.stderr)
-        if p_push_heroku.returncode != 0:
-            if ("Updates were rejected" in p_push_heroku.stderr) or ("fetch first" in p_push_heroku.stderr):
-                self.log("⚠️ Le remote Heroku est en avance. Tentative de pull/rebase depuis Heroku.")
-                p_pull_heroku = subprocess.run(["git", "-C", path, "pull", "heroku", "main", "--rebase"], capture_output=True, text=True)
-                self.log(p_pull_heroku.stdout)
-                self.log(p_pull_heroku.stderr)
-                if p_pull_heroku.returncode == 0:
-                    self.log("Nouvelle tentative de push Heroku après pull --rebase...")
-                    p_push_heroku = subprocess.run(cmd_push_heroku, capture_output=True, text=True)
-                    self.log(p_push_heroku.stdout)
-                    self.log(p_push_heroku.stderr)
-                    if p_push_heroku.returncode != 0:
-                        self.log(f"❌ Echec push vers heroku (code {p_push_heroku.returncode}) après pull.")
-                        return
-                    else:
-                        self.log("✅ Push et déploiement GitHub & Heroku réussis (après pull).")
-                        return
-                else:
-                    self.log(f"❌ Echec pull heroku main (code {p_pull_heroku.returncode}). Conflit ?")
-                    return
-            else:
-                self.log(f"❌ Echec push vers heroku (code {p_push_heroku.returncode}).")
-                return
-
-        self.log("✅ Push et déploiement GitHub & Heroku réussis!")
-
-    def heroku_clone(self):
-        app_name = self.heroku_app_var.get().strip()
-        base_path = self.local_repo_path.get().strip()
-        repo_path = base_path
-        self.log(f"Cloner Heroku app '{app_name}' => {repo_path}")
-        if not app_name:
-            self.log("❌ Nom de l'application Heroku manquant.")
-            return
-        if not base_path:
-            self.log("❌ Chemin local manquant.")
-            return
-        if os.path.exists(repo_path):
-            try:
-                force_remove(repo_path)
-                self.log(f"Le dossier '{repo_path}' existant a été supprimé pour permettre un clone complet.")
-            except Exception as e:
-                self.log(f"❌ Erreur lors de la suppression du dossier '{repo_path}' : {e}")
-                return
-        os.makedirs(repo_path, exist_ok=True)
-        encoded_email = quote(HEROKU_EMAIL)
-        heroku_url = f"https://{encoded_email}:{HEROKU_API_KEY}@git.heroku.com/{app_name}.git"
-        cmd = ["git", "clone", heroku_url, repo_path]
+        # Vérifier s'il y a des commits à pousser
+        cmd = ["git", "-C", path, "push", "origin", "main"]
         p = subprocess.run(cmd, capture_output=True, text=True)
         self.log(p.stdout)
         self.log(p.stderr)
+        
         if p.returncode == 0:
-            self.log("✅ Clone Heroku OK.")
+            self.log("✅ Push GitHub réussi.")
+            self.log("ℹ️ Un déploiement automatique sur Render devrait être déclenché.")
+            self.update_git_status()
         else:
-            self.log(f"❌ Echec clone Heroku (code {p.returncode}).")
+            self.log(f"❌ Échec du push (code {p.returncode}).")
+
+    def update_git_status(self):
+        path = self.local_repo_path.get().strip()
+        if not os.path.isdir(path) or not os.path.isdir(os.path.join(path, ".git")):
+            self.lbl_git_status.configure(text="Git : Dépôt non initialisé")
+            return
+
+        try:
+            # Obtenir la branche actuelle
+            branch_cmd = ["git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD"]
+            branch_result = subprocess.run(branch_cmd, capture_output=True, text=True)
+            branch = branch_result.stdout.strip() if branch_result.returncode == 0 else "?"
+
+            # Obtenir le dernier commit
+            commit_cmd = ["git", "-C", path, "log", "-1", "--oneline"]
+            commit_result = subprocess.run(commit_cmd, capture_output=True, text=True)
+            last_commit = commit_result.stdout.strip() if commit_result.returncode == 0 else "Aucun commit"
+
+            # Vérifier s'il y a des modifications non commitées
+            status_cmd = ["git", "-C", path, "status", "--porcelain"]
+            status_result = subprocess.run(status_cmd, capture_output=True, text=True)
+            has_changes = len(status_result.stdout.strip()) > 0
+
+            status_text = f"Git : {branch} - {last_commit[:30]}"
+            if has_changes:
+                status_text += " (modifications non commitées)"
+
+            self.lbl_git_status.configure(text=status_text)
+        except Exception as e:
+            self.log(f"Erreur lors de la mise à jour du statut Git : {e}")
+            self.lbl_git_status.configure(text="Git : Erreur de statut")
 
     # ----------------------------------------------------------------
-    # TASK : Création de la tâche planifiée Kiosk
+    # Render Deployment & Status
+    # ----------------------------------------------------------------
+    def check_render_status(self):
+        service_id = self.render_service_id.get().strip()
+        self.log(f"Vérification du statut du service Render (ID: {service_id})")
+        
+        # Ouverture du dashboard dans le navigateur
+        dashboard_url = f"https://dashboard.render.com/web/srv-{service_id}"
+        webbrowser.open(dashboard_url)
+        
+        self.log("✅ Dashboard Render ouvert dans le navigateur.")
+        self.lbl_render_status.configure(text="Render : Dashboard ouvert")
+
+    def deploy_to_render(self):
+        service_id = self.render_service_id.get().strip()
+        self.log(f"Déclenchement d'un déploiement manuel sur Render (ID: {service_id})")
+        
+        # Ouvrir la page de déploiement manuel
+        deploy_url = f"https://dashboard.render.com/web/srv-{service_id}/deploys"
+        webbrowser.open(deploy_url)
+        
+        self.log("✅ Page de déploiement Render ouverte.")
+        self.log("ℹ️ Cliquez sur 'Manual Deploy' puis 'Clear build cache & deploy' pour un déploiement complet.")
+
+    def open_render_dashboard(self):
+        service_id = self.render_service_id.get().strip()
+        dashboard_url = f"https://dashboard.render.com/web/srv-{service_id}"
+        webbrowser.open(dashboard_url)
+        self.log(f"✅ Dashboard Render ouvert : {dashboard_url}")
+
+    def open_render_page(self):
+        room = self.selected_room.get().lower()
+        url = f"https://{MAIN_DOMAIN}/{room}"
+        webbrowser.open(url)
+        self.log(f"✅ Page ouverte : {url}")
+
+    # ----------------------------------------------------------------
+    # Chrome Kiosk Mode
     # ----------------------------------------------------------------
     def create_kiosk_task(self):
         room = self.selected_room.get().lower()
         url = f"https://{MAIN_DOMAIN}/{room}"
+        chrome_path = self.chrome_path.get().strip()
+        
+        if not os.path.exists(chrome_path):
+            self.log(f"❌ Chrome introuvable : {chrome_path}")
+            return
+            
         vbs_content = f'''Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run """{self.chrome_path.get().strip()}"" --profile-directory=Default --app={url}", 0, True
+WshShell.Run """{chrome_path}"" --profile-directory=Default --app={url}", 0, True
 ' Attendre 5 secondes pour être certain que Chrome est bien chargé
 WScript.Sleep 5000
 ' Tenter d'activer la fenêtre Chrome
-WshShell.AppActivate "salle.anecoop-france.com"
+WshShell.AppActivate "{MAIN_DOMAIN}"
 WScript.Sleep 500
 ' Envoyer F11 pour passer en plein écran
 WshShell.SendKeys "{{F11}}"
@@ -790,10 +628,11 @@ WshShell.SendKeys "{{F11}}"
         try:
             with open(vbs_path, "w", encoding="utf-8") as f:
                 f.write(vbs_content)
-            self.log(f"VBScript créé : {vbs_path}")
+            self.log(f"✅ VBScript créé : {vbs_path}")
         except Exception as e:
-            self.log(f"Erreur lors de la création du VBScript : {e}")
+            self.log(f"❌ Erreur lors de la création du VBScript : {e}")
             return
+            
         task_name = self.kiosk_task_name.get().strip()
         tr_command = f'"wscript.exe" "{vbs_path}"'
         schtasks_cmd = [
@@ -804,37 +643,69 @@ WshShell.SendKeys "{{F11}}"
             "/rl", "HIGHEST",
             "/f"
         ]
-        self.log("Création Tâche Planifiée : " + " ".join(schtasks_cmd))
+        self.log("Création de la tâche planifiée : " + " ".join(schtasks_cmd))
         p = subprocess.run(schtasks_cmd, capture_output=True, text=True)
         self.log(p.stdout)
         self.log(p.stderr)
         if p.returncode == 0:
-            self.log("✅ Tâche planifiée OK.")
+            self.log("✅ Tâche planifiée créée avec succès.")
         else:
-            self.log(f"❌ Echec (code {p.returncode}).")
+            self.log(f"❌ Échec de création de la tâche (code {p.returncode}).")
+
+    def test_kiosk_mode(self):
+        room = self.selected_room.get().lower()
+        url = f"https://{MAIN_DOMAIN}/{room}"
+        chrome_path = self.chrome_path.get().strip()
+        
+        if not os.path.exists(chrome_path):
+            self.log(f"❌ Chrome introuvable : {chrome_path}")
+            return
+            
+        self.log(f"Test du mode kiosk pour {url}")
+        cmd = [chrome_path, "--profile-directory=Default", f"--app={url}"]
+        try:
+            subprocess.Popen(cmd)
+            self.log("✅ Chrome lancé en mode app. Appuyez sur F11 pour activer le plein écran.")
+        except Exception as e:
+            self.log(f"❌ Erreur lors du lancement de Chrome : {e}")
+
+    def delete_kiosk_task(self):
+        task_name = self.kiosk_task_name.get().strip()
+        cmd = ["schtasks", "/delete", "/tn", task_name, "/f"]
+        self.log(f"Suppression de la tâche planifiée : {task_name}")
+        
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        self.log(p.stdout)
+        self.log(p.stderr)
+        
+        if p.returncode == 0:
+            self.log("✅ Tâche planifiée supprimée avec succès.")
+        else:
+            self.log(f"❌ Échec de suppression de la tâche (code {p.returncode}).")
 
     # ----------------------------------------------------------------
-    # NOUVELLES FONCTIONS : Lancer le serveur local et ouvrir la page
+    # Local Development Server
     # ----------------------------------------------------------------
     def start_local_server(self):
         path = self.local_repo_path.get().strip()
         app_path = os.path.join(path, "app.py")
+        
         if not os.path.isfile(app_path):
             self.log(f"❌ 'app.py' introuvable dans {path}")
             return
-        self.log(f"Lancement du serveur Python: {app_path}")
+            
+        self.log(f"Lancement du serveur Python : {app_path}")
         try:
             subprocess.Popen([sys.executable, app_path], cwd=path, shell=True)
-            self.log("✅ Serveur lancé (vérifiez la console).")
+            self.log("✅ Serveur local lancé sur http://127.0.0.1:5000/")
         except Exception as e:
             self.log(f"❌ Erreur lors du lancement du serveur : {e}")
 
     def open_local_page(self):
         room = self.selected_room.get().lower()
         url = f"http://127.0.0.1:5000/{room}"
-        self.log(f"Ouverture de la page: {url}")
-        import webbrowser
         webbrowser.open(url)
+        self.log(f"✅ Page locale ouverte : {url}")
 
 # ---------------------------------------------------------------------------
 # MAIN
