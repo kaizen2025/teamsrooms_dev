@@ -120,11 +120,21 @@ function initUIEvents() {
   // Adaptation mobile
   window.addEventListener('resize', checkMobileView);
   
-  // S'assurer que le bouton toggle afficher/masquer salles a le bon contenu
-  const toggleRoomsBtn = document.getElementById('toggleRoomsBtn');
-  if (toggleRoomsBtn) {
-    toggleRoomsBtn.innerHTML = '<i class="fas fa-eye"></i> <span class="button-text">Afficher salles</span>';
+  // Supprimer le bouton d'affichage des salles du menu
+  const menuButton = document.querySelector('.toggle-rooms-button');
+  if (menuButton) {
+    menuButton.remove();
   }
+  
+  // Créer le nouveau bouton en position fixe
+  const newButton = document.createElement('button');
+  newButton.className = 'rooms-toggle-button';
+  newButton.id = 'toggleRoomsBtn';
+  newButton.innerHTML = '<i class="fas fa-eye"></i> Afficher salles';
+  document.body.appendChild(newButton);
+  
+  // Réattacher l'événement au nouveau bouton
+  newButton.addEventListener('click', toggleRoomsVisibility);
 }
 
 // Initialisation
