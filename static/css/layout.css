@@ -54,7 +54,7 @@
   color: var(--light-color);
 }
 
-/* Titre central - Centré sur la page */
+/* Titre central - Centré sur la page avec contraste amélioré */
 .title-container {
   position: absolute;
   left: 0;
@@ -71,13 +71,14 @@
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   color: white;
-  background: rgba(0, 0, 0, 0.4);
-  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(0, 0, 0, 0.5);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--border-radius-md);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Content area (middle) */
@@ -129,52 +130,9 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Barre de recherche d'ID repositionnée */
+/* Masquer la barre de recherche d'ID originale car intégrée directement dans le panneau */
 .meeting-join {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.2);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(5px);
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: var(--z-index-above);
-  transition: var(--transition-normal);
-}
-
-.meeting-join input {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: 0.95rem;
-  background: rgba(255, 255, 255, 0.9);
-  outline: none;
-  width: 220px;
-}
-
-.meeting-join button {
-  background-color: var(--success-color);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  color: white;
-  padding: var(--spacing-sm) var(--spacing-md);
-  margin-left: var(--spacing-sm);
-  cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  transition: var(--transition-fast);
-}
-
-.meeting-join button:hover {
-  background-color: #218838;
-  transform: scale(1.05);
+  display: none;
 }
 
 /* Zone des IDs récents */
