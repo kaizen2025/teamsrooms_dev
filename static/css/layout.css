@@ -211,3 +211,28 @@
 .recent-id:hover {
   background: rgba(98, 100, 167, 0.8);
 }
+
+/* Bouton pour afficher/masquer les salles (indépendant) */
+.rooms-toggle-button {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(98, 100, 167, 0.9);
+  border: none;
+  border-radius: var(--border-radius-md);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  z-index: var(--z-index-above);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-fast);
+}
+
+.rooms-toggle-button:hover {
+  background: var(--primary-color);
+  transform: scale(1.05);
+}
