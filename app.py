@@ -40,7 +40,9 @@ except AttributeError:
     pass  # time.tzset() n'est pas disponible sous Windows
 
 # Création de l'application Flask et configuration de ProxyFix
-app = Flask(__name__)
+app = Flask(__name__, 
+    static_folder='templates',
+    template_folder='templates')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_proto=1, x_host=1, x_prefix=1)
 
 # Configuration
