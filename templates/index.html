@@ -157,50 +157,61 @@
   <div id="recent-ids"></div>
   
   <!-- Modal de réservation -->
-  <div class="booking-modal" id="bookingModal">
-    <div class="booking-modal-content">
-      <h2>Créer une réunion Teams</h2>
-      
-      <div class="form-group">
-        <label for="booking-title">Titre de la réunion</label>
-        <input type="text" id="booking-title" placeholder="Entrez un titre">
-      </div>
-      
-      <div class="form-group">
-        <label for="booking-room">Salle</label>
-        <select id="booking-room">
-          <option value="">Sélectionnez une salle</option>
-          <!-- Options will be added by JavaScript -->
-        </select>
-        <div class="room-availability" id="room-availability"></div>
-      </div>
-      
-      <div class="form-group">
-        <label>Durée</label>
-        <div class="quick-duration-buttons">
-          <div class="duration-button" data-minutes="15">15 min</div>
-          <div class="duration-button" data-minutes="30">30 min</div>
-          <div class="duration-button" data-minutes="60">1 heure</div>
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="booking-start">Heure de début</label>
-        <input type="time" id="booking-start">
-      </div>
-      
-      <div class="form-group participants-container">
-        <label for="booking-participants">Participants (séparés par des virgules)</label>
-        <input type="text" id="booking-participants" class="participants-input" 
-               placeholder="ex: user@anecoop-france.com, autre@domaine.com">
-      </div>
-      
-      <div class="booking-modal-buttons">
-        <button class="cancel-button" id="cancelBookingBtn">Annuler</button>
-        <button class="create-button" id="createTeamsMeetingBtn">Créer la réunion</button>
+  <!-- Modal de réservation -->
+<div class="booking-modal" id="bookingModal">
+  <div class="booking-modal-content">
+    <h2>Créer une réunion Teams</h2>
+    
+    <div class="form-group">
+      <label for="booking-title">Titre de la réunion</label>
+      <input type="text" id="booking-title" placeholder="Entrez un titre">
+    </div>
+    
+    <div class="form-group">
+      <label for="booking-room">Salle</label>
+      <select id="booking-room">
+        <option value="">Sélectionnez une salle</option>
+        <!-- Options will be added by JavaScript -->
+      </select>
+      <div class="room-availability" id="room-availability"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="booking-date">Date</label>
+      <input type="date" id="booking-date">
+    </div>
+    
+    <div class="form-group">
+      <label for="booking-start">Heure de début</label>
+      <input type="time" id="booking-start">
+    </div>
+    
+    <div class="form-group">
+      <label for="booking-end">Heure de fin</label>
+      <input type="time" id="booking-end">
+    </div>
+    
+    <div class="form-group">
+      <label>Durée rapide</label>
+      <div class="quick-duration-buttons">
+        <div class="duration-button" data-minutes="15">15 min</div>
+        <div class="duration-button" data-minutes="30">30 min</div>
+        <div class="duration-button" data-minutes="60">1 heure</div>
       </div>
     </div>
+    
+    <div class="form-group participants-container">
+      <label for="booking-participants">Participants (séparés par des virgules)</label>
+      <input type="text" id="booking-participants" class="participants-input" 
+             placeholder="ex: user@anecoop-france.com, autre@domaine.com">
+    </div>
+    
+    <div class="booking-modal-buttons">
+      <button class="cancel-button" id="cancelBookingBtn">Annuler</button>
+      <button class="create-button" id="createTeamsMeetingBtn">Créer la réunion</button>
+    </div>
   </div>
+</div>
   
   <!-- Scripts JavaScript -->
 <script src="/static/js/config.js"></script>
