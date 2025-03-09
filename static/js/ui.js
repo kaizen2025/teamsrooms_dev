@@ -213,8 +213,18 @@ function initUIEvents() {
       // Ne pas modifier le comportement par défaut pour les liens externes
       if (this.getAttribute('target') === '_blank') return;
       
+      // Vérifier les droits d'accès si AuthSystem est disponible
+      if (window.AuthSystem && this.classList.contains('admin-only') && 
+          (!AuthSystem.isAuthenticated || AuthSystem.currentUser.role !== 'administrator')) {
+        alert("Vous n'avez pas les droits d'accès à cette fonctionnalité.");
+        return;
+      }
+      
       // Sinon, activer l'élément du menu
       setActiveMenuItem(this);
+      
+      // Gérer les actions spéciales (administration, etc.)
+      handleSpecialMenuActions(this);
     });
   });
   
@@ -226,6 +236,201 @@ function initUIEvents() {
       window.location.reload();
     });
   }
+  
+  // Initialiser le système de thèmes
+  initThemeSystem();
+}
+
+/**
+ * Gère les actions spéciales pour certains éléments de menu
+ */
+function handleSpecialMenuActions(menuItem) {
+  // Identifier l'élément sélectionné
+  const menuId = menuItem.dataset.menuId;
+  
+  if (menuId === 'admin') {
+    // Afficher le panneau d'administration
+    showAdminPanel();
+  } else {
+    // Masquer le panneau d'administration pour les autres sections
+    const adminSection = document.getElementById('adminSection');
+    if (adminSection) {
+      adminSection.style.display = 'none';
+    }
+  }
+}
+
+/**
+ * Affiche le panneau d'administration
+ */
+function showAdminPanel() {
+  // Masquer les autres contenus de la zone centrale
+  document.querySelectorAll('.content > div').forEach(el => {
+    if (el.id !== 'adminSection') {
+      el.style.display = 'none';
+    }
+  });
+  
+  // Afficher la section d'administration
+  const adminSection = document.getElementById('adminSection');
+  if (adminSection) {
+    adminSection.style.display = 'flex';
+  }
+}
+
+/**
+ * Initialise le système de thèmes
+ */
+function initThemeSystem() {
+  // Boutons de changement de thème
+  const themeSelector = document.querySelector('.user-dropdown-link:nth-child(3)');
+  if (themeSelector) {
+    themeSelector.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Rotation des thèmes
+      const themes = ['default', 'light', 'dark', 'custom'];
+      const htmlEl = document.documentElement;
+      const currentTheme = htmlEl.getAttribute('data-theme') || 'default';
+      
+      // Trouver l'index actuel et passer au suivant
+      const currentIndex = themes.indexOf(currentTheme);
+      const nextIndex = (currentIndex + 1) % themes.length;
+      const nextTheme = themes[nextIndex];
+      
+      // Appliquer le nouveau thème
+      htmlEl.setAttribute('data-theme', nextTheme);
+      
+      // Enregistrer la préférence
+      localStorage.setItem('preferred-theme', nextTheme);
+      
+      // Notification
+      alert(`Thème ${formatThemeName(nextTheme)} appliqué.`);
+    });
+  }
+  
+  // Appliquer le thème sauvegardé au chargement
+  const savedTheme = localStorage.getItem('preferred-theme');
+  if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }
+}
+
+/**
+ * Formate le nom d'un thème pour affichage
+ */
+function formatThemeName(themeKey) {
+  const themeNames = {
+    'default': 'Par défaut',
+    'light': 'Clair',
+    'dark': 'Sombre',
+    'custom': 'Personnalisé'
+  };
+  
+  return themeNames[themeKey] || themeKey;
+}
+
+/**
+ * Met à jour l'interface pour l'utilisateur actuellement connecté
+ */
+function updateUIForCurrentUser() {
+  if (window.AuthSystem) {
+    const user = AuthSystem.currentUser;
+    const isAuth = AuthSystem.isAuthenticated;
+    
+    // Mettre à jour le composant de profil utilisateur
+    const userDisplayName = document.getElementById('userDisplayName');
+    const userRole = document.getElementById('userRole');
+    const userDisplayNameFull = document.getElementById('userDisplayNameFull');
+    const userRoleFull = document.getElementById('userRoleFull');
+    const userInitials = document.querySelector('.user-initials');
+    
+    if (isAuth && user) {
+      // Nom et rôle
+      if (userDisplayName) userDisplayName.textContent = user.displayName || 'Utilisateur';
+      if (userRole) userRole.textContent = formatRoleName(user.role) || 'Invité';
+      if (userDisplayNameFull) userDisplayNameFull.textContent = user.displayName || 'Utilisateur';
+      if (userRoleFull) userRoleFull.textContent = formatRoleName(user.role) || 'Invité';
+      
+      // Initiales
+      if (userInitials && user.displayName) {
+        const initials = getInitials(user.displayName);
+        userInitials.textContent = initials;
+      }
+      
+      // Classes de rôle sur le corps
+      document.body.dataset.userRole = user.role;
+      
+      // Classe principale du conteneur
+      const mainContainer = document.querySelector('.main-container');
+      if (mainContainer) {
+        // Retirer les anciennes classes
+        mainContainer.classList.remove('layout-administrator', 'layout-manager', 'layout-user', 'layout-teams_room');
+        // Ajouter la nouvelle classe
+        mainContainer.classList.add(`layout-${user.role}`);
+      }
+      
+      // Éléments visibles uniquement pour les administrateurs
+      const adminOnlyElements = document.querySelectorAll('.admin-only');
+      adminOnlyElements.forEach(el => {
+        el.style.display = user.role === 'administrator' ? '' : 'none';
+      });
+    } else {
+      // Valeurs par défaut pour utilisateur non connecté
+      if (userDisplayName) userDisplayName.textContent = 'Invité';
+      if (userRole) userRole.textContent = 'Non connecté';
+      if (userDisplayNameFull) userDisplayNameFull.textContent = 'Invité';
+      if (userRoleFull) userRoleFull.textContent = 'Non connecté';
+      if (userInitials) userInitials.textContent = 'IN';
+      
+      // Réinitialiser les classes
+      document.body.dataset.userRole = '';
+      
+      // Masquer les éléments admin-only
+      const adminOnlyElements = document.querySelectorAll('.admin-only');
+      adminOnlyElements.forEach(el => {
+        el.style.display = 'none';
+      });
+    }
+    
+    // Éléments à afficher uniquement quand connecté
+    document.querySelectorAll('.auth-required').forEach(el => {
+      el.style.display = isAuth ? '' : 'none';
+    });
+    
+    // Éléments à masquer quand connecté
+    document.querySelectorAll('.auth-hidden').forEach(el => {
+      el.style.display = isAuth ? 'none' : '';
+    });
+  }
+}
+
+/**
+ * Récupère les initiales d'un nom
+ */
+function getInitials(name) {
+  if (!name) return '??';
+  
+  const parts = name.split(' ');
+  if (parts.length === 1) {
+    return name.substring(0, 2).toUpperCase();
+  }
+  
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+/**
+ * Formate un nom de rôle pour l'affichage
+ */
+function formatRoleName(roleKey) {
+  const roleNames = {
+    'administrator': 'Administrateur',
+    'manager': 'Manager',
+    'user': 'Utilisateur',
+    'teams_room': 'Salle Teams'
+  };
+  
+  return roleNames[roleKey] || roleKey;
 }
 
 // Initialisation
@@ -241,4 +446,13 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Mise en place des rotations d'arrière-plan
   setInterval(changeBackground, window.REFRESH_INTERVALS.BACKGROUND);
+  
+  // Mise à jour de l'interface pour l'utilisateur courant
+  if (window.AuthSystem) {
+    // Première mise à jour
+    updateUIForCurrentUser();
+    
+    // Écouter les changements d'état d'authentification
+    document.addEventListener('authStateChanged', updateUIForCurrentUser);
+  }
 });

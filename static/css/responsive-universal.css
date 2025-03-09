@@ -1,0 +1,254 @@
+/* responsive-universal.css */
+
+/* =============================
+   Système de grille fluide universel
+   ============================= */
+
+:root {
+  /* Variables pour le responsive */
+  --mobile-breakpoint: 576px;
+  --tablet-breakpoint: 768px;
+  --desktop-breakpoint: 992px;
+  --large-breakpoint: 1200px;
+  --xlarge-breakpoint: 1600px;
+  --tv-breakpoint: 2400px;
+  
+  /* Tailles relatives pour différents écrans */
+  --title-size-mobile: 1.2rem;
+  --title-size-tablet: 1.5rem;
+  --title-size-desktop: 1.7rem;
+  --title-size-large: 2rem;
+  --title-size-xlarge: 2.5rem;
+  --title-size-tv: 3.5rem;
+  
+  /* Espacement adaptatif */
+  --container-padding-mobile: 8px;
+  --container-padding-tablet: 16px;
+  --container-padding-desktop: 24px;
+  --container-padding-large: 32px;
+  --container-padding-tv: 48px;
+}
+
+/* Base fluid container */
+.fluid-container {
+  width: 100%;
+  max-width: 2560px;
+  margin: 0 auto;
+  padding: var(--container-padding-mobile);
+}
+
+/* Layout adaptatif basé sur les rôles */
+.layout-container {
+  display: grid;
+  width: 100%;
+  height: 100vh;
+  transition: all 0.3s ease;
+}
+
+/* Layouts basés sur les rôles et le format d'écran */
+/* Layout administrateur */
+.layout-admin {
+  grid-template-columns: 0px 1fr 480px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "menu header header"
+    "menu content meetings"
+    "menu controls controls";
+}
+
+/* Layout manager */
+.layout-manager {
+  grid-template-columns: 0px 1fr 480px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "menu header header"
+    "menu content meetings"
+    "menu controls controls";
+}
+
+/* Layout utilisateur standard */
+.layout-user {
+  grid-template-columns: 0px 1fr 480px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "menu header header"
+    "menu content meetings"
+    "menu controls controls";
+}
+
+/* Layout salle Teams (optimisé pour les grands écrans) */
+.layout-room {
+  grid-template-columns: 0 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header header"
+    "meetings meetings";
+}
+
+/* Adaptations mobiles */
+@media (max-width: 576px) {
+  .layout-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+      "header"
+      "content"
+      "meetings"
+      "controls";
+  }
+  
+  .main-container.menu-expanded {
+    grid-template-columns: 1fr;
+  }
+  
+  .title {
+    font-size: var(--title-size-mobile);
+  }
+  
+  .meetings-container {
+    width: 100%;
+    top: -40px;
+  }
+  
+  .join-meeting-container {
+    position: fixed !important;
+    bottom: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: calc(100% - 20px) !important;
+    z-index: 1000 !important;
+  }
+}
+
+/* Tablettes */
+@media (min-width: 577px) and (max-width: 768px) {
+  .layout-container {
+    grid-template-columns: 0px 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+      "menu header"
+      "menu content"
+      "menu meetings"
+      "menu controls";
+  }
+  
+  .title {
+    font-size: var(--title-size-tablet);
+  }
+  
+  .meetings-container {
+    top: -50px;
+    height: calc(100% - 20px);
+  }
+}
+
+/* Écrans ordinateurs */
+@media (min-width: 769px) and (max-width: 1200px) {
+  .title {
+    font-size: var(--title-size-desktop);
+  }
+}
+
+/* Grands écrans */
+@media (min-width: 1201px) and (max-width: 1600px) {
+  .title {
+    font-size: var(--title-size-large);
+  }
+  
+  .fluid-container {
+    padding: var(--container-padding-desktop);
+  }
+  
+  .meetings-container {
+    width: 520px;
+  }
+}
+
+/* Très grands écrans */
+@media (min-width: 1601px) and (max-width: 2400px) {
+  .title {
+    font-size: var(--title-size-xlarge);
+  }
+  
+  .fluid-container {
+    padding: var(--container-padding-large);
+  }
+  
+  .meetings-container {
+    width: 600px;
+  }
+  
+  .meeting-item {
+    min-height: 120px;
+    padding: 16px 24px;
+  }
+  
+  .meeting-item h3 {
+    font-size: 1.5rem;
+  }
+  
+  .meeting-item p {
+    font-size: 1.2rem;
+  }
+}
+
+/* TV et écrans très larges */
+@media (min-width: 2401px) {
+  .title {
+    font-size: var(--title-size-tv);
+  }
+  
+  .fluid-container {
+    padding: var(--container-padding-tv);
+  }
+  
+  .meetings-container {
+    width: 800px;
+  }
+  
+  .meeting-item {
+    min-height: 160px;
+    padding: 24px 32px;
+  }
+  
+  .meeting-item h3 {
+    font-size: 2rem;
+  }
+  
+  .meeting-item p {
+    font-size: 1.5rem;
+  }
+  
+  .join-meeting-container input,
+  .join-meeting-container button {
+    font-size: 1.5rem;
+    padding: 16px 24px;
+  }
+}
+
+/* Orientations spécifiques */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Mode paysage sur petit écran */
+  .meetings-container {
+    top: -30px;
+  }
+  
+  .meetings-title-bar {
+    padding: 4px 8px;
+  }
+  
+  .meeting-item {
+    min-height: 70px;
+    padding: 4px 12px;
+  }
+}
+
+/* Mode d'affichage spécifique pour TV */
+.tv-mode .meeting-item {
+  font-size: 120%;
+  min-height: 180px;
+}
+
+.tv-mode .datetime p {
+  font-size: 2rem;
+}
