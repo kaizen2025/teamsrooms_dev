@@ -92,7 +92,6 @@
   padding: var(--spacing-md);
 }
 
-/* Controls container (bottom) - Fond transparent */
 .controls-container {
   grid-area: controls;
   display: flex;
@@ -101,6 +100,8 @@
   padding: var(--spacing-md) var(--spacing-md);
   background: transparent;
   border-top: none;
+  z-index: var(--z-index-above); /* Ajout d'un z-index pour garantir la visibilité */
+  position: relative; /* Assure le bon positionnement */
 }
 
 .control-buttons {
@@ -122,6 +123,7 @@
   gap: var(--spacing-sm);
   box-shadow: var(--shadow-sm);
   transition: var(--transition-fast);
+  visibility: visible; /* Explicitement visible */
 }
 
 .control-buttons button:hover {
