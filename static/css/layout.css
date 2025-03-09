@@ -173,8 +173,8 @@
   background: rgba(98, 100, 167, 0.8);
 }
 
-/* Bouton pour afficher/masquer les salles (indépendant) */
-.rooms-toggle-button {
+/* Bouton flottant pour afficher/masquer les salles */
+.rooms-toggle-button-floating {
   position: fixed;
   bottom: 20px;
   left: 20px;
@@ -193,15 +193,29 @@
   transition: var(--transition-fast);
 }
 
-/* Déplacer le bouton quand le menu est élargi */
-.main-container.menu-expanded .rooms-toggle-button {
-  opacity: 0; /* Cache complètement le bouton quand le menu est ouvert */
-  visibility: hidden; /* Rend l'élément non interactif */
-  z-index: var(--z-index-base);
-  pointer-events: none; /* Empêche l'interaction avec le bouton */
-}
-
-.rooms-toggle-button:hover {
+.rooms-toggle-button-floating:hover {
   background: var(--primary-color);
   transform: scale(1.05);
+}
+
+/* Styles pour le bouton dans le menu latéral */
+.side-menu .toggle-rooms-button {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: white;
+  padding: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+.side-menu .toggle-rooms-button:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
