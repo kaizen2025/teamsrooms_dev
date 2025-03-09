@@ -279,15 +279,22 @@
   gap: 5px;
 }
 
-/* Zone "Rejoindre avec ID" intégrée au panneau des réunions */
+/* Conteneur pour la zone de jointure de réunion */
+.join-meeting-container {
+  margin-top: 15px;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  width: 98%;
+}
+
 .meeting-join-integrated {
   display: flex;
   align-items: center;
   background: rgba(30, 30, 30, 0.5);
   padding: var(--spacing-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
-  margin-top: auto;
+  border-radius: var(--border-radius-md);
+  width: 100%;
+  box-shadow: var(--shadow-md);
 }
 
 .meeting-join-integrated input {
@@ -298,6 +305,7 @@
   font-size: 0.95rem;
   background: rgba(255, 255, 255, 0.9);
   outline: none;
+  color: var(--dark-color);
 }
 
 .meeting-join-integrated button {
