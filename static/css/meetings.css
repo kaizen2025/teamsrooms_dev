@@ -7,7 +7,7 @@
   grid-area: meetings;
   overflow: hidden;
   width: 98%;
-  height: calc(100% - 20px); /* Leave a small gap at the bottom */
+  height: 100%; /* Utilise toute la hauteur disponible */
   padding: 0;
   margin: 0 auto;
   justify-self: center;
@@ -15,13 +15,13 @@
   flex-direction: column;
   max-height: 100vh; /* Maximise la hauteur */
   position: relative;
-  top: -30px; /* Remonte davantage le panneau pour utiliser plus d'espace */
-  margin-bottom: -10px; /* Compense le décalage pour maintenir l'alignement en bas */
+  top: -45px; /* Remonté davantage pour utiliser l'espace en haut */
+  margin-bottom: -20px; /* Compense le décalage pour maintenir l'alignement en bas */
 }
 
-/* Adjust when menu is expanded to prevent overlap */
+/* Ajustement quand le menu est ouvert pour éviter le chevauchement */
 .main-container.menu-expanded .meetings-container {
-  margin-right: 15px; /* Add some space on the right when menu is expanded */
+  margin-right: 25px; /* Espace supplémentaire à droite */
 }
 
 /* En-tête amélioré avec le bouton centré */
@@ -87,7 +87,7 @@
   flex: 1;
   overflow: hidden;
   /* Increased height to use more vertical space */
-  min-height: 400px; /* Ensure minimum height */
+  min-height: 450px; /* Augmenté pour montrer plus de contenu */
 }
 
 /* Liste des réunions - Optimisée pour utiliser tout l'espace vertical */
@@ -317,10 +317,13 @@
 /* Conteneur pour la zone de jointure de réunion - Style amélioré */
 .join-meeting-container {
   margin-top: 15px;
-  margin-bottom: 15px; /* Added space at the bottom */
+  margin-bottom: 20px; /* Plus d'espace en bas pour s'assurer qu'il est visible */
   border-radius: var(--border-radius-md);
   overflow: hidden;
   width: 98%;
+  display: block !important; /* Force l'affichage */
+  position: relative; 
+  z-index: 10; /* Priorité d'affichage élevée */
 }
 
 .meeting-join-integrated {
@@ -331,6 +334,7 @@
   border-radius: var(--border-radius-md);
   width: 100%;
   box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Bordure subtile */
 }
 
 .meeting-join-integrated input {
@@ -364,4 +368,9 @@
 .meeting-join-integrated button:hover {
   background-color: #218838;
   transform: scale(1.05);
+}
+
+/* Masquer les éléments dupliqués */
+.meeting-join {
+  display: none !important;
 }
