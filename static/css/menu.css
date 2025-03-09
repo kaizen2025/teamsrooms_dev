@@ -91,15 +91,33 @@
 .menu-items {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   padding: 0 var(--spacing-sm);
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 5px;
+}
+
+.menu-items::-webkit-scrollbar {
+  width: 4px;
+}
+
+.menu-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu-items::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-md);
+  padding: 8px 16px;
+  margin-bottom: 2px;
   border-radius: var(--border-radius-md);
   cursor: pointer;
   transition: var(--transition-fast);
@@ -141,6 +159,20 @@
   margin: var(--spacing-md) var(--spacing-md);
 }
 
+/* Styles pour les groupes de menu */
+.menu-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.menu-group-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
 /* Zone inférieure du menu */
 .menu-bottom {
   margin-top: auto;
@@ -176,17 +208,4 @@
 
 .toggle-rooms-button:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-/* Styles pour les groupes de menu */
-.menu-group {
-  margin-bottom: var(--spacing-md);
-}
-
-.menu-group-title {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-  padding: var(--spacing-sm) var(--spacing-md);
-  margin-top: var(--spacing-md);
-  margin-bottom: var(--spacing-xs);
 }
