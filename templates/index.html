@@ -107,26 +107,34 @@
     </div>
     
     <!-- Conteneur des réunions -->
-    <div class="meetings-container">
-      <div class="meetings">
-        <!-- En-tête avec titre -->
-        <div class="meetings-header">
-          <h2>RÉUNIONS D'AUJOURD'HUI</h2>
-          <!-- Bouton de création -->
-          <button class="create-meeting-button" id="createMeetingBtn">
-            <i class="fas fa-plus"></i> <span>Créer une réunion</span>
-          </button>
-        </div>
-        
-        <!-- Liste des réunions -->
-        <div class="meetings-list" id="meetingsContainer">
-          <!-- Placeholder de chargement -->
-          <div class="loading-indicator">
-            <i class="fas fa-circle-notch fa-spin"></i>
-            <p>Chargement des réunions...</p>
-          </div>
-        </div>
+    <!-- Section du conteneur de réunions restructuré -->
+<div class="meetings-container">
+  <!-- En-tête séparé pour le titre -->
+  <div class="meetings-title-bar">
+    <h2>RÉUNIONS D'AUJOURD'HUI</h2>
+    <!-- Bouton de création -->
+    <button class="create-meeting-button" id="createMeetingBtn">
+      <i class="fas fa-plus"></i> <span>Créer une réunion</span>
+    </button>
+  </div>
+  
+  <div class="meetings">
+    <!-- Liste des réunions -->
+    <div class="meetings-list" id="meetingsContainer">
+      <!-- Placeholder de chargement -->
+      <div class="loading-indicator">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <p>Chargement des réunions...</p>
       </div>
+    </div>
+    
+    <!-- Formulaire intégré pour rejoindre une réunion par ID -->
+    <div class="meeting-join-integrated">
+      <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
+      <button id="joinMeetingBtn"><i class="fas fa-sign-in-alt"></i> Rejoindre</button>
+    </div>
+  </div>
+</div>
     </div>
     
     <!-- Contrôles en bas de page -->
