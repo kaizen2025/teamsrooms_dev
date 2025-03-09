@@ -15,13 +15,13 @@
   flex-direction: column;
   max-height: 100vh; /* Maximise la hauteur */
   position: relative;
-  top: -45px; /* Remonté davantage pour utiliser l'espace en haut */
-  margin-bottom: -20px; /* Compense le décalage pour maintenir l'alignement en bas */
+  top: -50px; /* Remonté davantage pour utiliser plus d'espace en haut */
+  margin-bottom: -25px; /* Compense le décalage pour maintenir l'alignement en bas */
 }
 
 /* Ajustement quand le menu est ouvert pour éviter le chevauchement */
 .main-container.menu-expanded .meetings-container {
-  margin-right: 25px; /* Espace supplémentaire à droite */
+  margin-right: 30px; /* Espace supplémentaire à droite */
 }
 
 /* En-tête amélioré avec le bouton centré */
@@ -31,12 +31,12 @@
   border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom: none;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md); /* Réduit pour gagner de l'espace vertical */
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center; /* Centre les éléments horizontalement */
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs); /* Réduit l'espace entre titre et bouton */
 }
 
 .meetings-title-bar h2 {
@@ -50,12 +50,12 @@
 
 /* Bouton de création de réunion centré et optimisé */
 .create-meeting-integrated {
-  margin: 10px auto; /* Centre horizontalement avec espace vertical */
+  margin: 8px auto; /* Réduit la marge pour optimiser l'espace */
   background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: var(--border-radius-sm);
-  padding: var(--spacing-sm) var(--spacing-lg); /* Plus large pour meilleure visibilité */
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: 0.95rem;
   font-weight: bold;
   cursor: pointer;
@@ -80,14 +80,13 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top: none;
   box-shadow: var(--shadow-lg);
-  padding: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm) var(--spacing-md); /* Réduit le padding en bas */
   color: white;
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow: hidden;
-  /* Increased height to use more vertical space */
-  min-height: 450px; /* Augmenté pour montrer plus de contenu */
+  min-height: 450px; /* Hauteur minimale pour montrer plus de contenu */
 }
 
 /* Liste des réunions - Optimisée pour utiliser tout l'espace vertical */
@@ -96,7 +95,8 @@
   overflow-y: auto;
   padding-right: var(--spacing-sm);
   max-height: unset; /* Supprime la limitation de hauteur fixe */
-  min-height: 350px; /* Increased minimum height for more visible content */
+  min-height: 350px; /* Hauteur minimale suffisante */
+  padding-bottom: var(--spacing-sm); /* Petit espace en bas pour éviter que le contenu soit trop serré */
 }
 
 .meetings-list::-webkit-scrollbar {
@@ -144,7 +144,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  margin: var(--spacing-xl) 0;
+  margin: var(--spacing-lg) 0; /* Réduit pour optimiser l'espace */
 }
 
 .empty-meetings-message p {
@@ -157,7 +157,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin: var(--spacing-sm) 0 var(--spacing-md) 0;
+  margin: var(--spacing-xs) 0 var(--spacing-sm) 0; /* Réduit pour optimiser l'espace */
 }
 
 /* Suppression de l'affichage du texte redondant "Aujourd'hui" */
@@ -187,14 +187,14 @@
 .meeting-item {
   background-color: rgba(40, 40, 40, 0.85);
   border-radius: var(--border-radius-md);
-  margin: 0 0 var(--spacing-sm) 0; /* Moins d'espace entre les éléments */
-  padding: var(--spacing-sm) var(--spacing-md);
+  margin: 0 0 var(--spacing-sm) 0; /* Réduit l'espace entre les éléments */
+  padding: var(--spacing-xs) var(--spacing-md); /* Réduit le padding vertical */
   transition: transform 0.3s, box-shadow 0.3s;
   display: flex;
   flex-direction: column;
   position: relative;
   box-shadow: var(--shadow-sm);
-  min-height: 100px; /* Réduit pour montrer plus d'éléments */
+  min-height: 95px; /* Réduit légèrement pour montrer plus d'éléments */
 }
 
 .meeting-item:hover {
@@ -216,7 +216,7 @@
 
 .meeting-item p {
   font-size: 0.95rem;
-  margin: 5px 0;
+  margin: 4px 0; /* Réduit la marge */
   color: #ddd;
 }
 
@@ -229,20 +229,20 @@
 /* Badge "En cours" */
 .meeting-status-badge {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 3px 12px; /* Réduit le padding vertical */
   border-radius: 20px;
   background-color: var(--success-color);
   color: white;
   font-weight: bold;
   font-size: 0.85rem;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs); /* Réduit la marge */
   align-self: flex-start;
 }
 
 /* Info salle */
 .meeting-salle {
   font-weight: bold;
-  margin: 4px 0;
+  margin: 3px 0; /* Réduit la marge */
   color: #ddd;
 }
 
@@ -253,7 +253,7 @@
   border: none;
   border-radius: var(--border-radius-sm);
   color: white;
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-xs) var(--spacing-md); /* Réduit le padding vertical */
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: bold;
@@ -261,7 +261,7 @@
   align-items: center;
   gap: 6px;
   transition: var(--transition-fast);
-  margin-top: var(--spacing-sm);
+  margin-top: var(--spacing-xs); /* Réduit la marge */
   box-shadow: var(--shadow-sm);
 }
 
@@ -274,10 +274,10 @@
 /* Barre de progression */
 .meeting-progress-container {
   width: 100%;
-  height: 8px;
+  height: 6px; /* Réduit légèrement la hauteur */
   background-color: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  margin: var(--spacing-sm) 0;
+  margin: var(--spacing-xs) 0; /* Réduit la marge */
   overflow: hidden;
 }
 
@@ -293,7 +293,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 5px 0;
+  margin: 4px 0; /* Réduit la marge */
   font-size: 0.9rem;
 }
 
@@ -303,7 +303,7 @@
   width: 100%;
   font-size: 0.85rem;
   color: #ddd;
-  margin-top: 5px;
+  margin-top: 4px; /* Réduit la marge */
 }
 
 .time-remaining {
@@ -316,25 +316,26 @@
 
 /* Conteneur pour la zone de jointure de réunion - Style amélioré */
 .join-meeting-container {
-  margin-top: 15px;
-  margin-bottom: 20px; /* Plus d'espace en bas pour s'assurer qu'il est visible */
+  margin-top: 12px;
+  margin-bottom: 25px; /* Espace suffisant en bas pour garantir la visibilité */
   border-radius: var(--border-radius-md);
-  overflow: hidden;
+  overflow: visible; /* Changé pour permettre de voir le contenu qui déborde */
   width: 98%;
   display: block !important; /* Force l'affichage */
   position: relative; 
-  z-index: 10; /* Priorité d'affichage élevée */
+  z-index: 20; /* Priorité d'affichage très élevée */
+  visibility: visible !important; /* Force la visibilité */
 }
 
 .meeting-join-integrated {
   display: flex;
   align-items: center;
-  background: rgba(30, 30, 30, 0.5);
+  background: rgba(30, 30, 30, 0.6); /* Légèrement plus foncé pour une meilleure visibilité */
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
   width: 100%;
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Bordure subtile */
+  box-shadow: var(--shadow-lg); /* Ombre plus prononcée */
+  border: 1px solid rgba(255, 255, 255, 0.25); /* Bordure légèrement plus visible */
 }
 
 .meeting-join-integrated input {
@@ -343,7 +344,7 @@
   border: none;
   border-radius: var(--border-radius-sm);
   font-size: 0.95rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95); /* Plus opaque pour une meilleure visibilité */
   outline: none;
   color: var(--dark-color);
 }
