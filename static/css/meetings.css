@@ -7,7 +7,7 @@
   grid-area: meetings;
   overflow: hidden;
   width: 98%;
-  height: 100%; /* Utilise toute la hauteur disponible */
+  height: calc(100% - 20px); /* Leave a small gap at the bottom */
   padding: 0;
   margin: 0 auto;
   justify-self: center;
@@ -16,7 +16,12 @@
   max-height: 100vh; /* Maximise la hauteur */
   position: relative;
   top: -30px; /* Remonte davantage le panneau pour utiliser plus d'espace */
-  margin-bottom: -30px; /* Compense le décalage pour maintenir l'alignement en bas */
+  margin-bottom: -10px; /* Compense le décalage pour maintenir l'alignement en bas */
+}
+
+/* Adjust when menu is expanded to prevent overlap */
+.main-container.menu-expanded .meetings-container {
+  margin-right: 15px; /* Add some space on the right when menu is expanded */
 }
 
 /* En-tête amélioré avec le bouton centré */
@@ -81,6 +86,8 @@
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  /* Increased height to use more vertical space */
+  min-height: 400px; /* Ensure minimum height */
 }
 
 /* Liste des réunions - Optimisée pour utiliser tout l'espace vertical */
@@ -89,7 +96,7 @@
   overflow-y: auto;
   padding-right: var(--spacing-sm);
   max-height: unset; /* Supprime la limitation de hauteur fixe */
-  min-height: 300px; /* Hauteur minimale pour garantir un espace suffisant */
+  min-height: 350px; /* Increased minimum height for more visible content */
 }
 
 .meetings-list::-webkit-scrollbar {
@@ -310,6 +317,7 @@
 /* Conteneur pour la zone de jointure de réunion - Style amélioré */
 .join-meeting-container {
   margin-top: 15px;
+  margin-bottom: 15px; /* Added space at the bottom */
   border-radius: var(--border-radius-md);
   overflow: hidden;
   width: 98%;
