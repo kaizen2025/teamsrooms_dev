@@ -145,7 +145,7 @@ function initUIEvents() {
   const newButton = document.createElement('button');
   newButton.className = 'rooms-toggle-button';
   newButton.id = 'toggleRoomsBtn';
-  newButton.innerHTML = '<i class="fas fa-eye"></i> Afficher salles';
+  newButton.innerHTML = '<i class="fas fa-eye"></i> Afficher les salles disponibles';
   document.body.appendChild(newButton);
   
   // Réattacher l'événement au nouveau bouton
