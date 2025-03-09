@@ -96,6 +96,21 @@ function exitFullscreen() {
 }
 
 /**
+ * Active et désactive les éléments de menu
+ */
+function setActiveMenuItem(element) {
+  // Désactiver tous les éléments de menu actifs
+  document.querySelectorAll('.menu-item.active').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // Activer le nouvel élément
+  if (element) {
+    element.classList.add('active');
+  }
+}
+
+/**
  * Initialise tous les événements d'interface
  */
 function initUIEvents() {
@@ -135,6 +150,36 @@ function initUIEvents() {
   
   // Réattacher l'événement au nouveau bouton
   newButton.addEventListener('click', toggleRoomsVisibility);
+  
+  // Associer le bouton de réservation de salle au modal
+  const roomReservationBtn = document.getElementById('roomReservationBtn');
+  if (roomReservationBtn) {
+    roomReservationBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      openBookingModal();
+      setActiveMenuItem(this);
+    });
+  }
+  
+  // Ajouter des écouteurs d'événements à tous les éléments de menu
+  document.querySelectorAll('.menu-item').forEach(menuItem => {
+    menuItem.addEventListener('click', function() {
+      // Ne pas modifier le comportement par défaut pour les liens externes
+      if (this.getAttribute('target') === '_blank') return;
+      
+      // Sinon, activer l'élément du menu
+      setActiveMenuItem(this);
+    });
+  });
+  
+  // Rafraîchir la page au clic sur Accueil
+  const homeMenuItem = document.querySelector('.menu-item[href="#"]:first-child');
+  if (homeMenuItem) {
+    homeMenuItem.addEventListener('click', function(e) {
+      e.preventDefault();
+      window.location.reload();
+    });
+  }
 }
 
 // Initialisation
