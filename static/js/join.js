@@ -90,13 +90,14 @@ function updateRecentIdsList() {
   const recentIds = JSON.parse(localStorage.getItem('recentMeetingIds') || '[]');
   
   if (recentIds.length > 0) {
-    // Positionner la liste sous le champ de saisie
+    // Positionner la liste près du champ de saisie intégré
     const inputField = document.getElementById('meeting-id');
     if (inputField) {
       const rect = inputField.getBoundingClientRect();
       container.style.position = 'absolute';
       container.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
-      container.style.right = (window.innerWidth - rect.right + 10) + 'px';
+      container.style.left = rect.left + 'px';
+      container.style.width = rect.width + 'px';
     }
     
     container.innerHTML = '<h4>Récemment utilisés</h4>';
