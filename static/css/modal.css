@@ -62,6 +62,30 @@
   color: white;
 }
 
+/* Amélioration de la visibilité des sélecteurs */
+.form-group select,
+.form-group select option {
+  color: white; /* S'assurer que le texte est visible */
+  background-color: rgba(40, 40, 40, 0.95); /* Fond foncé */
+}
+
+.form-group select option {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-group select option:hover,
+.form-group select option:focus {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Style distinct pour l'option sélectionnée */
+.form-group select option:checked {
+  background-color: var(--primary-color);
+  color: white;
+}
+
 /* Boutons de durée rapide */
 .quick-duration-buttons {
   display: flex;
