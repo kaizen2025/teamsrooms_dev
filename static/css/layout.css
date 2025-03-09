@@ -195,8 +195,10 @@
 
 /* Déplacer le bouton quand le menu est élargi */
 .main-container.menu-expanded .rooms-toggle-button {
-  z-index: var(--z-index-base); /* Passe au second plan quand le menu est ouvert */
-  opacity: 0.6; /* Plus discret visuellement */
+  opacity: 0; /* Cache complètement le bouton quand le menu est ouvert */
+  visibility: hidden; /* Rend l'élément non interactif */
+  z-index: var(--z-index-base);
+  pointer-events: none; /* Empêche l'interaction avec le bouton */
 }
 
 .rooms-toggle-button:hover {
