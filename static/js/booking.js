@@ -1,6 +1,7 @@
 /**
  * Gestion de la réservation de réunions
  */
+
 /**
  * Ouvre le modal de réservation
  */
@@ -54,6 +55,26 @@ function openBookingModal() {
   
   // Vérifier la disponibilité
   setTimeout(checkRoomAvailability, 500);
+}
+
+/**
+ * Ferme le modal de réservation
+ */
+function closeBookingModal() {
+  const modal = document.getElementById('bookingModal');
+  if (!modal) return;
+  
+  modal.style.display = 'none';
+  
+  // Réinitialiser les champs
+  const titleInput = document.getElementById('booking-title');
+  const participantsInput = document.getElementById('booking-participants');
+  
+  if (titleInput) titleInput.value = '';
+  if (participantsInput) participantsInput.value = '';
+  
+  // S'assurer que le modal est bien fermé
+  document.body.style.overflow = 'auto'; // Restaurer le défilement
 }
 
 /**
