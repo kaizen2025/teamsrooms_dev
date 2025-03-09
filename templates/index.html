@@ -28,57 +28,74 @@
   <!-- Structure principale -->
   <div class="main-container">
     <!-- Menu latéral -->
-    <div class="side-menu" id="sideMenu">
-      <div class="menu-logo">
-        <!-- Placeholder pour le logo de l'entreprise -->
-        <svg width="100" height="40" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="40" rx="5" fill="#6264A7"/>
-          <text x="50" y="25" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ANECOOP</text>
-        </svg>
-      </div>
-      
-      <h3 class="menu-title">Tableau de bord</h3>
-      
-      <div class="menu-items">
-        <a href="#" class="menu-item active">
-          <span class="menu-item-icon"><i class="fas fa-home"></i></span>
-          <span class="menu-item-text">Accueil</span>
-        </a>
-        <a href="#" class="menu-item">
-          <span class="menu-item-icon"><i class="fas fa-calendar-alt"></i></span>
-          <span class="menu-item-text">Réservation</span>
-        </a>
-        <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
-          <span class="menu-item-icon"><i class="fas fa-users"></i></span>
-          <span class="menu-item-text">Teams</span>
-        </a>
-        
-        <div class="menu-separator"></div>
-        
-        <a href="#" class="menu-item">
-          <span class="menu-item-icon"><i class="fas fa-briefcase"></i></span>
-          <span class="menu-item-text">SAGE</span>
-        </a>
-        <a href="#" class="menu-item">
-          <span class="menu-item-icon"><i class="fas fa-box"></i></span>
-          <span class="menu-item-text">Demande de prêt</span>
-        </a>
-        <a href="#" class="menu-item">
-          <span class="menu-item-icon"><i class="fas fa-sync-alt"></i></span>
-          <span class="menu-item-text">AnecoopPulse</span>
-        </a>
-        <a href="#" class="menu-item">
-          <span class="menu-item-icon"><i class="fas fa-robot"></i></span>
-          <span class="menu-item-text">Mistral AI</span>
-        </a>
-      </div>
-      
-      <div class="menu-bottom">
-        <button class="toggle-rooms-button" id="toggleRoomsBtn">
-          <i class="fas fa-eye"></i> <span class="button-text">Afficher salles</span>
-        </button>
-      </div>
-    </div>
+    <!-- Menu latéral -->
+<div class="side-menu" id="sideMenu">
+  <div class="menu-logo">
+    <!-- Placeholder pour le logo de l'entreprise -->
+    <svg width="100" height="40" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="40" rx="5" fill="#6264A7"/>
+      <text x="50" y="25" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ANECOOP</text>
+    </svg>
+  </div>
+  
+  <h3 class="menu-title">Tableau de bord</h3>
+  
+  <div class="menu-items">
+    <!-- Accueil -->
+    <a href="#" class="menu-item active">
+      <span class="menu-item-icon"><i class="fas fa-home"></i></span>
+      <span class="menu-item-text">Accueil</span>
+    </a>
+    
+    <!-- Réservations -->
+    <div class="menu-group-title">Réservations</div>
+    
+    <a href="#" class="menu-item" id="roomReservationBtn">
+      <span class="menu-item-icon"><i class="fas fa-calendar-alt"></i></span>
+      <span class="menu-item-text">Salle de réunion</span>
+    </a>
+    
+    <a href="#" class="menu-item">
+      <span class="menu-item-icon"><i class="fas fa-car"></i></span>
+      <span class="menu-item-text">Réservation voiture</span>
+    </a>
+    
+    <a href="#" class="menu-item">
+      <span class="menu-item-icon"><i class="fas fa-laptop"></i></span>
+      <span class="menu-item-text">Prêt de matériel</span>
+    </a>
+    
+    <!-- Applications -->
+    <div class="menu-separator"></div>
+    <div class="menu-group-title">Applications</div>
+    
+    <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
+      <span class="menu-item-icon"><i class="fas fa-users"></i></span>
+      <span class="menu-item-text">Teams</span>
+    </a>
+    
+    <a href="#" class="menu-item">
+      <span class="menu-item-icon"><i class="fas fa-briefcase"></i></span>
+      <span class="menu-item-text">SAGE</span>
+    </a>
+    
+    <a href="#" class="menu-item">
+      <span class="menu-item-icon"><i class="fas fa-phone"></i></span>
+      <span class="menu-item-text">3CX</span>
+    </a>
+    
+    <a href="#" class="menu-item">
+      <span class="menu-item-icon"><i class="fas fa-sync-alt"></i></span>
+      <span class="menu-item-text">AnecoopPulse</span>
+    </a>
+  </div>
+  
+  <div class="menu-bottom">
+    <button class="toggle-rooms-button" id="toggleRoomsBtn">
+      <i class="fas fa-eye"></i> <span class="button-text">Afficher salles</span>
+    </button>
+  </div>
+</div>
     
     <!-- Section d'en-tête -->
     <div class="header">
