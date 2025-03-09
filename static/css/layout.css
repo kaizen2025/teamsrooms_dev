@@ -92,6 +92,7 @@
   padding: var(--spacing-md);
 }
 
+/* Controls container (bottom) - Fond transparent */
 .controls-container {
   grid-area: controls;
   display: flex;
@@ -190,6 +191,11 @@
   z-index: var(--z-index-above);
   box-shadow: var(--shadow-md);
   transition: var(--transition-fast);
+}
+
+/* Déplacer le bouton quand le menu est élargi */
+.main-container.menu-expanded .rooms-toggle-button {
+  left: 270px; /* Évite la superposition avec le menu */
 }
 
 .rooms-toggle-button:hover {
