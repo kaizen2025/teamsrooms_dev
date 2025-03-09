@@ -5,18 +5,18 @@
 /* Conteneur principal - Optimisé pour utiliser tout l'espace vertical disponible */
 .meetings-container {
   grid-area: meetings;
-  overflow: hidden;
+  overflow: visible; /* Changé pour permettre le débordement du champ de jointure */
   width: 98%;
-  height: 100%; /* Utilise toute la hauteur disponible */
+  height: 100%;
   padding: 0;
   margin: 0 auto;
   justify-self: center;
   display: flex;
   flex-direction: column;
-  max-height: 100vh; /* Maximise la hauteur */
+  max-height: 100vh;
   position: relative;
-  top: -60px; /* Remonté davantage pour utiliser plus d'espace en haut */
-  margin-bottom: -25px; /* Compense le décalage pour maintenir l'alignement en bas */
+  top: -70px; /* Augmenté pour remonter davantage */
+  margin-bottom: -30px;
 }
 
 /* Ajustement quand le menu est ouvert pour éviter le chevauchement */
@@ -26,17 +26,17 @@
 
 /* En-tête amélioré avec le bouton centré */
 .meetings-title-bar {
-  background: rgba(30, 30, 30, 0.5);
+  background: rgba(30, 30, 30, 0.6); /* Plus opaque */
   backdrop-filter: blur(8px);
   border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-bottom: none;
-  padding: 8px 16px; /* Réduit pour gagner de l'espace vertical */
+  padding: 6px 16px; /* Réduit encore plus */
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centre les éléments horizontalement */
-  gap: 4px; /* Réduit l'espace entre titre et bouton */
+  align-items: center;
+  gap: 3px; /* Réduit au minimum */
 }
 
 .meetings-title-bar h2 {
@@ -97,6 +97,14 @@
   max-height: unset; /* Supprime la limitation de hauteur fixe */
   min-height: 350px; /* Hauteur minimale suffisante */
   padding-bottom: var(--spacing-sm); /* Petit espace en bas pour éviter que le contenu soit trop serré */
+}
+
+/* Assure que le champ de jointure est visible */
+#meetingsContainer:after {
+  content: '';
+  display: block;
+  height: 20px;
+  width: 100%;
 }
 
 .meetings-list::-webkit-scrollbar {
@@ -326,14 +334,17 @@
 
 /* Conteneur pour la zone de jointure de réunion - Style amélioré */
 .join-meeting-container {
-  margin-top: 12px;
-  margin-bottom: 25px; /* Espace suffisant en bas pour garantir la visibilité */
+  margin-top: 10px;
+  margin-bottom: 30px; /* Espace suffisant en bas */
   border-radius: var(--border-radius-md);
-  overflow: visible; /* Changé pour permettre de voir le contenu qui déborde */
+  overflow: visible;
   width: 98%;
   display: block !important; /* Force l'affichage */
-  position: relative; 
-  z-index: 50 !important; /* Priorité d'affichage très élevée */
+  position: relative !important; 
+  bottom: -5px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 100 !important; /* Priorité d'affichage très élevée */
   visibility: visible !important; /* Force la visibilité */
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -342,12 +353,12 @@
 .meeting-join-integrated {
   display: flex;
   align-items: center;
-  background: rgba(30, 30, 30, 0.6); /* Légèrement plus foncé pour une meilleure visibilité */
+  background: rgba(40, 40, 40, 0.8); /* Plus contrasté */
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
   width: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Ombre plus prononcée */
-  border: 1px solid rgba(98, 100, 167, 0.5); /* Bordure légèrement plus visible */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(98, 100, 167, 0.7);
   transition: box-shadow 0.3s ease;
 }
 
@@ -391,6 +402,9 @@
 /* Masquer les éléments dupliqués */
 .meeting-join {
   display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  z-index: -999 !important;
 }
 
 /* Adaptations pour les écrans plus petits */
