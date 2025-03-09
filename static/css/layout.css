@@ -43,7 +43,7 @@
   border-radius: var(--border-radius-md);
   padding: var(--spacing-sm) var(--spacing-md);
   box-shadow: var(--shadow-md);
-  margin-left: 35px; /* Espace pour éviter le chevauchement avec le bouton de menu */
+  margin-left: 60px; /* Augmenté pour plus d'espace avec le bouton menu */
   z-index: 2;
 }
 
@@ -195,7 +195,8 @@
 
 /* Déplacer le bouton quand le menu est élargi */
 .main-container.menu-expanded .rooms-toggle-button {
-  left: 270px; /* Évite la superposition avec le menu */
+  z-index: var(--z-index-base); /* Passe au second plan quand le menu est ouvert */
+  opacity: 0.6; /* Plus discret visuellement */
 }
 
 .rooms-toggle-button:hover {
