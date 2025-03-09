@@ -18,9 +18,18 @@
   transition: var(--transition-normal);
 }
 
-/* Quand le menu est étendu */
-.main-container.menu-expanded {
-  grid-template-columns: 250px 1fr 480px; /* Menu étendu à 250px */
+/* Ajustement pour éviter le chevauchement du titre */
+.main-container.menu-expanded .title-container {
+  left: 50px; /* Augmenté pour éviter le chevauchement */
+  width: calc(100% - 300px); /* Ajusté pour maintenir le centrage */
+}
+
+.title {
+  max-width: 80%; /* Limite la largeur du titre */
+  margin: 0 auto; /* Centrage horizontal */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Header section - Modifié pour empêcher les chevauchements */
