@@ -530,9 +530,6 @@ ip_new = {ip_data['votre_ip_probable']}</pre>
 # --- Endpoint pour créer des réunions Teams ---
 @app.route('/api/create-meeting', methods=['POST'])
 def create_meeting():
-    """
-    Crée une réunion Teams en utilisant l'API Microsoft Graph.
-    """
     # Récupérer les données envoyées depuis le front-end
     data = request.json
     
@@ -562,7 +559,7 @@ def create_meeting():
     # Convertir les participants en format attendees de Graph API
     attendees_list = []
     
-    # Ajouter la salle comme ressource
+    # Ajouter la salle comme ressource (uniquement la salle sélectionnée)
     if room_email:
         attendees_list.append({
             "emailAddress": {
@@ -571,15 +568,18 @@ def create_meeting():
             "type": "resource"
         })
     
-    # Ajouter les autres participants
+    # Ajouter les autres participants (en excluant les emails de salles)
+    salle_emails = [email.lower() for email in SALLES.values()]
     for email in participants:
         if email and '@' in email:  # Validation basique d'email
-            attendees_list.append({
-                "emailAddress": {
-                    "address": email
-                },
-                "type": "required"
-            })
+            # Vérifier que l'email n'est pas celui d'une salle
+            if email.lower() not in salle_emails:
+                attendees_list.append({
+                    "emailAddress": {
+                        "address": email
+                    },
+                    "type": "required"
+                })
     
     # Construire le corps de la requête
     event_data = {
