@@ -20,6 +20,9 @@ function toggleSideMenu() {
   } else {
     mainContainer.classList.remove('menu-expanded');
   }
+  
+  // Mettre à jour la visibilité des boutons d'affichage des salles
+  updateToggleButtonsVisibility();
 }
 
 /**
@@ -111,6 +114,55 @@ function setActiveMenuItem(element) {
 }
 
 /**
+ * Configure les boutons d'affichage des salles pour éviter les conflits
+ */
+function setupRoomsToggleButtons() {
+  // Récupérer le bouton dans le menu latéral
+  const menuButton = document.querySelector('.toggle-rooms-button');
+  
+  // Récupérer ou créer le bouton flottant
+  let floatingButton = document.querySelector('.rooms-toggle-button-floating');
+  
+  // Si le bouton flottant n'existe pas, le créer
+  if (!floatingButton) {
+    floatingButton = document.createElement('button');
+    floatingButton.className = 'rooms-toggle-button-floating';
+    floatingButton.id = 'toggleRoomsBtn';
+    floatingButton.innerHTML = '<i class="fas fa-eye"></i> Afficher les salles disponibles';
+    document.body.appendChild(floatingButton);
+    
+    // Attacher l'événement
+    floatingButton.addEventListener('click', toggleRoomsVisibility);
+  }
+  
+  // Si le bouton du menu existe, lui attacher l'événement également
+  if (menuButton) {
+    menuButton.addEventListener('click', toggleRoomsVisibility);
+  }
+  
+  // Configurer l'affichage en fonction de l'état du menu
+  updateToggleButtonsVisibility();
+}
+
+/**
+ * Met à jour la visibilité des boutons en fonction de l'état du menu
+ */
+function updateToggleButtonsVisibility() {
+  const sideMenu = document.getElementById('sideMenu');
+  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+  
+  if (!sideMenu || !floatingButton) return;
+  
+  if (sideMenu.classList.contains('expanded')) {
+    // Si le menu est ouvert, cacher le bouton flottant
+    floatingButton.style.display = 'none';
+  } else {
+    // Si le menu est fermé, afficher le bouton flottant
+    floatingButton.style.display = 'flex';
+  }
+}
+
+/**
  * Initialise tous les événements d'interface
  */
 function initUIEvents() {
@@ -135,21 +187,8 @@ function initUIEvents() {
   // Adaptation mobile
   window.addEventListener('resize', checkMobileView);
   
-  // Supprimer le bouton d'affichage des salles du menu
-  const menuButton = document.querySelector('.toggle-rooms-button');
-  if (menuButton) {
-    menuButton.remove();
-  }
-  
-  // Créer le nouveau bouton en position fixe
-  const newButton = document.createElement('button');
-  newButton.className = 'rooms-toggle-button';
-  newButton.id = 'toggleRoomsBtn';
-  newButton.innerHTML = '<i class="fas fa-eye"></i> Afficher les salles disponibles';
-  document.body.appendChild(newButton);
-  
-  // Réattacher l'événement au nouveau bouton
-  newButton.addEventListener('click', toggleRoomsVisibility);
+  // Gestion des boutons d'affichage des salles
+  setupRoomsToggleButtons();
   
   // Associer le bouton de réservation de salle au modal
   const roomReservationBtn = document.getElementById('roomReservationBtn');
