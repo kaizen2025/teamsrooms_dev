@@ -7,18 +7,25 @@
   bottom: 80px;
   left: 20px;
   z-index: var(--z-index-modal);
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(25, 25, 25, 0.9); /* Plus contrasté */
+  backdrop-filter: blur(10px);
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
   width: auto;
-  max-width: 500px;
+  max-width: 550px;
   transition: var(--transition-normal);
+  border: 1px solid rgba(98, 100, 167, 0.5); /* Bordure assortie au thème */
 }
 
 .rooms-section.visible {
   display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .rooms-container {
@@ -51,9 +58,9 @@
 
 /* Cartes de salles */
 .room-card {
-  flex: 0 0 100px;
-  height: 60px;
-  background: var(--bg-medium);
+  flex: 0 0 105px; /* Légèrement plus larges */
+  height: 65px; /* Légèrement plus hautes */
+  background: rgba(40, 40, 40, 0.9);
   border-radius: var(--border-radius-md);
   padding: var(--spacing-sm);
   display: flex;
@@ -62,15 +69,17 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  transition: var(--transition-fast);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: var(--spacing-xs);
+  border: 1px solid rgba(60, 60, 60, 0.8);
 }
 
 .room-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: rgba(98, 100, 167, 0.5);
 }
 
 /* Barre d'indicateur de statut en haut de la carte */
