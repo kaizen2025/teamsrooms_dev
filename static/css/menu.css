@@ -99,19 +99,6 @@
   padding-right: 5px;
 }
 
-.menu-items::-webkit-scrollbar {
-  width: 4px;
-}
-
-.menu-items::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.menu-items::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-}
-
 .menu-item {
   display: flex;
   align-items: center;
@@ -208,4 +195,52 @@
 
 .toggle-rooms-button:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Styles modernes pour les barres de défilement */
+.side-menu,
+.meetings-list,
+.rooms-container,
+.menu-items {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(98, 100, 167, 0.4) transparent;
+}
+
+.side-menu::-webkit-scrollbar,
+.meetings-list::-webkit-scrollbar,
+.rooms-container::-webkit-scrollbar,
+.menu-items::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.side-menu::-webkit-scrollbar-track,
+.meetings-list::-webkit-scrollbar-track,
+.rooms-container::-webkit-scrollbar-track,
+.menu-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.side-menu::-webkit-scrollbar-thumb,
+.meetings-list::-webkit-scrollbar-thumb,
+.rooms-container::-webkit-scrollbar-thumb,
+.menu-items::-webkit-scrollbar-thumb {
+  background-color: rgba(98, 100, 167, 0.4);
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.side-menu::-webkit-scrollbar-thumb:hover,
+.meetings-list::-webkit-scrollbar-thumb:hover,
+.rooms-container::-webkit-scrollbar-thumb:hover,
+.menu-items::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(98, 100, 167, 0.7);
+}
+
+/* Animation fluide du défilement */
+.side-menu,
+.meetings-list,
+.rooms-container,
+.menu-items {
+  scroll-behavior: smooth;
 }
