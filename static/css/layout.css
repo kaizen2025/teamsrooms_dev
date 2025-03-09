@@ -18,21 +18,12 @@
   transition: var(--transition-normal);
 }
 
-/* Ajustement pour éviter le chevauchement du titre */
-.main-container.menu-expanded .title-container {
-  left: 50px; /* Augmenté pour éviter le chevauchement */
-  width: calc(100% - 300px); /* Ajusté pour maintenir le centrage */
+/* Quand le menu est étendu */
+.main-container.menu-expanded {
+  grid-template-columns: 250px 1fr 480px; /* Menu étendu à 250px */
 }
 
-.title {
-  max-width: 80%; /* Limite la largeur du titre */
-  margin: 0 auto; /* Centrage horizontal */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Header section - Modifié pour empêcher les chevauchements */
+/* Header section */
 .header {
   grid-area: header;
   display: flex;
@@ -43,7 +34,7 @@
   position: relative;
 }
 
-/* Date/Heure - Amélioré pour plus de contraste */
+/* Date/Heure */
 .datetime {
   display: flex;
   flex-direction: column;
@@ -63,7 +54,7 @@
   color: var(--light-color);
 }
 
-/* Titre central - Centré sur la page avec contraste amélioré */
+/* Titre central */
 .title-container {
   position: absolute;
   left: 0;
@@ -74,9 +65,10 @@
   z-index: 1;
 }
 
-/* Added space to the right when menu is expanded to prevent overlap */
+/* Ajustement pour éviter le chevauchement du titre quand le menu est ouvert */
 .main-container.menu-expanded .title-container {
-  left: 30px; /* Shift title right when menu is expanded */
+  left: 50px; /* Augmenté pour éviter le chevauchement */
+  width: calc(100% - 300px); /* Ajusté pour maintenir le centrage */
 }
 
 .title {
@@ -93,6 +85,8 @@
   text-overflow: ellipsis;
   box-shadow: var(--shadow-md);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 80%; /* Limite la largeur du titre */
+  margin: 0 auto; /* Centrage horizontal */
 }
 
 /* Content area (middle) */
@@ -106,7 +100,7 @@
   padding: var(--spacing-md);
 }
 
-/* Controls container (bottom) - Fond transparent */
+/* Controls container (bottom) */
 .controls-container {
   grid-area: controls;
   display: flex;
@@ -115,8 +109,8 @@
   padding: var(--spacing-md) var(--spacing-md);
   background: transparent;
   border-top: none;
-  z-index: var(--z-index-above); /* Ajout d'un z-index pour garantir la visibilité */
-  position: relative; /* Assure le bon positionnement */
+  z-index: var(--z-index-above);
+  position: relative;
 }
 
 .control-buttons {
@@ -138,7 +132,7 @@
   gap: var(--spacing-sm);
   box-shadow: var(--shadow-sm);
   transition: var(--transition-fast);
-  visibility: visible; /* Explicitement visible */
+  visibility: visible;
 }
 
 .control-buttons button:hover {
@@ -147,7 +141,7 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Masquer la barre de recherche d'ID originale car intégrée directement dans le panneau */
+/* Masquer la barre de recherche d'ID originale */
 .meeting-join {
   display: none;
 }
