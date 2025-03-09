@@ -15,7 +15,8 @@
   flex-direction: column;
   max-height: 100vh; /* Maximise la hauteur */
   position: relative;
-  top: -20px; /* Remonte le panneau pour utiliser l'espace disponible */
+  top: -30px; /* Remonte davantage le panneau pour utiliser plus d'espace */
+  margin-bottom: -30px; /* Compense le décalage pour maintenir l'alignement en bas */
 }
 
 /* En-tête amélioré avec le bouton centré */
@@ -44,11 +45,12 @@
 
 /* Bouton de création de réunion centré et optimisé */
 .create-meeting-integrated {
+  margin: 10px auto; /* Centre horizontalement avec espace vertical */
   background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: var(--border-radius-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg); /* Plus large pour meilleure visibilité */
   font-size: 0.95rem;
   font-weight: bold;
   cursor: pointer;
@@ -57,8 +59,6 @@
   gap: var(--spacing-sm);
   transition: var(--transition-fast);
   box-shadow: var(--shadow-sm);
-  margin-top: var(--spacing-xs);
-  width: auto; /* Ajustement automatique à la largeur du contenu */
 }
 
 .create-meeting-integrated:hover {
@@ -176,7 +176,7 @@
   100% { opacity: 1; }
 }
 
-/* Items de réunions - Avec dégradé subtil pour les réunions en cours */
+/* ===== Items de réunions - Avec dégradé subtil pour les réunions en cours ===== */
 .meeting-item {
   background-color: rgba(40, 40, 40, 0.85);
   border-radius: var(--border-radius-md);
