@@ -54,7 +54,7 @@
 /* Logo conteneur */
 .menu-logo {
   text-align: center;
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-md); /* Reduced from spacing-xl to save vertical space */
   padding: 0 var(--spacing-md);
   opacity: 0;
   transition: var(--transition-normal);
@@ -69,18 +69,20 @@
   height: auto;
 }
 
-/* Titre du menu */
+/* Titre du menu - Reduced vertical space consumption */
 .menu-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem; /* Reduced font size */
   font-weight: bold;
   text-align: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md); /* Reduced margin */
   color: white;
   text-transform: uppercase;
   letter-spacing: 1px;
   opacity: 0;
   transition: var(--transition-normal);
   white-space: nowrap;
+  padding: 0 var(--spacing-sm);
+  line-height: 1.2; /* Tighter line height */
 }
 
 .side-menu.expanded .menu-title {
@@ -91,20 +93,21 @@
 .menu-items {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px; /* Reduced gap */
   padding: 0 var(--spacing-sm);
   max-height: calc(100vh - 200px);
   overflow-y: auto;
   scrollbar-width: thin;
   padding-right: 5px;
+  margin-bottom: auto; /* Push this to the top */
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: 8px 16px;
-  margin-bottom: 2px;
+  padding: 6px 16px; /* Reduced vertical padding */
+  margin-bottom: 1px; /* Reduced margin */
   border-radius: var(--border-radius-md);
   cursor: pointer;
   transition: var(--transition-fast);
@@ -143,30 +146,32 @@
 .menu-separator {
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
-  margin: var(--spacing-md) var(--spacing-md);
+  margin: var(--spacing-sm) var(--spacing-md); /* Reduced margin */
 }
 
 /* Styles pour les groupes de menu */
 .menu-group {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm); /* Reduced margin */
 }
 
 .menu-group-title {
   font-size: 0.75rem;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
-  padding: var(--spacing-sm) var(--spacing-md);
-  margin-top: 8px;
-  margin-bottom: 2px;
+  padding: var(--spacing-xs) var(--spacing-md); /* Reduced padding */
+  margin-top: 6px;
+  margin-bottom: 1px;
 }
 
-/* Zone inférieure du menu */
+/* Zone inférieure du menu - Modified to position the button lower */
 .menu-bottom {
-  margin-top: auto;
-  padding: 0 var(--spacing-md) var(--spacing-lg) var(--spacing-md);
+  margin-top: auto; /* Ensure this is pushed to the bottom */
+  margin-bottom: 10px; /* Add some space from the bottom */
+  padding: 0 var(--spacing-md) var(--spacing-sm) var(--spacing-md);
+  width: 100%;
 }
 
-/* Bouton pour afficher/masquer les salles */
+/* Bouton pour afficher/masquer les salles - Repositioned lower */
 .toggle-rooms-button {
   width: 100%;
   background: rgba(255, 255, 255, 0.15);
@@ -181,6 +186,8 @@
   cursor: pointer;
   transition: var(--transition-fast);
   font-size: 0.9rem;
+  position: relative;
+  bottom: 0;
 }
 
 .toggle-rooms-button span.button-text {
