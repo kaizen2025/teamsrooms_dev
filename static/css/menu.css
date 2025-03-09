@@ -177,3 +177,16 @@
 .toggle-rooms-button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+/* Styles pour les groupes de menu */
+.menu-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.menu-group-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
