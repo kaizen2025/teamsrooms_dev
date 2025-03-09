@@ -1,7 +1,6 @@
 /**
  * Gestion de la réservation de réunions
  */
-
 /**
  * Ouvre le modal de réservation
  */
@@ -22,10 +21,27 @@ function openBookingModal() {
     }
   }
   
-  // Mettre à jour l'heure actuelle
+  // Définir la date à aujourd'hui
+  const dateInput = document.getElementById('booking-date');
+  if (dateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+    dateInput.min = today; // Empêcher les dates passées
+  }
+  
+  // Mettre à jour l'heure actuelle pour le début
   const startTimeInput = document.getElementById('booking-start');
   if (startTimeInput) {
     startTimeInput.value = getCurrentTime();
+  }
+  
+  // Mettre à jour l'heure de fin par défaut (start + 30min)
+  const endTimeInput = document.getElementById('booking-end');
+  if (endTimeInput && startTimeInput.value) {
+    const start = new Date();
+    const [hours, minutes] = startTimeInput.value.split(':').map(Number);
+    start.setHours(hours, minutes + 30);
+    endTimeInput.value = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
   }
   
   // Sélectionner par défaut le bouton 30 minutes
@@ -41,20 +57,25 @@ function openBookingModal() {
 }
 
 /**
- * Ferme le modal de réservation
+ * Met à jour l'heure de fin en fonction de la durée sélectionnée
  */
-function closeBookingModal() {
-  const modal = document.getElementById('bookingModal');
-  if (!modal) return;
+function updateEndTimeFromDuration(durationMinutes) {
+  const startTimeInput = document.getElementById('booking-start');
+  const endTimeInput = document.getElementById('booking-end');
+  const dateInput = document.getElementById('booking-date');
   
-  modal.style.display = 'none';
+  if (!startTimeInput || !endTimeInput || !dateInput || !startTimeInput.value) return;
   
-  // Réinitialiser les champs
-  const titleInput = document.getElementById('booking-title');
-  const participantsInput = document.getElementById('booking-participants');
+  const selectedDate = dateInput.value;
+  const [startHours, startMinutes] = startTimeInput.value.split(':').map(Number);
   
-  if (titleInput) titleInput.value = '';
-  if (participantsInput) participantsInput.value = '';
+  const startDateTime = new Date(selectedDate);
+  startDateTime.setHours(startHours, startMinutes);
+  
+  const endDateTime = new Date(startDateTime);
+  endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes);
+  
+  endTimeInput.value = `${String(endDateTime.getHours()).padStart(2, '0')}:${String(endDateTime.getMinutes()).padStart(2, '0')}`;
 }
 
 /**
@@ -64,25 +85,34 @@ function checkRoomAvailability() {
   const roomSelect = document.getElementById('booking-room');
   const availabilityDiv = document.getElementById('room-availability');
   const startTimeInput = document.getElementById('booking-start');
+  const endTimeInput = document.getElementById('booking-end');
+  const dateInput = document.getElementById('booking-date');
   
-  if (!roomSelect || !availabilityDiv || !startTimeInput) return;
+  if (!roomSelect || !availabilityDiv || !startTimeInput || !dateInput) return;
   
   const selectedRoom = roomSelect.value;
+  const selectedDate = dateInput.value;
   const startTime = startTimeInput.value;
+  const endTime = endTimeInput.value;
   
-  if (!selectedRoom || !startTime) {
+  if (!selectedRoom || !selectedDate || !startTime) {
     availabilityDiv.innerHTML = '';
     return;
   }
   
-  // Obtenir l'heure de fin basée sur la durée sélectionnée
-  const activeDuration = document.querySelector('.duration-button.active');
-  const durationMinutes = activeDuration ? parseInt(activeDuration.dataset.minutes) : 30;
-  
   // Convertir en objets Date
-  const start = timeStringToDate(startTime);
-  const end = new Date(start);
-  end.setMinutes(end.getMinutes() + durationMinutes);
+  const startDateTime = new Date(`${selectedDate}T${startTime}`);
+  let endDateTime;
+  
+  if (endTime) {
+    endDateTime = new Date(`${selectedDate}T${endTime}`);
+  } else {
+    // Obtenir l'heure de fin basée sur la durée sélectionnée
+    const activeDuration = document.querySelector('.duration-button.active');
+    const durationMinutes = activeDuration ? parseInt(activeDuration.dataset.minutes) : 30;
+    endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes);
+  }
   
   // Vérifier s'il y a un conflit avec les réunions existantes
   let isAvailable = true;
@@ -101,8 +131,16 @@ function checkRoomAvailability() {
         const [_, meetingStartStr, meetingEndStr] = times;
         
         // Convertir en objets Date
-        const meetingStart = timeStringToDate(meetingStartStr);
-        const meetingEnd = timeStringToDate(meetingEndStr);
+        const today = new Date().toISOString().split('T')[0];
+        const meetingStart = new Date(`${today}T${meetingStartStr}`);
+        const meetingEnd = new Date(`${today}T${meetingEndStr}`);
+        
+        // Ajuster si la date sélectionnée est différente d'aujourd'hui
+        if (selectedDate !== today) {
+          const diff = new Date(selectedDate).getTime() - new Date(today).getTime();
+          meetingStart.setTime(meetingStart.getTime() + diff);
+          meetingEnd.setTime(meetingEnd.getTime() + diff);
+        }
         
         // Récupérer la salle depuis le texte si disponible
         const salleText = item.textContent;
@@ -117,9 +155,9 @@ function checkRoomAvailability() {
     for (const meeting of allMeetings) {
       if (meeting.salle.toLowerCase() === selectedRoom.toLowerCase()) {
         // Vérifier si les plages horaires se chevauchent
-        if ((start >= meeting.start && start < meeting.end) || 
-            (end > meeting.start && end <= meeting.end) ||
-            (start <= meeting.start && end >= meeting.end)) {
+        if ((startDateTime >= meeting.start && startDateTime < meeting.end) || 
+            (endDateTime > meeting.start && endDateTime <= meeting.end) ||
+            (startDateTime <= meeting.start && endDateTime >= meeting.end)) {
           isAvailable = false;
           conflictingMeeting = meeting;
           break;
@@ -148,7 +186,9 @@ function checkRoomAvailability() {
 async function createTeamsMeeting() {
   const title = document.getElementById('booking-title').value;
   const room = document.getElementById('booking-room').value;
+  const dateInput = document.getElementById('booking-date').value;
   const startTime = document.getElementById('booking-start').value;
+  const endTime = document.getElementById('booking-end').value;
   const participantsInput = document.getElementById('booking-participants').value;
   
   // Validation de base
@@ -162,25 +202,36 @@ async function createTeamsMeeting() {
     return;
   }
   
+  if (!dateInput) {
+    alert("Veuillez sélectionner une date.");
+    return;
+  }
+  
   if (!startTime) {
     alert("Veuillez spécifier une heure de début.");
     return;
   }
   
-  // Obtenir la durée sélectionnée
-  const activeDuration = document.querySelector('.duration-button.active');
-  const durationMinutes = activeDuration ? parseInt(activeDuration.dataset.minutes) : 30;
+  if (!endTime) {
+    alert("Veuillez spécifier une heure de fin.");
+    return;
+  }
+  
+  // Construire les dates de début et de fin
+  const startDateTime = new Date(`${dateInput}T${startTime}`);
+  const endDateTime = new Date(`${dateInput}T${endTime}`);
+  
+  // Vérifier que l'heure de fin est après l'heure de début
+  if (endDateTime <= startDateTime) {
+    alert("L'heure de fin doit être après l'heure de début.");
+    return;
+  }
   
   // Récupérer les participants 
   const participants = participantsInput
     .split(',')
     .map(email => email.trim())
     .filter(email => email.length > 0);
-  
-  // Construire les dates de début et de fin
-  const start = timeStringToDate(startTime);
-  const end = new Date(start);
-  end.setMinutes(end.getMinutes() + durationMinutes);
   
   // Obtenir l'adresse email de la salle depuis la configuration
   const roomEmail = window.SALLES?.[room] || '';
@@ -195,8 +246,8 @@ async function createTeamsMeeting() {
     title,
     room,
     roomEmail,
-    start: start.toISOString(),
-    end: end.toISOString(),
+    start: startDateTime.toISOString(),
+    end: endDateTime.toISOString(),
     participants,
     isOnlineMeeting: true
   };
@@ -254,6 +305,11 @@ function initializeBookingEvents() {
       durationButtons.forEach(btn => btn.classList.remove('active'));
       // Ajouter la classe active au bouton cliqué
       this.classList.add('active');
+      
+      // Mettre à jour l'heure de fin en fonction de la durée
+      const durationMinutes = parseInt(this.dataset.minutes);
+      updateEndTimeFromDuration(durationMinutes);
+      
       // Vérifier la disponibilité de la salle
       checkRoomAvailability();
     });
@@ -261,14 +317,32 @@ function initializeBookingEvents() {
   
   // Événements pour vérifier la disponibilité en cas de changements
   const roomSelect = document.getElementById('booking-room');
+  const dateInput = document.getElementById('booking-date');
   const startTimeInput = document.getElementById('booking-start');
+  const endTimeInput = document.getElementById('booking-end');
   
   if (roomSelect) {
     roomSelect.addEventListener('change', checkRoomAvailability);
   }
   
+  if (dateInput) {
+    dateInput.addEventListener('change', checkRoomAvailability);
+  }
+  
   if (startTimeInput) {
-    startTimeInput.addEventListener('change', checkRoomAvailability);
+    startTimeInput.addEventListener('change', function() {
+      // Mettre à jour l'heure de fin si un bouton de durée est actif
+      const activeButton = document.querySelector('.duration-button.active');
+      if (activeButton) {
+        const durationMinutes = parseInt(activeButton.dataset.minutes);
+        updateEndTimeFromDuration(durationMinutes);
+      }
+      checkRoomAvailability();
+    });
+  }
+  
+  if (endTimeInput) {
+    endTimeInput.addEventListener('change', checkRoomAvailability);
   }
   
   // Fermer le modal si on clique en dehors du contenu
