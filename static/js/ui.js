@@ -120,6 +120,9 @@ function setupRoomsToggleButtons() {
   // Récupérer le bouton dans le menu latéral
   const menuButton = document.querySelector('.toggle-rooms-button');
   
+  // Définir un texte standard pour les deux boutons
+  const buttonText = "Afficher les salles disponibles";
+  
   // Récupérer ou créer le bouton flottant
   let floatingButton = document.querySelector('.rooms-toggle-button-floating');
   
@@ -128,15 +131,19 @@ function setupRoomsToggleButtons() {
     floatingButton = document.createElement('button');
     floatingButton.className = 'rooms-toggle-button-floating';
     floatingButton.id = 'toggleRoomsBtn';
-    floatingButton.innerHTML = '<i class="fas fa-eye"></i> Afficher les salles disponibles';
+    floatingButton.innerHTML = `<i class="fas fa-eye"></i> ${buttonText}`;
     document.body.appendChild(floatingButton);
     
     // Attacher l'événement
     floatingButton.addEventListener('click', toggleRoomsVisibility);
   }
   
-  // Si le bouton du menu existe, lui attacher l'événement également
+  // Si le bouton du menu existe, mettre à jour son texte et attacher l'événement
   if (menuButton) {
+    const menuButtonText = menuButton.querySelector('.button-text');
+    if (menuButtonText) {
+      menuButtonText.textContent = buttonText;
+    }
     menuButton.addEventListener('click', toggleRoomsVisibility);
   }
   
