@@ -2,7 +2,7 @@
    Panneau des réunions
    ============================= */
 
-/* Conteneur principal - Optimisé pour afficher plus de réunions */
+/* Conteneur principal - Optimisé pour utiliser tout l'espace vertical disponible */
 .meetings-container {
   grid-area: meetings;
   overflow: hidden;
@@ -13,9 +13,12 @@
   justify-self: center;
   display: flex;
   flex-direction: column;
+  max-height: 100vh; /* Maximise la hauteur */
+  position: relative;
+  top: -20px; /* Remonte le panneau pour utiliser l'espace disponible */
 }
 
-/* Ajout d'un en-tête séparé pour le titre */
+/* En-tête amélioré avec le bouton centré */
 .meetings-title-bar {
   background: rgba(30, 30, 30, 0.5);
   backdrop-filter: blur(8px);
@@ -25,8 +28,9 @@
   padding: var(--spacing-md);
   margin-bottom: 0;
   display: flex;
-  flex-direction: column; /* Change to column layout */
-  gap: var(--spacing-sm); /* Add space between title and button */
+  flex-direction: column;
+  align-items: center; /* Centre les éléments horizontalement */
+  gap: var(--spacing-sm);
 }
 
 .meetings-title-bar h2 {
@@ -38,9 +42,8 @@
   color: white;
 }
 
-/* Bouton de création de réunion intégré sous le titre */
+/* Bouton de création de réunion centré et optimisé */
 .create-meeting-integrated {
-  align-self: flex-end; /* Aligne à droite */
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -55,6 +58,7 @@
   transition: var(--transition-fast);
   box-shadow: var(--shadow-sm);
   margin-top: var(--spacing-xs);
+  width: auto; /* Ajustement automatique à la largeur du contenu */
 }
 
 .create-meeting-integrated:hover {
@@ -79,12 +83,13 @@
   overflow: hidden;
 }
 
-/* Liste des réunions - Optimisée pour utiliser l'espace vertical */
+/* Liste des réunions - Optimisée pour utiliser tout l'espace vertical */
 .meetings-list {
   flex: 1;
   overflow-y: auto;
   padding-right: var(--spacing-sm);
-  max-height: unset; /* Remove fixed height limitation */
+  max-height: unset; /* Supprime la limitation de hauteur fixe */
+  min-height: 300px; /* Hauteur minimale pour garantir un espace suffisant */
 }
 
 .meetings-list::-webkit-scrollbar {
@@ -171,7 +176,7 @@
   100% { opacity: 1; }
 }
 
-/* ===== Items de réunions - Avec dégradé subtil pour les réunions en cours ===== */
+/* Items de réunions - Avec dégradé subtil pour les réunions en cours */
 .meeting-item {
   background-color: rgba(40, 40, 40, 0.85);
   border-radius: var(--border-radius-md);
@@ -302,7 +307,7 @@
   gap: 5px;
 }
 
-/* Conteneur pour la zone de jointure de réunion */
+/* Conteneur pour la zone de jointure de réunion - Style amélioré */
 .join-meeting-container {
   margin-top: 15px;
   border-radius: var(--border-radius-md);
