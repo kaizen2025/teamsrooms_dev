@@ -166,6 +166,99 @@
     <div class="content">
       <!-- Zone vide par défaut pour l'arrière-plan -->
       
+      <!-- NOUVEAU CODE INSÉRÉ ICI -->
+      <div id="reservationSection" class="resource-reservation-section glass-container">
+        <div class="reservation-header">
+            <h2><i class="fas fa-calendar-check"></i> Système de réservation</h2>
+            <div class="reservation-tabs">
+                <button class="reservation-tab active" data-tab="room-booking">
+                    <i class="fas fa-door-open"></i> Salles
+                </button>
+                <button class="reservation-tab" data-tab="vehicle-booking">
+                    <i class="fas fa-car"></i> Véhicules
+                </button>
+                <button class="reservation-tab" data-tab="equipment-booking">
+                    <i class="fas fa-laptop"></i> Matériel
+                </button>
+            </div>
+        </div>
+        
+        <div class="reservation-content">
+            <!-- Réservation de salles -->
+            <div class="reservation-tab-content active" id="room-booking-tab">
+                <div class="resource-list-section">
+                    <h3>Salles disponibles</h3>
+                    <div class="resource-filter">
+                        <input type="text" placeholder="Filtrer les salles..." id="roomFilter">
+                        <select id="roomCapacityFilter">
+                            <option value="all">Toutes capacités</option>
+                            <option value="small">Petite (1-4 pers.)</option>
+                            <option value="medium">Moyenne (5-10 pers.)</option>
+                            <option value="large">Grande (10+ pers.)</option>
+                        </select>
+                    </div>
+                    <div class="resources-grid" id="roomsGrid"></div>
+                </div>
+                
+                <div class="resource-details-section" id="roomDetails">
+                    <div class="placeholder-message">
+                        <i class="fas fa-hand-point-left"></i>
+                        <p>Sélectionnez une salle pour voir les détails</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Réservation de véhicules -->
+            <div class="reservation-tab-content" id="vehicle-booking-tab">
+                <div class="resource-list-section">
+                    <h3>Véhicules disponibles</h3>
+                    <div class="resource-filter">
+                        <input type="text" placeholder="Filtrer les véhicules..." id="vehicleFilter">
+                        <select id="vehicleTypeFilter">
+                            <option value="all">Tous types</option>
+                            <option value="car">Voiture</option>
+                            <option value="van">Utilitaire</option>
+                        </select>
+                    </div>
+                    <div class="resources-grid" id="vehiclesGrid"></div>
+                </div>
+                
+                <div class="resource-details-section" id="vehicleDetails">
+                    <div class="placeholder-message">
+                        <i class="fas fa-hand-point-left"></i>
+                        <p>Sélectionnez un véhicule pour voir les détails</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Prêt de matériel -->
+            <div class="reservation-tab-content" id="equipment-booking-tab">
+                <div class="resource-list-section">
+                    <h3>Équipements disponibles</h3>
+                    <div class="resource-filter">
+                        <input type="text" placeholder="Filtrer les équipements..." id="equipmentFilter">
+                        <select id="equipmentTypeFilter">
+                            <option value="all">Tous types</option>
+                            <option value="computer">Ordinateur</option>
+                            <option value="projector">Vidéoprojecteur</option>
+                            <option value="phone">Téléphone</option>
+                            <option value="misc">Divers</option>
+                        </select>
+                    </div>
+                    <div class="resources-grid" id="equipmentGrid"></div>
+                </div>
+                
+                <div class="resource-details-section" id="equipmentDetails">
+                    <div class="placeholder-message">
+                        <i class="fas fa-hand-point-left"></i>
+                        <p>Sélectionnez un équipement pour voir les détails</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+      <!-- FIN DU NOUVEAU CODE -->
+      
       <!-- Section d'administration (visible uniquement pour les admins) -->
       <div class="admin-section" id="adminSection" style="display: none;">
         <div class="admin-header">
