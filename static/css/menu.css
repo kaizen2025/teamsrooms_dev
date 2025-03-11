@@ -3,8 +3,8 @@
    ============================= */
 .side-menu {
   grid-area: menu;
-  background: var(--bg-dark);
-  backdrop-filter: blur(5px);
+  background: linear-gradient(180deg, rgba(30, 30, 30, 0.95) 0%, rgba(35, 35, 35, 0.95) 100%);
+  backdrop-filter: blur(10px);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0;
   display: flex;
@@ -17,10 +17,11 @@
   width: 0;
   overflow: hidden;
   transition: var(--transition-normal);
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
 }
 
 .side-menu.expanded {
-  width: 250px;
+  width: var(--sidebar-width);
   padding: var(--spacing-lg) 0;
 }
 
@@ -29,7 +30,7 @@
   position: fixed;
   left: 15px;
   top: 15px;
-  background: rgba(98, 100, 167, 0.9);
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-dark));
   border: none;
   border-radius: var(--border-radius-full);
   width: 40px;
@@ -40,21 +41,35 @@
   color: white;
   cursor: pointer;
   z-index: var(--z-index-overlay);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   font-size: 1.2rem;
   transition: var(--transition-fast);
 }
 
 .menu-toggle-visible:hover {
-  background: var(--primary-color);
-  transform: scale(1.05);
-  box-shadow: var(--shadow-md);
+  transform: scale(1.1) rotate(180deg);
+  box-shadow: 0 0 15px rgba(98, 100, 167, 0.5);
+}
+
+.menu-toggle-visible:active {
+  transform: scale(0.95);
+}
+
+/* Effet pulsation pour attirer l'attention */
+@keyframes pulsate {
+  0% { box-shadow: 0 0 0 0 rgba(98, 100, 167, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(98, 100, 167, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(98, 100, 167, 0); }
+}
+
+.menu-toggle-visible.attention {
+  animation: pulsate 2s infinite;
 }
 
 /* Logo conteneur */
 .menu-logo {
   text-align: center;
-  margin-bottom: var(--spacing-md); /* Reduced from spacing-xl to save vertical space */
+  margin-bottom: var(--spacing-lg);
   padding: 0 var(--spacing-md);
   opacity: 0;
   transition: var(--transition-normal);
@@ -62,27 +77,29 @@
 
 .side-menu.expanded .menu-logo {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .menu-logo img, .menu-logo svg {
   max-width: 80%;
   height: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
-/* Titre du menu - Reduced vertical space consumption */
+/* Titre du menu */
 .menu-title {
-  font-size: 1.1rem; /* Reduced font size */
+  font-size: 1.1rem;
   font-weight: bold;
   text-align: center;
-  margin-bottom: var(--spacing-md); /* Reduced margin */
+  margin-bottom: var(--spacing-md);
   color: white;
   text-transform: uppercase;
   letter-spacing: 1px;
   opacity: 0;
   transition: var(--transition-normal);
   white-space: nowrap;
-  padding: 0 var(--spacing-sm);
-  line-height: 1.2; /* Tighter line height */
+  padding: 0 var(--spacing-md);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .side-menu.expanded .menu-title {
@@ -93,89 +110,132 @@
 .menu-items {
   display: flex;
   flex-direction: column;
-  gap: 1px; /* Reduced gap */
+  gap: 2px;
   padding: 0 var(--spacing-sm);
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
   scrollbar-width: thin;
-  padding-right: 5px;
-  margin-bottom: auto; /* Push this to the top */
+  scrollbar-color: rgba(98, 100, 167, 0.4) transparent;
+  margin-bottom: auto;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: 6px 16px; /* Reduced vertical padding */
-  margin-bottom: 1px; /* Reduced margin */
+  padding: 8px 16px;
+  margin-bottom: 1px;
   border-radius: var(--border-radius-md);
   cursor: pointer;
   transition: var(--transition-fast);
   color: #e0e0e0;
   text-decoration: none;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
 }
 
 .menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
+  transform: translateX(3px);
 }
 
 .menu-item.active {
-  background: rgba(98, 100, 167, 0.6);
+  background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
   color: white;
   font-weight: bold;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Effet de survol avec un gradient qui se déplace */
+.menu-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    rgba(255, 255, 255, 0) 100%);
+  transition: var(--transition-slow);
+  pointer-events: none;
+}
+
+.menu-item:hover::before {
+  left: 100%;
 }
 
 .menu-item-icon {
   font-size: 1.2rem;
   width: 24px;
   text-align: center;
+  color: var(--primary-color-light);
+  transition: var(--transition-fast);
+}
+
+.menu-item.active .menu-item-icon {
+  color: white;
 }
 
 .menu-item-text {
   font-size: 0.95rem;
   opacity: 0;
+  transform: translateX(-10px);
   transition: var(--transition-normal);
 }
 
 .side-menu.expanded .menu-item-text {
   opacity: 1;
+  transform: translateX(0);
 }
 
 /* Séparateur */
 .menu-separator {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: var(--spacing-sm) var(--spacing-md); /* Reduced margin */
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.15) 50%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  margin: var(--spacing-md) var(--spacing-md);
 }
 
 /* Styles pour les groupes de menu */
 .menu-group {
-  margin-bottom: var(--spacing-sm); /* Reduced margin */
+  margin-bottom: var(--spacing-sm);
 }
 
 .menu-group-title {
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-  padding: var(--spacing-xs) var(--spacing-md); /* Reduced padding */
+  color: rgba(255, 255, 255, 0.5);
+  padding: var(--spacing-xs) var(--spacing-md);
   margin-top: 6px;
   margin-bottom: 1px;
+  letter-spacing: 0.5px;
 }
 
-/* Zone inférieure du menu - Modified to position the button lower */
+/* Zone inférieure du menu */
 .menu-bottom {
-  margin-top: auto; /* Ensure this is pushed to the bottom */
-  margin-bottom: 10px; /* Add some space from the bottom */
-  padding: 0 var(--spacing-md) var(--spacing-sm) var(--spacing-md);
+  margin-top: auto;
+  padding: var(--spacing-md);
   width: 100%;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: var(--transition-normal);
 }
 
-/* Bouton pour afficher/masquer les salles - Repositioned lower */
+.side-menu.expanded .menu-bottom {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Bouton pour afficher/masquer les salles */
 .toggle-rooms-button {
   width: 100%;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--border-radius-sm);
   color: white;
   padding: var(--spacing-sm);
@@ -186,25 +246,32 @@
   cursor: pointer;
   transition: var(--transition-fast);
   font-size: 0.9rem;
-  position: relative;
-  bottom: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .toggle-rooms-button span.button-text {
   opacity: 0;
+  transform: translateX(-10px);
   transition: var(--transition-normal);
   white-space: nowrap;
 }
 
 .side-menu.expanded .toggle-rooms-button span.button-text {
   opacity: 1;
+  transform: translateX(0);
 }
 
 .toggle-rooms-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(90deg, rgba(98, 100, 167, 0.2), rgba(98, 100, 167, 0.3));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-/* Styles modernes pour les barres de défilement */
+.toggle-rooms-button:active {
+  transform: translateY(0);
+}
+
+/* Styles pour les barres de défilement */
 .side-menu,
 .meetings-list,
 .rooms-container,
@@ -250,4 +317,97 @@
 .rooms-container,
 .menu-items {
   scroll-behavior: smooth;
+}
+
+/* Adaptations mobiles */
+@media (max-width: 768px) {
+  .side-menu {
+    position: fixed;
+    left: -100%;
+    width: 250px;
+    height: 100%;
+    z-index: var(--z-index-modal);
+    transition: left 0.3s ease;
+  }
+  
+  .side-menu.expanded {
+    left: 0;
+    width: 250px;
+  }
+  
+  .side-menu .menu-logo,
+  .side-menu .menu-title,
+  .side-menu .menu-item-text,
+  .side-menu .menu-bottom,
+  .side-menu .toggle-rooms-button span.button-text {
+    opacity: 1;
+    transform: none;
+  }
+  
+  /* Overlay de fond quand le menu est ouvert */
+  .menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-index-above);
+    backdrop-filter: blur(2px);
+  }
+  
+  .menu-overlay.active {
+    display: block;
+  }
+}
+
+/* Grands écrans */
+@media (min-width: 1601px) {
+  .menu-item {
+    padding: 10px 20px;
+  }
+  
+  .menu-item-icon {
+    font-size: 1.4rem;
+    width: 30px;
+  }
+  
+  .menu-item-text {
+    font-size: 1.1rem;
+  }
+  
+  .menu-title {
+    font-size: 1.3rem;
+  }
+  
+  .toggle-rooms-button {
+    padding: var(--spacing-md);
+    font-size: 1.1rem;
+  }
+}
+
+/* TV et écrans très larges */
+@media (min-width: 2401px) {
+  .menu-item {
+    padding: 15px 25px;
+  }
+  
+  .menu-item-icon {
+    font-size: 1.8rem;
+    width: 40px;
+  }
+  
+  .menu-item-text {
+    font-size: 1.4rem;
+  }
+  
+  .menu-title {
+    font-size: 1.6rem;
+  }
+  
+  .toggle-rooms-button {
+    padding: var(--spacing-lg);
+    font-size: 1.4rem;
+  }
 }
