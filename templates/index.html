@@ -16,8 +16,6 @@
   <link rel="stylesheet" href="/static/css/rooms.css">
   <link rel="stylesheet" href="/static/css/meetings.css">
   <link rel="stylesheet" href="/static/css/modal.css">
-  <link rel="stylesheet" href="/static/css/responsive.css">
-  <!-- Nouvelles feuilles de style -->
   <link rel="stylesheet" href="/static/css/responsive-universal.css">
   <link rel="stylesheet" href="/static/css/auth.css">
   <link rel="stylesheet" href="/static/css/admin.css">
@@ -34,7 +32,7 @@
     <!-- Menu latéral -->
     <div class="side-menu" id="sideMenu">
       <div class="menu-logo">
-        <!-- Placeholder pour le logo de l'entreprise -->
+        <!-- Logo de l'entreprise -->
         <svg width="100" height="40" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="100" height="40" rx="5" fill="#6264A7"/>
           <text x="50" y="25" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ANECOOP</text>
@@ -109,26 +107,26 @@
     <!-- Section d'en-tête -->
     <div class="header">
       <!-- Date/Heure -->
-      <div class="datetime">
-        <p id="current-date"></p>
-        <p id="current-time"></p>
+      <div class="datetime glass-container-light">
+        <p id="current-date">Chargement...</p>
+        <p id="current-time">00:00:00</p>
       </div>
       
       <!-- Composant profil utilisateur -->
       <div class="user-profile">
         <div class="user-profile-button">
-          <span class="user-initials">UK</span>
+          <span class="user-initials">IN</span>
           <div class="user-info">
-            <span id="userDisplayName">Utilisateur</span>
-            <span id="userRole" class="user-role">Invité</span>
+            <span id="userDisplayName">Invité</span>
+            <span id="userRole" class="user-role">Non connecté</span>
           </div>
           <i class="fas fa-chevron-down"></i>
         </div>
         
         <div class="user-dropdown">
           <div class="user-dropdown-header">
-            <span id="userDisplayNameFull">Utilisateur</span>
-            <span id="userRoleFull" class="user-role-full">Invité</span>
+            <span id="userDisplayNameFull">Invité</span>
+            <span id="userRoleFull" class="user-role-full">Non connecté</span>
           </div>
           
           <div class="user-dropdown-links">
@@ -166,7 +164,7 @@
     
     <!-- Zone centrale -->
     <div class="content">
-      <!-- Zone vide pour l'arrière-plan par défaut -->
+      <!-- Zone vide par défaut pour l'arrière-plan -->
       
       <!-- Section d'administration (visible uniquement pour les admins) -->
       <div class="admin-section" id="adminSection" style="display: none;">
@@ -414,115 +412,162 @@
         </div>
       </div>
     </div>
-  </div>
-  
-  <!-- Barre de recherche d'ID (repositionnée) -->
-  <div class="meeting-join">
-    <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
-    <button id="joinMeetingBtn"><i class="fas fa-sign-in-alt"></i> Rejoindre</button>
+    
+    <!-- Section des contrôles -->
+    <div class="controls-container">
+      <div class="control-buttons">
+        <button id="refreshBtn" class="btn-primary">
+          <i class="fas fa-sync-alt"></i> <span>Rafraîchir</span>
+        </button>
+        
+        <button id="roomReservationBtn" class="btn-success">
+          <i class="fas fa-calendar-plus"></i> <span>Créer une réunion</span>
+        </button>
+        
+        <button id="fullscreenBtn" class="btn-ghost">
+          <i class="fas fa-expand"></i> <span>Plein écran</span>
+        </button>
+        
+        <button id="helpBtn" class="btn-ghost hide-in-room-mode">
+          <i class="fas fa-question-circle"></i> <span>Aide</span>
+        </button>
+      </div>
+    </div>
   </div>
   
   <!-- Zone des IDs récents (flottante) -->
   <div id="recent-ids"></div>
   
-  <!-- Modal de réservation - Version améliorée -->
-<div class="booking-modal" id="bookingModal">
-  <div class="booking-modal-content">
-    <div class="booking-modal-header">
-      <h2><i class="fas fa-calendar-plus"></i> Créer une réunion Teams</h2>
-      <button class="modal-close" id="closeBookingModalBtn">&times;</button>
-    </div>
-    
-    <div class="booking-modal-body">
-      <form class="booking-form" id="bookingForm">
-        <div class="form-group">
-          <label for="booking-title">Titre de la réunion</label>
-          <div class="input-with-icon">
-            <i class="fas fa-meeting-title"></i>
-            <input type="text" id="booking-title" placeholder="Entrez le titre de la réunion" required>
+  <!-- Modal de réservation -->
+  <div class="booking-modal" id="bookingModal">
+    <div class="booking-modal-content">
+      <div class="booking-modal-header">
+        <h2><i class="fas fa-calendar-plus"></i> Créer une réunion Teams</h2>
+        <button class="modal-close" id="closeBookingModalBtn">&times;</button>
+      </div>
+      
+      <div class="booking-modal-body">
+        <form class="booking-form" id="bookingForm">
+          <div class="form-group">
+            <label for="booking-title">Titre de la réunion</label>
+            <div class="input-with-icon">
+              <input type="text" id="booking-title" placeholder="Entrez le titre de la réunion" required>
+            </div>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="booking-room">Salle</label>
-          <div class="input-with-icon">
-            <i class="fas fa-door-open"></i>
-            <select id="booking-room" required>
-              <option value="">Sélectionner une salle</option>
-              <!-- Options ajoutées dynamiquement par JavaScript -->
+          
+          <div class="form-group">
+            <label for="booking-room">Salle</label>
+            <div class="input-with-icon">
+              <select id="booking-room" required>
+                <option value="">Sélectionner une salle</option>
+                <!-- Options ajoutées dynamiquement par JavaScript -->
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-date">Date</label>
+            <div class="input-with-icon">
+              <input type="date" id="booking-date" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-start">Heure de début</label>
+            <div class="input-with-icon">
+              <input type="time" id="booking-start" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Durée</label>
+            <div class="quick-duration-buttons">
+              <div class="duration-button" data-minutes="15">15 min</div>
+              <div class="duration-button active" data-minutes="30">30 min</div>
+              <div class="duration-button" data-minutes="60">1 heure</div>
+              <div class="duration-button" data-minutes="120">2 heures</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-end">Heure de fin</label>
+            <div class="input-with-icon">
+              <input type="time" id="booking-end" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-participants">Participants (emails séparés par des virgules)</label>
+            <div class="input-with-icon">
+              <input type="text" id="booking-participants" placeholder="exemple@anecoop-france.com, ...">
+            </div>
+          </div>
+          
+          <div class="room-availability" id="room-availability">
+            <!-- Message de disponibilité rempli dynamiquement -->
+          </div>
+        </form>
+      </div>
+      
+      <div class="booking-modal-footer">
+        <button class="cancel-button" id="cancelBookingBtn">
+          <i class="fas fa-times"></i> Annuler
+        </button>
+        <button class="create-button" id="createTeamsMeetingBtn">
+          <i class="fas fa-check"></i> Créer la réunion
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal pour ajouter/éditer un utilisateur -->
+  <div class="admin-modal" id="userModal">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3 id="userModalTitle">Nouvel utilisateur</h3>
+        <button class="admin-modal-close" id="closeUserModalBtn">&times;</button>
+      </div>
+      
+      <div class="admin-modal-body">
+        <form id="userForm">
+          <input type="hidden" id="user-id" value="">
+          
+          <div class="form-group">
+            <label for="user-username">Nom d'utilisateur</label>
+            <input type="text" id="user-username" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="user-displayname">Nom complet</label>
+            <input type="text" id="user-displayname" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="user-email">Email</label>
+            <input type="email" id="user-email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="user-role">Rôle</label>
+            <select id="user-role" required>
+              <option value="administrator">Administrateur</option>
+              <option value="manager">Manager</option>
+              <option value="user">Utilisateur</option>
+              <option value="teams_room">Salle Teams</option>
             </select>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="booking-date">Date</label>
-          <div class="input-with-icon">
-            <i class="fas fa-calendar-alt"></i>
-            <input type="date" id="booking-date" required>
+          
+          <div class="form-group">
+            <label for="user-password">Mot de passe</label>
+            <input type="password" id="user-password" required>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="booking-start">Heure de début</label>
-          <div class="input-with-icon">
-            <i class="fas fa-clock"></i>
-            <input type="time" id="booking-start" required>
+          
+          <div class="form-group">
+            <label for="user-password-confirm">Confirmer le mot de passe</label>
+            <input type="password" id="user-password-confirm" required>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label>Durée</label>
-          <div class="quick-duration-buttons">
-            <div class="duration-button" data-minutes="15">15 min</div>
-            <div class="duration-button active" data-minutes="30">30 min</div>
-            <div class="duration-button" data-minutes="60">1 heure</div>
-            <div class="duration-button" data-minutes="120">2 heures</div>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="booking-end">Heure de fin</label>
-          <div class="input-with-icon">
-            <i class="fas fa-hourglass-end"></i>
-            <input type="time" id="booking-end" required>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="booking-participants">Participants (emails séparés par des virgules)</label>
-          <div class="input-with-icon">
-            <i class="fas fa-users"></i>
-            <input type="text" id="booking-participants" placeholder="exemple@anecoop-france.com, ...">
-          </div>
-        </div>
-        
-        <div class="room-availability" id="room-availability">
-          <!-- Message de disponibilité rempli dynamiquement -->
-        </div>
-      </form>
-    </div>
-    
-    <div class="booking-modal-footer">
-      <button class="cancel-button" id="cancelBookingBtn">
-        <i class="fas fa-times"></i> Annuler
-      </button>
-      <button class="create-button" id="createTeamsMeetingBtn">
-        <i class="fas fa-check"></i> Créer la réunion
-      </button>
-    </div>
-  </div>
-</div>
-    
-    <div class="booking-modal-footer">
-      <button class="cancel-button" id="cancelBookingBtn">
-        <i class="fas fa-times"></i> Annuler
-      </button>
-      <button class="create-button" id="createTeamsMeetingBtn">
-        <i class="fas fa-check"></i> Créer la réunion
-      </button>
-    </div>
-  </div>
-</div>
+        </form>
+      </div>
       
       <div class="admin-modal-footer">
         <button class="admin-cancel-btn" id="cancelUserBtn">Annuler</button>
