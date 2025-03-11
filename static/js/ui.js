@@ -720,7 +720,24 @@ const UISystem = {
     this.showNotification('Données rafraîchies', 'success');
   }
 };
-
+// À ajouter dans ui.js
+document.addEventListener('DOMContentLoaded', function() {
+    // Sélectionner tous les boutons de création de réunion, y compris celui du bas
+    const allCreateButtons = document.querySelectorAll('#roomReservationBtn, .create-meeting-button, [id^="create"]');
+    
+    allCreateButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Utiliser le BookingSystem si disponible, sinon utiliser une fonction autonome
+            if (window.BookingSystem && typeof BookingSystem.openModal === 'function') {
+                BookingSystem.openModal();
+            } else {
+                openBookingModal(); // Fonction de secours
+            }
+        });
+    });
+});
 // Initialiser le système d'interface utilisateur au chargement
 document.addEventListener('DOMContentLoaded', () => {
   UISystem.init();
