@@ -19,17 +19,17 @@
   --light-color: #f8f9fa;
   --dark-color: #212529;
   
-  /* Couleurs d'interface */
-  --bg-darkest: rgba(20, 20, 20, 0.85);
-  --bg-dark: rgba(30, 30, 30, 0.85);
-  --bg-medium: rgba(40, 40, 40, 0.85);
-  --bg-light: rgba(255, 255, 255, 0.15);
-  --bg-overlay: rgba(0, 0, 0, 0.5);
+  /* Couleurs d'interface - Version plus claire */
+  --bg-darkest: rgba(35, 35, 35, 0.75);
+  --bg-dark: rgba(45, 45, 45, 0.75);
+  --bg-medium: rgba(55, 55, 55, 0.75);
+  --bg-light: rgba(255, 255, 255, 0.25);
+  --bg-overlay: rgba(0, 0, 0, 0.4);
   
   /* Couleurs de texte */
   --text-primary: #ffffff;
-  --text-secondary: #b8b8b8;
-  --text-muted: #8e8e8e;
+  --text-secondary: #e0e0e0;
+  --text-muted: #b0b0b0;
   
   /* Ombres */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.15);
@@ -93,7 +93,7 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Arrière-plan avec animation */
+/* Arrière-plan avec animation - plus lumineux */
 #background-container {
   position: fixed;
   top: 0; left: 0;
@@ -103,22 +103,22 @@ html, body {
   background-position: center center;
   background-repeat: no-repeat;
   animation: zoomBackground 30s infinite alternate ease-in-out;
-  filter: brightness(0.85);
+  filter: brightness(0.9); /* Plus lumineux */
 }
 
 @keyframes zoomBackground {
-  0%   { transform: scale(1); filter: brightness(0.85); }
-  50%  { transform: scale(1.05); filter: brightness(0.9); }
-  100% { transform: scale(1); filter: brightness(0.85); }
+  0%   { transform: scale(1); filter: brightness(0.9); }
+  50%  { transform: scale(1.05); filter: brightness(0.95); }
+  100% { transform: scale(1); filter: brightness(0.9); }
 }
 
-/* Overlay pour améliorer la lisibilité sur l'arrière-plan */
+/* Overlay pour améliorer la lisibilité sur l'arrière-plan - plus léger */
 #background-container::after {
   content: '';
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%);
+  background: linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 100%);
   z-index: 0;
 }
 
@@ -212,11 +212,11 @@ button:disabled, .btn:disabled {
 
 .btn-ghost {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Elements de formulaire communs */
@@ -275,22 +275,22 @@ input::placeholder, textarea::placeholder {
 .p-3 { padding: var(--spacing-md); }
 .p-4 { padding: var(--spacing-lg); }
 
-/* Conteneurs avec glassmorphism */
+/* Conteneurs avec glassmorphism - Plus lumineux */
 .glass-container {
-  background: rgba(40, 40, 40, 0.7);
+  background: rgba(50, 50, 50, 0.6);
   backdrop-filter: blur(8px);
   border-radius: var(--border-radius-md);
   padding: var(--spacing-lg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: var(--shadow-lg);
 }
 
 .glass-container-light {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(8px);
   border-radius: var(--border-radius-md);
   padding: var(--spacing-lg);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: var(--shadow-lg);
 }
 
@@ -325,7 +325,7 @@ input::placeholder, textarea::placeholder {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 50px;
   font-size: var(--font-size-xs);
   font-weight: 600;
@@ -351,11 +351,93 @@ input::placeholder, textarea::placeholder {
   color: white;
 }
 
-/* Adaptation aux modes sombres/clairs du système */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Variables potentiellement ajustées pour le mode sombre */
-  }
+/* Onglets de navigation pour les types de réservation */
+.resource-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 15px;
+  border-radius: var(--border-radius-md);
+  background: rgba(40, 40, 40, 0.5);
+  padding: 5px;
+}
+
+.resource-tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0e0e0;
+}
+
+.resource-tab:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.resource-tab.active {
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
+  color: white;
+  font-weight: bold;
+}
+
+.resource-tab i {
+  color: inherit;
+}
+
+/* Barre d'action pour les boutons principaux */
+.action-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.action-btn.create-btn {
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
+  color: white;
+}
+
+.action-btn.create-btn:hover {
+  background: linear-gradient(to right, var(--primary-color-dark), var(--primary-color));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn.refresh-btn {
+  background: linear-gradient(to right, var(--success-color), var(--success-color-light));
+  color: white;
+}
+
+.action-btn.refresh-btn:hover {
+  background: linear-gradient(to right, var(--success-color-dark), var(--success-color));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn.fullscreen-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.action-btn.fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 /* Styles spécifiques pour l'impression */
