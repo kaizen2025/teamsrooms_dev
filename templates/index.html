@@ -425,59 +425,74 @@
   <!-- Zone des IDs récents (flottante) -->
   <div id="recent-ids"></div>
   
-  <!-- Modal de réservation -->
   <div class="booking-modal" id="bookingModal">
-    <!-- Contenu du modal de réservation existant -->
+  <div class="booking-modal-content">
+    <div class="booking-modal-header">
+      <h2><i class="fas fa-calendar-plus"></i> Créer une réunion Teams</h2>
+      <button class="modal-close" id="closeBookingModalBtn">&times;</button>
+    </div>
+    
+    <div class="booking-modal-body">
+      <form class="booking-form" id="bookingForm">
+        <div class="form-group">
+          <label for="booking-title">Titre de la réunion</label>
+          <input type="text" id="booking-title" placeholder="Entrez le titre de la réunion" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="booking-room">Salle</label>
+          <select id="booking-room" required>
+            <option value="">Sélectionner une salle</option>
+            <!-- Options ajoutées dynamiquement par JavaScript -->
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="booking-date">Date</label>
+          <input type="date" id="booking-date" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="booking-start">Heure de début</label>
+          <input type="time" id="booking-start" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Durée</label>
+          <div class="quick-duration-buttons">
+            <div class="duration-button" data-minutes="15">15 min</div>
+            <div class="duration-button active" data-minutes="30">30 min</div>
+            <div class="duration-button" data-minutes="60">1 heure</div>
+            <div class="duration-button" data-minutes="120">2 heures</div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="booking-end">Heure de fin</label>
+          <input type="time" id="booking-end" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="booking-participants">Participants (emails séparés par des virgules)</label>
+          <input type="text" id="booking-participants" placeholder="exemple@anecoop-france.com, ...">
+        </div>
+        
+        <div class="room-availability" id="room-availability">
+          <!-- Message de disponibilité rempli dynamiquement -->
+        </div>
+      </form>
+    </div>
+    
+    <div class="booking-modal-footer">
+      <button class="cancel-button" id="cancelBookingBtn">
+        <i class="fas fa-times"></i> Annuler
+      </button>
+      <button class="create-button" id="createTeamsMeetingBtn">
+        <i class="fas fa-check"></i> Créer la réunion
+      </button>
+    </div>
   </div>
-  
-  <!-- Modal pour ajouter/éditer un utilisateur -->
-  <div class="admin-modal" id="userModal">
-    <div class="admin-modal-content">
-      <div class="admin-modal-header">
-        <h3 id="userModalTitle">Nouvel utilisateur</h3>
-        <button class="admin-modal-close" id="closeUserModalBtn">&times;</button>
-      </div>
-      
-      <div class="admin-modal-body">
-        <form id="userForm">
-          <input type="hidden" id="user-id" value="">
-          
-          <div class="form-group">
-            <label for="user-username">Nom d'utilisateur</label>
-            <input type="text" id="user-username" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-displayname">Nom complet</label>
-            <input type="text" id="user-displayname" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-email">Email</label>
-            <input type="email" id="user-email" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-role">Rôle</label>
-            <select id="user-role" required>
-              <option value="administrator">Administrateur</option>
-              <option value="manager">Manager</option>
-              <option value="user">Utilisateur</option>
-              <option value="teams_room">Salle Teams</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-password">Mot de passe</label>
-            <input type="password" id="user-password" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-password-confirm">Confirmer le mot de passe</label>
-            <input type="password" id="user-password-confirm" required>
-          </div>
-        </form>
-      </div>
+</div>
       
       <div class="admin-modal-footer">
         <button class="admin-cancel-btn" id="cancelUserBtn">Annuler</button>
