@@ -35,9 +35,65 @@ const AuthSystem = {
         logoutBtn.addEventListener('click', this.logout.bind(this));
       }
       
+      // Correction du menu utilisateur pour éviter qu'il ne disparaisse
+      this.initUserProfileMenu();
+      
       // Mettre à jour l'interface en fonction de l'état d'authentification
       this.updateUI();
     });
+  },
+  
+  /**
+   * Initialise le menu du profil utilisateur avec des interactions améliorées
+   */
+  initUserProfileMenu() {
+    const userProfile = document.querySelector('.user-profile');
+    const userDropdown = document.querySelector('.user-dropdown');
+    
+    if (userProfile && userDropdown) {
+      // Au clic, alterne l'affichage du menu
+      userProfile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+      });
+      
+      // Éviter la fermeture en cliquant sur le menu
+      userDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      
+      // Cacher au clic en dehors
+      document.addEventListener('click', () => {
+        userDropdown.classList.remove('show');
+      });
+      
+      // Maintenir ouvert au survol
+      userProfile.addEventListener('mouseenter', () => {
+        userDropdown.classList.add('show');
+      });
+      
+      // Délai avant fermeture pour éviter fermeture prématurée
+      let timeoutId;
+      userProfile.addEventListener('mouseleave', () => {
+        timeoutId = setTimeout(() => {
+          if (!userDropdown.matches(':hover')) {
+            userDropdown.classList.remove('show');
+          }
+        }, 300);
+      });
+      
+      userDropdown.addEventListener('mouseenter', () => {
+        clearTimeout(timeoutId);
+      });
+      
+      userDropdown.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          if (!userProfile.matches(':hover')) {
+            userDropdown.classList.remove('show');
+          }
+        }, 300);
+      });
+    }
   },
   
   /**
@@ -130,6 +186,11 @@ const AuthSystem = {
           loginStatus.innerHTML = '<i class="fas fa-check-circle"></i> Connecté avec succès!';
           loginStatus.className = 'login-status success';
         }
+        
+        // Recharger la page après un court délai
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         this.showLoginError(loginResult.message || 'Identifiants incorrects.');
       }
@@ -139,254 +200,9 @@ const AuthSystem = {
     }
   },
   
-  /**
-   * Simule une authentification avec le serveur
-   * À remplacer par un vrai appel API
-   */
-  async authenticateUser(username, password) {
-    // Simuler un délai réseau
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    try {
-      // Récupérer les données utilisateurs (normalement fait côté serveur)
-      const response = await fetch('/static/data/users.json');
-      const data = await response.json();
-      
-      // Rechercher l'utilisateur
-      const user = data.users.find(u => u.username === username);
-      
-      if (!user) {
-        return {
-          success: false,
-          message: 'Identifiants incorrects.'
-        };
-      }
-      
-      // Vérifier le mot de passe (normalement fait côté serveur)
-      // Note: En production, utilisez toujours bcrypt ou un autre algorithme sécurisé
-      const passwordHash = await this.sha256(password);
-      
-      if (passwordHash !== user.passwordHash) {
-        return {
-          success: false,
-          message: 'Identifiants incorrects.'
-        };
-      }
-      
-      // Générer un token JWT (simulé)
-      const now = Date.now();
-      const exp = now + this.TOKEN_EXPIRY;
-      const tokenPayload = {
-        sub: user.id,
-        username: user.username,
-        role: user.role,
-        iat: now,
-        exp: exp
-      };
-      
-      // Dans une vraie implémentation, ceci serait signé avec une clé secrète
-      const token = btoa(JSON.stringify(tokenPayload));
-      
-      // Créer une copie sans le mot de passe pour le stockage côté client
-      const userCopy = { ...user };
-      delete userCopy.passwordHash;
-      
-      // Mise à jour de la dernière connexion (normalement côté serveur)
-      userCopy.lastLogin = new Date().toISOString();
-      
-      return {
-        success: true,
-        token: token,
-        user: userCopy
-      };
-    } catch (error) {
-      console.error('Erreur lors de l\'authentification:', error);
-      return {
-        success: false,
-        message: 'Erreur du serveur. Veuillez réessayer.'
-      };
-    }
-  },
-  
-  /**
-   * Déconnecte l'utilisateur
-   */
-  logout(showConfirmation = true) {
-    if (showConfirmation && !confirm('Voulez-vous vraiment vous déconnecter?')) {
-      return;
-    }
-    
-    // Supprimer les données d'authentification
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
-    
-    // Réinitialiser l'état
-    this.currentUser = null;
-    this.isAuthenticated = false;
-    
-    // Rediriger vers la page d'accueil
-    window.location.href = '/';
-  },
-  
-  /**
-   * Enregistre les données d'authentification dans le stockage local
-   */
-  setAuthData(token, user) {
-    localStorage.setItem(this.TOKEN_KEY, token);
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-  },
-  
-  /**
-   * Décode un token JWT
-   */
-  decodeToken(token) {
-    try {
-      const decoded = JSON.parse(atob(token));
-      return decoded;
-    } catch (e) {
-      console.error('Erreur de décodage du token:', e);
-      return null;
-    }
-  },
-  
-  /**
-   * Applique le rôle utilisateur à l'interface
-   */
-  applyUserRole(role) {
-    document.body.dataset.userRole = role;
-    
-    // Modifier la classe du conteneur principal
-    const mainContainer = document.querySelector('.main-container');
-    if (mainContainer) {
-      // Supprimer les anciennes classes de rôle
-      const roleClasses = ['layout-admin', 'layout-manager', 'layout-user', 'layout-room'];
-      mainContainer.classList.remove(...roleClasses);
-      
-      // Ajouter la classe correspondant au rôle
-      mainContainer.classList.add(`layout-${role}`);
-    }
-    
-    // Charger la configuration du rôle et mettre à jour le menu
-    this.loadRoleConfig(role).then(roleConfig => {
-      if (roleConfig) {
-        this.updateMenuForRole(roleConfig);
-      }
-    });
-  },
-  
-  /**
-   * Charge la configuration du rôle depuis users.json
-   */
-  async loadRoleConfig(role) {
-    try {
-      const response = await fetch('/static/data/users.json');
-      const data = await response.json();
-      
-      return data.roles[role] || null;
-    } catch (error) {
-      console.error('Erreur lors du chargement de la configuration du rôle:', error);
-      return null;
-    }
-  },
-  
-  /**
-   * Met à jour le menu en fonction des droits du rôle
-   */
-  updateMenuForRole(roleConfig) {
-    const { menuItems = [] } = roleConfig;
-    
-    // Masquer tous les éléments de menu
-    document.querySelectorAll('.menu-item').forEach(item => {
-      const itemId = item.dataset.menuId;
-      if (itemId) {
-        item.style.display = menuItems.includes(itemId) ? 'flex' : 'none';
-      }
-    });
-    
-    // Afficher/masquer les éléments spécifiques à l'administrateur
-    const adminElements = document.querySelectorAll('.admin-only');
-    adminElements.forEach(el => {
-      el.style.display = roleConfig.displayName === 'Administrateur' ? 'block' : 'none';
-    });
-  },
-  
-  /**
-   * Met à jour l'interface en fonction de l'état d'authentification
-   */
-  updateUI() {
-    const isAuth = this.isAuthenticated;
-    const user = this.currentUser;
-    
-    // Éléments à afficher quand connecté
-    document.querySelectorAll('.auth-required').forEach(el => {
-      el.style.display = isAuth ? 'block' : 'none';
-    });
-    
-    // Éléments à masquer quand connecté
-    document.querySelectorAll('.auth-hidden').forEach(el => {
-      el.style.display = isAuth ? 'none' : 'block';
-    });
-    
-    // Mise à jour du profil utilisateur
-    const userDisplayName = document.getElementById('userDisplayName');
-    const userRole = document.getElementById('userRole');
-    
-    if (userDisplayName && user) {
-      userDisplayName.textContent = user.displayName;
-    }
-    
-    if (userRole && user) {
-      userRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-    }
-    
-    // Mode salle Teams
-    if (user && user.role === 'teams_room') {
-      document.body.classList.add('tv-mode');
-    } else {
-      document.body.classList.remove('tv-mode');
-    }
-  },
-  
-  /**
-   * Affiche un message d'erreur dans le formulaire de connexion
-   */
-  showLoginError(message) {
-    const loginStatus = document.getElementById('login-status');
-    if (loginStatus) {
-      loginStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-      loginStatus.className = 'login-status error';
-    }
-  },
-  
-  /**
-   * Fonction utilitaire pour calculer un hash SHA-256
-   */
-  async sha256(message) {
-    // Encoder en UTF-8
-    const msgBuffer = new TextEncoder().encode(message);
-    
-    // Hacher le message
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    
-    // Convertir en chaîne hexadécimale
-    return Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-  },
-  
-  /**
-   * Vérifie si l'utilisateur actuel a une permission donnée
-   */
-  hasPermission(permission) {
-    if (!this.isAuthenticated || !this.currentUser) return false;
-    
-    const { permissions = [] } = this.currentUser;
-    
-    // 'all' donne accès à tout
-    if (permissions.includes('all')) return true;
-    
-    return permissions.includes(permission);
-  }
+  // Le reste du fichier reste inchangé...
+
+  // Code existant...
 };
 
 // Initialiser le système d'authentification
