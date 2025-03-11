@@ -11,21 +11,21 @@
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.7);
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(8px);
 }
 
 .auth-modal-content {
-  background-color: rgba(40, 40, 40, 0.95);
+  background-color: rgba(50, 50, 50, 0.92);
   color: white;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-xl);
   width: 90%;
   max-width: 420px;
   animation: modalFadeIn 0.4s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
 }
 
@@ -40,7 +40,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .auth-modal-header h3 {
@@ -54,7 +54,7 @@
 .auth-modal-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 1.5rem;
   cursor: pointer;
   transition: var(--transition-fast);
@@ -118,8 +118,8 @@
 .form-group input[type="email"] {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--border-radius-sm);
   color: white;
   font-size: 0.95rem;
@@ -129,7 +129,7 @@
 .form-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 0 2px rgba(98, 100, 167, 0.3);
 }
 
@@ -192,12 +192,13 @@
   display: flex;
 }
 
+/* Nouveau style du bouton de connexion (rectangulaire) */
 .login-button {
   width: 100%;
-  background: var(--primary-color);
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
   color: white;
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-sm); /* Rectangulaire avec coins légèrement arrondis */
   padding: var(--spacing-md);
   font-weight: bold;
   cursor: pointer;
@@ -207,12 +208,14 @@
   gap: var(--spacing-md);
   transition: var(--transition-fast);
   font-size: 1rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .login-button:hover {
-  background: var(--primary-color-light);
+  background: linear-gradient(to right, var(--primary-color-dark), var(--primary-color));
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(98, 100, 167, 0.5);
 }
 
 .login-button i {
@@ -243,17 +246,19 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  background: rgba(0, 0, 0, 0.4);
-  padding: 6px 12px;
-  border-radius: var(--border-radius-full);
+  background: linear-gradient(to right, rgba(50, 50, 50, 0.8), rgba(60, 60, 60, 0.8));
+  padding: 8px 14px;
+  border-radius: var(--border-radius-sm); /* Rectangulaire comme le bouton de connexion */
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .user-profile-button:hover {
-  background: rgba(0, 0, 0, 0.6);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(to right, rgba(60, 60, 60, 0.8), rgba(70, 70, 70, 0.8));
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .user-initials {
@@ -279,19 +284,21 @@
   text-transform: uppercase;
 }
 
+/* Correction du menu déroulant pour éviter qu'il disparaisse */
 .user-dropdown {
   position: absolute;
   right: 0;
   top: 100%;
   margin-top: var(--spacing-sm);
   width: 220px;
-  background: rgba(40, 40, 40, 0.95);
+  background: rgba(50, 50, 50, 0.95);
   border-radius: var(--border-radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   display: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   animation: dropdownFadeIn 0.2s ease-out;
+  z-index: var(--z-index-overlay);
 }
 
 @keyframes dropdownFadeIn {
@@ -299,14 +306,15 @@
   to {opacity: 1; transform: translateY(0);}
 }
 
-.user-profile:hover .user-dropdown {
+/* Correction pour le menu persistant */
+.user-dropdown.show {
   display: block;
 }
 
 .user-dropdown-header {
   padding: var(--spacing-md);
-  background: rgba(30, 30, 30, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(40, 40, 40, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   text-align: center;
 }
 
@@ -335,7 +343,7 @@
 }
 
 .user-dropdown-link:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
 }
 
@@ -384,36 +392,5 @@
   .login-button {
     padding: 14px;
     font-size: 1.3rem;
-  }
-}
-
-/* TV et écrans très larges */
-@media (min-width: 2401px) {
-  .auth-modal-content {
-    max-width: 600px;
-  }
-  
-  .auth-modal-header h3 {
-    font-size: 2rem;
-  }
-  
-  .auth-logo h4 {
-    font-size: 1.5rem;
-  }
-  
-  .form-group label {
-    font-size: 1.4rem;
-  }
-  
-  .form-group input[type="text"],
-  .form-group input[type="password"],
-  .form-group input[type="email"] {
-    padding: 16px 20px;
-    font-size: 1.4rem;
-  }
-  
-  .login-button {
-    padding: 18px;
-    font-size: 1.5rem;
   }
 }
