@@ -2,41 +2,32 @@
    Panneau des réunions
    ============================= */
 
-/* Conteneur principal - Optimisé pour utiliser tout l'espace vertical disponible */
+/* Conteneur principal */
 .meetings-container {
   grid-area: meetings;
-  overflow: visible; /* Changé pour permettre le débordement du champ de jointure */
-  width: 98%;
+  overflow: hidden;
+  width: 100%;
   height: 100%;
   padding: 0;
-  margin: 0 auto;
-  justify-self: center;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  max-height: 100vh;
   position: relative;
-  top: -70px; /* Augmenté pour remonter davantage */
-  margin-bottom: -30px;
 }
 
-/* Ajustement quand le menu est ouvert pour éviter le chevauchement */
-.main-container.menu-expanded .meetings-container {
-  margin-right: 30px; /* Espace supplémentaire à droite */
-}
-
-/* En-tête amélioré avec le bouton centré */
+/* En-tête avec dégradé */
 .meetings-title-bar {
-  background: rgba(30, 30, 30, 0.6); /* Plus opaque */
+  background: linear-gradient(to right, rgba(30, 30, 30, 0.8), rgba(50, 50, 50, 0.8));
   backdrop-filter: blur(8px);
   border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-bottom: none;
-  padding: 6px 16px; /* Réduit encore plus */
-  margin-bottom: 0;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px; /* Réduit au minimum */
+  gap: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .meetings-title-bar h2 {
@@ -46,12 +37,13 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Bouton de création de réunion centré et optimisé */
+/* Bouton de création de réunion */
 .create-meeting-integrated {
-  margin: 8px auto; /* Réduit la marge pour optimiser l'espace */
-  background-color: var(--primary-color);
+  margin: 0 auto;
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
   color: white;
   border: none;
   border-radius: var(--border-radius-sm);
@@ -67,44 +59,36 @@
 }
 
 .create-meeting-integrated:hover {
-  background-color: var(--primary-color-light);
-  transform: scale(1.05);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(98, 100, 167, 0.5);
 }
 
+.create-meeting-integrated:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(98, 100, 167, 0.3);
+}
+
+/* Conteneur principal des réunions */
 .meetings {
-  width: 100%;
-  background: rgba(30, 30, 30, 0.4);
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(30, 30, 30, 0.65);
   backdrop-filter: blur(8px);
   border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top: none;
   box-shadow: var(--shadow-lg);
-  padding: 12px 16px 8px; /* Réduit le padding en bas et sur les côtés */
-  color: white;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  min-height: 450px; /* Hauteur minimale pour montrer plus de contenu */
 }
 
-/* Liste des réunions - Optimisée pour utiliser tout l'espace vertical */
+/* Liste des réunions */
 .meetings-list {
   flex: 1;
   overflow-y: auto;
-  padding-right: var(--spacing-sm);
-  max-height: unset; /* Supprime la limitation de hauteur fixe */
-  min-height: 350px; /* Hauteur minimale suffisante */
-  padding-bottom: var(--spacing-sm); /* Petit espace en bas pour éviter que le contenu soit trop serré */
-}
-
-/* Assure que le champ de jointure est visible */
-#meetingsContainer:after {
-  content: '';
-  display: block;
-  height: 20px;
-  width: 100%;
+  padding: var(--spacing-md);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .meetings-list::-webkit-scrollbar {
@@ -117,42 +101,32 @@
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
+.meetings-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
 
 /* Animation améliorée pour le chargement */
 .loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  color: var(--light-color);
   animation: pulse 1.5s infinite alternate;
+  margin: auto;
+  height: 200px;
+}
+
+.loading-indicator i {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--primary-color);
 }
 
 @keyframes pulse {
-  0% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
-
-/* Bouton de création */
-.create-meeting-button {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 0.95rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  transition: var(--transition-fast);
-  box-shadow: var(--shadow-sm);
-}
-
-.create-meeting-button:hover {
-  background-color: var(--primary-color-light);
-  transform: scale(1.05);
-  box-shadow: var(--shadow-md);
-}
-
-.create-meeting-button i {
-  font-size: 1rem;
+  0% { opacity: 0.7; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* Message vide */
@@ -162,12 +136,21 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  margin: var(--spacing-lg) 0; /* Réduit pour optimiser l'espace */
+  margin: var(--spacing-lg) 0;
+  height: 200px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-meetings-message i {
+  font-size: 3rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: var(--spacing-sm);
 }
 
 .empty-meetings-message p {
   font-size: 1.1rem;
   color: #ccc;
+  text-align: center;
 }
 
 /* Section de status */
@@ -175,12 +158,18 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin: var(--spacing-xs) 0 var(--spacing-sm) 0; /* Réduit pour optimiser l'espace */
+  margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--spacing-xs);
 }
 
-/* Suppression de l'affichage du texte redondant "Aujourd'hui" */
-.status-section h4:first-child {
-  display: none;
+.status-section h4 {
+  font-size: 1.1rem;
+  color: #ddd;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .status-current {
@@ -189,10 +178,11 @@
   border-radius: var(--border-radius-md);
   font-size: 1.1rem;
   font-weight: bold;
-  background-color: var(--success-color);
+  background: linear-gradient(to right, var(--success-color), #43a047);
   color: white;
   animation: blink 1.5s infinite alternate;
   margin: 0;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
 }
 
 @keyframes blink {
@@ -201,28 +191,41 @@
   100% { opacity: 1; }
 }
 
-/* ===== Items de réunions - Avec dégradé subtil pour les réunions en cours ===== */
+/* Items de réunions avec dégradés */
 .meeting-item {
-  background-color: rgba(40, 40, 40, 0.85);
+  background: linear-gradient(to right, rgba(40, 40, 40, 0.85), rgba(50, 50, 50, 0.85));
   border-radius: var(--border-radius-md);
-  margin: 0 0 6px 0; /* Réduit l'espace entre les éléments */
-  padding: 8px 16px; /* Réduit le padding vertical */
-  transition: transform 0.3s, box-shadow 0.3s;
+  margin: 0 0 12px 0;
+  padding: 14px 16px;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: var(--shadow-sm);
-  min-height: 90px; /* Réduit légèrement pour montrer plus d'éléments */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
 }
 
 .meeting-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Dégradé subtil pour les réunions en cours */
-.meeting-item:not(.past) {
-  background: linear-gradient(to right, rgba(40, 40, 40, 0.85), rgba(40, 40, 45, 0.95));
+/* Effet de bordure colorée selon le statut */
+.meeting-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--primary-color);
+  border-radius: 2px 0 0 2px;
+}
+
+.meeting-item.past::before {
+  background-color: #777;
 }
 
 .meeting-item h3 {
@@ -234,44 +237,51 @@
 
 .meeting-item p {
   font-size: 0.95rem;
-  margin: 4px 0; /* Réduit la marge */
+  margin: 4px 0;
   color: #ddd;
 }
 
 .meeting-item.past {
   opacity: 0.75;
-  color: #bbb;
-  background-color: rgba(30, 30, 30, 0.6);
+  background: linear-gradient(to right, rgba(30, 30, 30, 0.6), rgba(40, 40, 40, 0.6));
 }
 
 /* Badge "En cours" */
 .meeting-status-badge {
   display: inline-block;
-  padding: 3px 12px; /* Réduit le padding vertical */
+  padding: 4px 12px;
   border-radius: 20px;
-  background-color: var(--success-color);
+  background: linear-gradient(to right, var(--success-color), #43a047);
   color: white;
   font-weight: bold;
   font-size: 0.85rem;
-  margin-bottom: var(--spacing-xs); /* Réduit la marge */
+  margin-bottom: var(--spacing-xs);
   align-self: flex-start;
+  box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
 }
 
 /* Info salle */
 .meeting-salle {
   font-weight: bold;
-  margin: 3px 0; /* Réduit la marge */
+  margin: 6px 0;
   color: #ddd;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meeting-salle i {
+  color: var(--primary-color-light);
 }
 
 /* Bouton rejoindre */
 .meeting-item button {
   align-self: flex-end;
-  background-color: var(--primary-color);
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
   border: none;
   border-radius: var(--border-radius-sm);
   color: white;
-  padding: var(--spacing-xs) var(--spacing-md); /* Réduit le padding vertical */
+  padding: var(--spacing-xs) var(--spacing-md);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: bold;
@@ -279,31 +289,37 @@
   align-items: center;
   gap: 6px;
   transition: var(--transition-fast);
-  margin-top: var(--spacing-xs); /* Réduit la marge */
-  box-shadow: var(--shadow-sm);
+  margin-top: var(--spacing-xs);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .meeting-item button:hover {
-  background-color: var(--primary-color-light);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(98, 100, 167, 0.4);
+}
+
+.meeting-item button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(98, 100, 167, 0.3);
 }
 
 /* Barre de progression */
 .meeting-progress-container {
   width: 100%;
-  height: 6px; /* Réduit légèrement la hauteur */
+  height: 6px;
   background-color: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  margin: var(--spacing-xs) 0; /* Réduit la marge */
+  border-radius: 3px;
+  margin: var(--spacing-xs) 0;
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .meeting-progress-bar {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 1s linear;
-  background-color: #e05667;
+  background: linear-gradient(to right, #e05667, #ff7e81);
+  box-shadow: 0 1px 3px rgba(224, 86, 103, 0.5);
 }
 
 /* Informations de progression */
@@ -311,7 +327,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 4px 0; /* Réduit la marge */
+  margin: 4px 0;
   font-size: 0.9rem;
 }
 
@@ -321,7 +337,7 @@
   width: 100%;
   font-size: 0.85rem;
   color: #ddd;
-  margin-top: 4px; /* Réduit la marge */
+  margin-top: 4px;
 }
 
 .time-remaining {
@@ -332,53 +348,52 @@
   gap: 5px;
 }
 
-/* Conteneur pour la zone de jointure de réunion - Style amélioré */
+.time-remaining i {
+  color: #ff7e81;
+}
+
+/* Conteneur pour la zone de jointure de réunion */
 .join-meeting-container {
-  margin-top: 10px;
-  margin-bottom: 30px; /* Espace suffisant en bas */
-  border-radius: var(--border-radius-md);
-  overflow: visible;
-  width: 98%;
-  display: block !important; /* Force l'affichage */
-  position: relative !important; 
-  bottom: -5px !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 100 !important; /* Priorité d'affichage très élevée */
-  visibility: visible !important; /* Force la visibilité */
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
+  margin-top: auto;
 }
 
 .meeting-join-integrated {
   display: flex;
   align-items: center;
-  background: rgba(40, 40, 40, 0.8); /* Plus contrasté */
+  background: linear-gradient(to right, rgba(35, 35, 35, 0.9), rgba(45, 45, 45, 0.9));
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
   width: 100%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(98, 100, 167, 0.7);
-  transition: box-shadow 0.3s ease;
+  border: 1px solid rgba(98, 100, 167, 0.5);
+  transition: all 0.3s ease;
 }
 
 .meeting-join-integrated:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  border-color: rgba(98, 100, 167, 0.7);
 }
 
 .meeting-join-integrated input {
   flex: 1;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--border-radius-sm);
   font-size: 0.95rem;
-  background: rgba(255, 255, 255, 0.95); /* Plus opaque pour une meilleure visibilité */
+  background: rgba(255, 255, 255, 0.95);
   outline: none;
   color: var(--dark-color);
+  transition: all 0.2s ease;
+}
+
+.meeting-join-integrated input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(98, 100, 167, 0.25);
 }
 
 .meeting-join-integrated button {
-  background-color: var(--success-color);
+  background: linear-gradient(to right, var(--success-color), #43a047);
   border: none;
   border-radius: var(--border-radius-sm);
   color: white;
@@ -392,11 +407,18 @@
   gap: 5px;
   white-space: nowrap;
   transition: var(--transition-fast);
+  box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
 }
 
 .meeting-join-integrated button:hover {
-  background-color: #218838;
-  transform: scale(1.05);
+  background: linear-gradient(to right, #218838, #28a745);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
+}
+
+.meeting-join-integrated button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
 }
 
 /* Masquer les éléments dupliqués */
@@ -408,13 +430,107 @@
 }
 
 /* Adaptations pour les écrans plus petits */
-@media (max-height: 800px) {
+@media (max-width: 992px) {
+  .meetings-title-bar h2 {
+    font-size: 1.3rem;
+  }
+  
+  .meeting-item h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) {
   .meetings-container {
-    top: -70px; /* Optimisation supplémentaire pour les petits écrans */
+    margin-top: var(--spacing-md);
+  }
+  
+  .meetings-title-bar {
+    border-radius: var(--border-radius-md);
+  }
+  
+  .meetings {
+    border-radius: var(--border-radius-md);
+    margin-top: var(--spacing-sm);
+  }
+  
+  .join-meeting-container {
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 576px) {
+  .meetings-title-bar {
+    padding: 10px;
+  }
+  
+  .meetings-title-bar h2 {
+    font-size: 1.2rem;
+  }
+  
+  .create-meeting-integrated {
+    font-size: 0.9rem;
+    padding: 6px 12px;
   }
   
   .meeting-item {
-    min-height: 85px;
-    padding: 6px 16px;
+    padding: 10px 12px;
+  }
+  
+  .meeting-item h3 {
+    font-size: 1rem;
+  }
+  
+  .meeting-item p {
+    font-size: 0.85rem;
+  }
+  
+  .meeting-join-integrated {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .meeting-join-integrated input {
+    width: 100%;
+  }
+  
+  .meeting-join-integrated button {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+}
+
+/* Grands écrans */
+@media (min-width: 1601px) {
+  .meetings-title-bar h2 {
+    font-size: 1.8rem;
+  }
+  
+  .create-meeting-integrated {
+    font-size: 1.1rem;
+    padding: 10px 24px;
+  }
+  
+  .meeting-item {
+    padding: 18px 20px;
+  }
+  
+  .meeting-item h3 {
+    font-size: 1.4rem;
+  }
+  
+  .meeting-item p {
+    font-size: 1.1rem;
+  }
+  
+  .meeting-progress-container {
+    height: 8px;
+  }
+  
+  .meeting-join-integrated input,
+  .meeting-join-integrated button {
+    font-size: 1.1rem;
+    padding: 10px 16px;
   }
 }
