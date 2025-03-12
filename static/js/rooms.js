@@ -1,6 +1,6 @@
 /**
  * Gestion des salles de réunion
- * Affiche et met à jour le statut des salles
+ * Version corrigée pour garantir l'affichage des salles
  */
 
 // Système de gestion des salles
@@ -97,6 +97,19 @@ const RoomsSystem = {
       console.log(`${Object.keys(this.rooms).length} salles chargées depuis la configuration`);
     } else {
       console.warn("Configuration des salles introuvable (window.SALLES)");
+      
+      // Configuration par défaut au cas où
+      this.rooms = {
+        'canigou': { name: 'Canigou', email: 'Sallecanigou@anecoop-france.com', status: 'available' },
+        'castillet': { name: 'Castillet', email: 'Sallecastillet@anecoop-france.com', status: 'available' },
+        'florensud': { name: 'Florensud', email: 'salleflorensud@florensud.fr', status: 'available' },
+        'mallorca': { name: 'Mallorca', email: 'Sallemallorca@anecoop-france.com', status: 'available' },
+        'mimosa': { name: 'Mimosa', email: 'Sallemimosa@florensud.fr', status: 'available' },
+        'pivoine': { name: 'Pivoine', email: 'SallePivoine@florensud.fr', status: 'available' },
+        'renoncule': { name: 'Renoncule', email: 'SalleRenoncule@florensud.fr', status: 'available' },
+        'tramontane': { name: 'Tramontane', email: 'Salletramontane@anecoop-france.com', status: 'available' },
+        'massane': { name: 'Massane', email: 'Sallemassane@anecoop-france.com', status: 'available' }
+      };
     }
   },
   
@@ -104,10 +117,20 @@ const RoomsSystem = {
    * Initialise les événements pour les salles
    */
   initEvents() {
+    // Supprimer tous les écouteurs d'événements existants
+    document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, .rooms-toggle-button-floating').forEach(btn => {
+      const newBtn = btn.cloneNode(true);
+      if (btn.parentNode) {
+        btn.parentNode.replaceChild(newBtn, btn);
+      }
+    });
+    
     // Bouton dans le menu latéral
     const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
     if (sideMenuButton) {
-      sideMenuButton.addEventListener('click', () => {
+      sideMenuButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         this.toggleRoomsVisibility();
       });
     }
@@ -115,7 +138,9 @@ const RoomsSystem = {
     // Bouton flottant
     const floatingButton = document.querySelector('.rooms-toggle-button-floating');
     if (floatingButton) {
-      floatingButton.addEventListener('click', () => {
+      floatingButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         this.toggleRoomsVisibility();
       });
     }
@@ -123,7 +148,19 @@ const RoomsSystem = {
     // Bouton dans la barre de contrôle
     const controlButton = document.getElementById('toggleRoomsBtn');
     if (controlButton) {
-      controlButton.addEventListener('click', () => {
+      controlButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleRoomsVisibility();
+      });
+    }
+    
+    // Bouton dans la barre en bas (compatibilité)
+    const bottomButton = document.querySelector('.afficher-salles');
+    if (bottomButton) {
+      bottomButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         this.toggleRoomsVisibility();
       });
     }
@@ -132,16 +169,14 @@ const RoomsSystem = {
     document.addEventListener('click', (e) => {
       if (this.isRoomsVisible) {
         const roomsSection = document.querySelector('.rooms-section');
-        const roomsButton = document.querySelector('.rooms-toggle-button-floating');
-        const controlButton = document.getElementById('toggleRoomsBtn');
-        const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
+        const isClickInside = 
+          (roomsSection && roomsSection.contains(e.target)) ||
+          e.target.closest('.rooms-toggle-button-floating') ||
+          e.target.closest('#toggleRoomsBtn') ||
+          e.target.closest('.toggle-rooms-button') ||
+          e.target.closest('.afficher-salles');
         
-        // Vérifier si le clic est en dehors des éléments de salles
-        if (roomsSection && 
-            !roomsSection.contains(e.target) && 
-            !(roomsButton && roomsButton.contains(e.target)) && 
-            !(controlButton && controlButton.contains(e.target)) && 
-            !(sideMenuButton && sideMenuButton.contains(e.target))) {
+        if (!isClickInside) {
           this.hideRooms();
         }
       }
@@ -164,6 +199,8 @@ const RoomsSystem = {
    * Bascule la visibilité des salles
    */
   toggleRoomsVisibility() {
+    console.log("Tentative de basculement de l'affichage des salles - État actuel:", this.isRoomsVisible);
+    
     if (this.isRoomsVisible) {
       this.hideRooms();
     } else {
@@ -177,16 +214,25 @@ const RoomsSystem = {
   showRooms() {
     console.log("Affichage des salles");
     
+    // S'assurer que la section existe
+    this.createRoomsSection();
+    
     const roomsSection = document.querySelector('.rooms-section');
     if (roomsSection) {
+      // Force la création du contenu avant d'afficher
+      this.updateRoomStatus();
+      
+      // Forcer le style d'affichage
+      roomsSection.style.display = 'block';
       roomsSection.classList.add('visible');
       this.isRoomsVisible = true;
       
       // Mettre à jour les textes des boutons
       this.updateButtonsText();
       
-      // Mettre à jour les statuts
-      this.updateRoomStatus();
+      console.log("Section des salles maintenant visible");
+    } else {
+      console.error("Impossible de trouver la section des salles");
     }
   },
   
@@ -199,10 +245,13 @@ const RoomsSystem = {
     const roomsSection = document.querySelector('.rooms-section');
     if (roomsSection) {
       roomsSection.classList.remove('visible');
+      roomsSection.style.display = 'none';
       this.isRoomsVisible = false;
       
       // Mettre à jour les textes des boutons
       this.updateButtonsText();
+      
+      console.log("Section des salles maintenant masquée");
     }
   },
   
@@ -213,6 +262,7 @@ const RoomsSystem = {
     const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
     const floatingButton = document.querySelector('.rooms-toggle-button-floating');
     const controlButton = document.getElementById('toggleRoomsBtn');
+    const bottomButton = document.querySelector('.afficher-salles');
     
     const showText = '<i class="fas fa-door-open"></i> <span>Afficher les salles</span>';
     const hideText = '<i class="fas fa-times"></i> <span>Masquer les salles</span>';
@@ -230,21 +280,29 @@ const RoomsSystem = {
         ? '<i class="fas fa-times"></i> Masquer les salles' 
         : '<i class="fas fa-door-open"></i> Afficher les salles';
     }
+    
+    if (bottomButton) {
+      bottomButton.innerHTML = this.isRoomsVisible 
+        ? '<i class="fas fa-times"></i> Masquer les salles' 
+        : '<i class="fas fa-door-open"></i> Afficher les salles';
+    }
   },
   
   /**
    * Met à jour le statut des salles en fonction des réunions
    */
   updateRoomStatus() {
-    // Ne pas mettre à jour si les salles ne sont pas affichées (économie de ressources)
-    if (!this.isRoomsVisible && this.isInitialized) {
-      return;
-    }
-    
     console.log("Mise à jour du statut des salles");
     
     // Récupérer les réunions courantes
-    const meetings = JSON.parse(previousMeetings || '[]');
+    let meetings = [];
+    try {
+      meetings = JSON.parse(previousMeetings || '[]');
+    } catch (e) {
+      console.error("Erreur lors de la récupération des réunions:", e);
+      meetings = [];
+    }
+    
     const now = new Date();
     
     // Réinitialiser les données des salles
@@ -297,7 +355,10 @@ const RoomsSystem = {
    */
   updateRoomsDisplay() {
     const roomsContainer = document.querySelector('.rooms');
-    if (!roomsContainer) return;
+    if (!roomsContainer) {
+      console.error("Conteneur de salles introuvable");
+      return;
+    }
     
     // Vider le conteneur
     roomsContainer.innerHTML = '';
@@ -340,6 +401,34 @@ const RoomsSystem = {
       // Ajouter au conteneur
       roomsContainer.appendChild(card);
     }
+    
+    console.log(`Affichage mis à jour avec ${Object.keys(this.rooms).length} salles`);
+  },
+  
+  /**
+   * Force l'affichage des salles et met à jour l'état
+   * (méthode de secours)
+   */
+  forceShowRooms() {
+    // Créer les éléments s'ils n'existent pas
+    this.createRoomsSection();
+    
+    // Charger les salles
+    this.loadRooms();
+    
+    // Mettre à jour les statuts
+    this.updateRoomStatus();
+    
+    // Forcer l'affichage
+    const roomsSection = document.querySelector('.rooms-section');
+    if (roomsSection) {
+      roomsSection.style.display = 'block';
+      roomsSection.classList.add('visible');
+      this.isRoomsVisible = true;
+      
+      // Mettre à jour les textes des boutons
+      this.updateButtonsText();
+    }
   }
 };
 
@@ -347,6 +436,13 @@ const RoomsSystem = {
 document.addEventListener('DOMContentLoaded', () => {
   console.log("Chargement du système de salles");
   RoomsSystem.init();
+  
+  // Ajouter une méthode de secours pour les boutons qui utilisent l'ancien système
+  window.afficherSalles = function() {
+    console.log("Méthode de compatibilité afficherSalles() appelée");
+    RoomsSystem.forceShowRooms();
+    return false; // Empêcher la navigation
+  };
 });
 
 // Exporter pour utilisation dans d'autres modules
