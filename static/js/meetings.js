@@ -3,22 +3,32 @@
  * Version améliorée avec meilleure gestion des erreurs et états de chargement
  */
 
-// Variable pour suivre les modifications des réunions
+// Variables globales pour le système de réunions
 let previousMeetings = JSON.stringify([]);
 let isLoadingMeetings = false;
+let lastVisibleUpdate = 0;
+const MIN_VISIBLE_UPDATE_INTERVAL = 30000; // 30 secondes minimum entre les mises à jour visibles
 
 /**
  * Récupère les réunions depuis l'API
+ * @param {boolean} forceVisibleUpdate - Force une mise à jour visible même si l'intervalle minimum n'est pas atteint
  */
-async function fetchMeetings() {
+async function fetchMeetings(forceVisibleUpdate = false) {
   // Éviter les requêtes multiples simultanées
   if (isLoadingMeetings) return;
   isLoadingMeetings = true;
 
   try {
-    // Afficher l'indicateur de chargement
+    // Requête silencieuse - ne pas afficher de chargement sauf si c'est le premier chargement
+    // ou si un rafraîchissement manuel a été demandé
     const container = document.getElementById('meetingsContainer');
-    if (container) {
+    const now = Date.now();
+    const isFirstLoad = !container.querySelector('.meeting-item');
+    const shouldShowLoading = isFirstLoad || 
+                             forceVisibleUpdate || 
+                             (now - lastVisibleUpdate > MIN_VISIBLE_UPDATE_INTERVAL);
+    
+    if (shouldShowLoading && container) {
       container.innerHTML = `
         <div class="loading-indicator">
           <i class="fas fa-circle-notch fa-spin"></i>
@@ -32,10 +42,9 @@ async function fetchMeetings() {
       ? window.API_URLS.GET_MEETINGS 
       : '/meetings.json';
     
-    // Ajouter un timestamp pour éviter le cache
+    // Effectuer la requête
     const response = await fetch(`${apiUrl}?t=${Date.now()}`);
     
-    // Vérifier si la réponse est OK
     if (!response.ok) {
       throw new Error(`Erreur HTTP: ${response.status}`);
     }
@@ -43,11 +52,10 @@ async function fetchMeetings() {
     // Traiter la réponse
     let meetings = await response.json();
 
-    // Déterminer le contexte actuel (salle spécifique ou toutes les salles)
+    // Filtrer selon le contexte actuel
     const salleName = window.resourceName || window.salleName;
     const isAllRooms = !salleName || salleName === 'toutes les salles';
 
-    // Filtrer par salle si ce n'est pas "toutes les salles"
     if (!isAllRooms && salleName) {
       meetings = meetings.filter(m => {
         const meetingSalle = (m.salle || '').toLowerCase();
@@ -62,27 +70,42 @@ async function fetchMeetings() {
       return meetingDate === today;
     });
 
-    // Trier les réunions par heure de début
+    // Trier les réunions
     meetings.sort((a, b) => new Date(a.start) - new Date(b.start));
 
-    // Vérifier si les données ont changé pour éviter des rafraîchissements inutiles
+    // Vérifier si les données ont changé
     const currentMeetingsString = JSON.stringify(meetings);
+    
     if (previousMeetings === currentMeetingsString) {
-      isLoadingMeetings = false;
-      return;
+      // Si les données n'ont pas changé et qu'il ne s'agit pas d'un chargement initial,
+      // ne pas mettre à jour l'affichage
+      if (!isFirstLoad && !forceVisibleUpdate) {
+        isLoadingMeetings = false;
+        return;
+      }
     }
+    
+    // Mettre à jour les données et l'affichage uniquement si nécessaire
     previousMeetings = currentMeetingsString;
 
-    // Mettre à jour l'affichage
-    updateMeetingsDisplay(meetings);
-    
-    console.log(`Réunions chargées avec succès (${meetings.length} réunions)`);
+    if (shouldShowLoading || isFirstLoad || forceVisibleUpdate) {
+      updateMeetingsDisplay(meetings);
+      lastVisibleUpdate = now;
+    } else {
+      // Mise à jour silencieuse - uniquement mettre à jour les timers/progress bars
+      updateMeetingTimers();
+    }
     
   } catch (error) {
-    console.error("❌ Erreur lors du chargement des réunions :", error);
+    console.error("Erreur lors du chargement des réunions:", error);
     
+    // N'afficher l'erreur que si c'est un rafraîchissement forcé ou le premier chargement
     const container = document.getElementById('meetingsContainer');
-    if (container) {
+    if (!container) return;
+    
+    const isFirstLoad = !container.querySelector('.meeting-item');
+    
+    if ((isFirstLoad || forceVisibleUpdate) && container) {
       container.innerHTML = `
         <div class="empty-meetings-message">
           <i class="fas fa-exclamation-triangle"></i>
@@ -96,7 +119,7 @@ async function fetchMeetings() {
       // Ajouter un bouton pour réessayer
       const retryBtn = document.getElementById('retryBtn');
       if (retryBtn) {
-        retryBtn.addEventListener('click', () => fetchMeetings());
+        retryBtn.addEventListener('click', () => fetchMeetings(true));
       }
     }
   } finally {
@@ -110,314 +133,267 @@ async function fetchMeetings() {
 function updateMeetingsDisplay(meetings) {
   const container = document.getElementById('meetingsContainer');
   if (!container) return;
-  
+
+  // Vider le conteneur
   container.innerHTML = '';
-  const now = new Date();
 
-  // Tri des réunions par statut
-  const pastMeetings = [];
-  const currentMeetings = [];
-  const upcomingMeetings = [];
-
-  meetings.forEach(m => {
-    const start = new Date(m.start);
-    const end = new Date(m.end);
-    
-    if (end < now) {
-      pastMeetings.push(m);
-    } else if (start <= now && now < end) {
-      currentMeetings.push(m);
-    } else {
-      upcomingMeetings.push(m);
-    }
-  });
-
-  // Affichage selon qu'il y a des réunions ou non
-  if (currentMeetings.length === 0 && upcomingMeetings.length === 0 && pastMeetings.length === 0) {
-    // Aucune réunion
+  // Pas de réunions aujourd'hui
+  if (meetings.length === 0) {
     container.innerHTML = `
       <div class="empty-meetings-message">
-        <i class="far fa-calendar-times"></i>
+        <i class="fas fa-calendar-day"></i>
         <p>Aucune réunion prévue aujourd'hui.</p>
-        <button id="createEmptyBtn" class="create-meeting-integrated">
-          <i class="fas fa-plus"></i> Créer une réunion
-        </button>
       </div>
     `;
-    
-    // Attacher l'événement au bouton de création
-    const createBtn = document.getElementById('createEmptyBtn');
-    if (createBtn && window.BookingSystem) {
-      createBtn.addEventListener('click', () => window.BookingSystem.openModal());
-    }
-  } else {
-    // Il y a des réunions
-    let html = '';
-    
-    // En cours
-    if (currentMeetings.length > 0) {
-      html += `
-        <div class="status-section">
-          <h4 class="status-current"><i class="fas fa-circle"></i> En cours</h4>
-        </div>
-      `;
-      
-      currentMeetings.forEach(m => {
-        html += createMeetingItem(m, 'En cours');
-      });
-    }
-    
-    // À venir
-    if (upcomingMeetings.length > 0) {
-      html += `
-        <div class="status-section">
-          <h4><i class="fas fa-clock"></i> À venir</h4>
-        </div>
-      `;
-      
-      upcomingMeetings.forEach(m => {
-        html += createMeetingItem(m, 'À venir');
-      });
-    }
-    
-    // Terminées
-    if (pastMeetings.length > 0) {
-      html += `
-        <div class="status-section">
-          <h4><i class="far fa-check-circle"></i> Terminées</h4>
-        </div>
-      `;
-      
-      pastMeetings.forEach(m => {
-        html += createMeetingItem(m, 'Terminée');
-      });
-    }
-    
-    container.innerHTML = html;
-    
-    // Attacher les événements aux boutons
-    attachMeetingEventHandlers();
+    return;
   }
-  
-  // Mettre à jour les chronomètres après création des éléments
-  updateMeetingTimers();
-}
 
-/**
- * Attache les gestionnaires d'événements aux éléments de réunion
- */
-function attachMeetingEventHandlers() {
-  // Boutons "Rejoindre"
-  document.querySelectorAll('.meeting-item button').forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const joinUrl = button.getAttribute('data-url');
-      if (joinUrl) {
-        window.open(joinUrl, '_blank');
-      }
-    });
-  });
-  
-  // Clic sur une réunion pour afficher les détails
-  document.querySelectorAll('.meeting-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const meetingId = item.getAttribute('data-id');
-      if (meetingId && window.showMeetingDetails) {
-        window.showMeetingDetails(meetingId);
-      }
-    });
-  });
-}
-
-/**
- * Crée le HTML pour un élément de réunion
- */
-function createMeetingItem(meeting, category) {
-  const start = new Date(meeting.start);
-  const end = new Date(meeting.end);
+  // Date actuelle pour comparer et déterminer les statuts
   const now = new Date();
-  const startTime = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  const endTime = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-  // ID unique pour la réunion
-  const meetingId = meeting.id || `meeting_${start.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
+  // Séparer les réunions en cours, futures et passées
+  const currentMeetings = [];
+  const upcomingMeetings = [];
+  const pastMeetings = [];
 
-  // Badge de statut
-  let statusBadge = '';
-  if (category === 'En cours') {
-    statusBadge = `<div class="meeting-status-badge">En cours</div>`;
+  // Classer les réunions selon leur statut
+  meetings.forEach(meeting => {
+    const startTime = new Date(meeting.start);
+    const endTime = new Date(meeting.end);
+
+    if (startTime <= now && endTime > now) {
+      currentMeetings.push({ ...meeting, status: 'current' });
+    } else if (startTime > now) {
+      upcomingMeetings.push({ ...meeting, status: 'upcoming' });
+    } else {
+      pastMeetings.push({ ...meeting, status: 'past' });
+    }
+  });
+
+  // Réunions en cours
+  if (currentMeetings.length > 0) {
+    container.innerHTML += `
+      <div class="status-section">
+        <h4><i class="fas fa-play-circle"></i> En cours</h4>
+      </div>
+    `;
+
+    currentMeetings.forEach(meeting => {
+      container.innerHTML += createMeetingHTML(meeting);
+    });
   }
 
-  // Information sur le temps restant
-  let progressBar = '';
-  
-  if (category === 'En cours') {
-    // Calcul du temps total et du temps écoulé
-    const totalDuration = end.getTime() - start.getTime();
-    const elapsedTime = now.getTime() - start.getTime();
-    const progressPercent = Math.min(100, Math.max(0, (elapsedTime / totalDuration) * 100)).toFixed(1);
-    
-    // Temps restant en minutes
-    const remainingMinutes = Math.floor((end.getTime() - now.getTime()) / 60000);
-    const remainingText = formatRemainingTime(remainingMinutes);
-    
-    // Création de la barre de progression
-    progressBar = `
-      <div class="meeting-progress-container">
-        <div class="meeting-progress-bar" style="width: ${progressPercent}%"></div>
+  // Réunions à venir
+  if (upcomingMeetings.length > 0) {
+    container.innerHTML += `
+      <div class="status-section">
+        <h4><i class="fas fa-clock"></i> À venir</h4>
       </div>
-      <div class="meeting-progress-info">
-        <span>${progressPercent}% écoulé</span>
-        <div class="time-remaining">
-          <i class="far fa-clock"></i> Reste: ${remainingText}
-        </div>
+    `;
+
+    upcomingMeetings.forEach(meeting => {
+      container.innerHTML += createMeetingHTML(meeting);
+    });
+  }
+
+  // Réunions passées
+  if (pastMeetings.length > 0) {
+    container.innerHTML += `
+      <div class="status-section">
+        <h4><i class="fas fa-check-circle"></i> Terminées</h4>
+      </div>
+    `;
+
+    pastMeetings.forEach(meeting => {
+      container.innerHTML += createMeetingHTML(meeting);
+    });
+  }
+
+  // Initialiser les barres de progression et les chronomètres
+  initializeMeetingTimers();
+}
+
+/**
+ * Crée le HTML pour une réunion
+ */
+function createMeetingHTML(meeting) {
+  const startTime = new Date(meeting.start);
+  const endTime = new Date(meeting.end);
+  const now = new Date();
+  
+  // Formatage de l'heure de début/fin
+  const startTimeStr = startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const endTimeStr = endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  
+  // Classes CSS en fonction du statut
+  let statusClass = '';
+  let progressHTML = '';
+  
+  if (meeting.status === 'current') {
+    statusClass = 'current';
+    
+    // Calculer la progression
+    const totalDuration = endTime - startTime;
+    const elapsed = now - startTime;
+    const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    
+    // Calculer le temps restant en minutes
+    const remainingMs = endTime - now;
+    const remainingMinutes = Math.ceil(remainingMs / 60000);
+    const remainingText = remainingMinutes < 60 
+      ? `${remainingMinutes} min` 
+      : `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}min`;
+    
+    progressHTML = `
+      <div class="meeting-status-badge">En cours</div>
+      <div class="meeting-progress-container">
+        <div class="meeting-progress-bar" style="width: ${progress}%"></div>
       </div>
       <div class="time-info">
-        <span>${startTime}</span>
-        <span>${endTime}</span>
+        <span>${startTimeStr} - ${endTimeStr}</span>
+        <span class="time-remaining"><i class="fas fa-hourglass-half"></i> ${remainingText}</span>
       </div>
     `;
+  } else if (meeting.status === 'past') {
+    statusClass = 'past';
+  } else {
+    // Réunion à venir
+    statusClass = 'upcoming';
   }
-
-  // Afficher la salle si on affiche toutes les salles
-  let salleHTML = '';
-  const isAllRooms = !window.salleName || window.salleName === 'toutes les salles';
-  if (isAllRooms && meeting.salle) {
-    salleHTML = `<p class="meeting-salle"><i class="fas fa-map-marker-alt"></i> Salle : ${meeting.salle}</p>`;
-  }
-
-  // Bouton "Rejoindre"
-  let joinButton = '';
-  if (meeting.joinUrl) {
-    joinButton = `<button data-url="${meeting.joinUrl}"><i class="fas fa-link"></i> Rejoindre</button>`;
-  }
-
+  
+  // HTML de la réunion
   return `
-    <div class="meeting-item ${category === 'Terminée' ? 'past' : ''}" data-id="${meetingId}">
-      ${statusBadge}
-      <h3>${meeting.subject || 'Réunion sans titre'}</h3>
-      <p><i class="far fa-clock"></i> ${startTime} - ${endTime}</p>
-      ${salleHTML}
-      ${category === 'En cours' ? progressBar : ''}
-      <p><i class="fas fa-users"></i> ${formatAttendees(meeting.attendees)}</p>
-      ${joinButton}
+    <div class="meeting-item ${statusClass}" data-id="${meeting.id}" data-start="${meeting.start}" data-end="${meeting.end}">
+      <h3>${meeting.subject}</h3>
+      ${progressHTML}
+      <p class="meeting-time">${startTimeStr} - ${endTimeStr}</p>
+      ${meeting.salle ? `<p class="meeting-salle"><i class="fas fa-door-open"></i> ${meeting.salle}</p>` : ''}
+      ${meeting.joinUrl ? `<button class="join-meeting-btn" data-url="${meeting.joinUrl}"><i class="fas fa-video"></i> Rejoindre</button>` : ''}
     </div>
   `;
 }
 
 /**
- * Formate la liste des participants pour l'affichage
+ * Initialise les minuteurs pour les réunions
  */
-function formatAttendees(attendees) {
-  if (!attendees) return 'Aucun invité';
+function initializeMeetingTimers() {
+  // Attacher les événements aux boutons de réunion
+  document.querySelectorAll('.join-meeting-btn').forEach(button => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      const url = button.dataset.url;
+      if (url) {
+        window.open(url, '_blank');
+      }
+    });
+  });
   
-  if (Array.isArray(attendees)) {
-    if (attendees.length === 0) return 'Aucun invité';
-    if (attendees.length <= 3) return attendees.join(', ');
-    return attendees.slice(0, 3).join(', ') + '...';
-  }
-  
-  return attendees;
+  // Mettre à jour immédiatement les timers
+  updateMeetingTimers();
 }
 
 /**
- * Met à jour les chronomètres des réunions en cours
+ * Met à jour les chronomètres et barres de progression
  */
 function updateMeetingTimers() {
-  const currentItems = document.querySelectorAll('.meeting-item:not(.past)');
   const now = new Date();
   
-  currentItems.forEach(item => {
-    // Extraire les heures de début et de fin
-    const timeText = item.querySelector('p')?.textContent || '';
-    const times = timeText.match(/(\d{2}:\d{2}) - (\d{2}:\d{2})/);
+  document.querySelectorAll('.meeting-item').forEach(item => {
+    const startTime = new Date(item.dataset.start);
+    const endTime = new Date(item.dataset.end);
     
-    if (times && times.length === 3) {
-      const [_, startStr, endStr] = times;
-      
-      // Convertir en objets Date
-      const startParts = startStr.split(':').map(Number);
-      const endParts = endStr.split(':').map(Number);
-      
-      const today = new Date();
-      
-      const start = new Date(today.setHours(startParts[0], startParts[1], 0, 0));
-      today.setHours(endParts[0], endParts[1], 0, 0);
-      const end = new Date(today);
-      
-      // Si c'est une réunion en cours, mettre à jour la barre de progression
-      if (start <= now && now < end) {
-        const totalDuration = end.getTime() - start.getTime();
-        const elapsedTime = now.getTime() - start.getTime();
-        const progressPercent = Math.min(100, Math.max(0, (elapsedTime / totalDuration) * 100)).toFixed(1);
+    // Réunion en cours
+    if (startTime <= now && endTime > now) {
+      // Mettre à jour la classe si ce n'était pas déjà 'current'
+      if (!item.classList.contains('current')) {
+        item.classList.remove('upcoming', 'past');
+        item.classList.add('current');
         
-        // Trouver et mettre à jour la barre de progression
-        const progressBar = item.querySelector('.meeting-progress-bar');
-        const progressText = item.querySelector('.meeting-progress-info span:first-child');
-        const remainingText = item.querySelector('.time-remaining');
-        
-        if (progressBar && progressText) {
-          // Mise à jour visuelle
-          progressBar.style.width = `${progressPercent}%`;
-          progressText.textContent = `${progressPercent}% écoulé`;
-          
-          // Mise à jour du temps restant
-          const remainingMinutes = Math.floor((end.getTime() - now.getTime()) / 60000);
-          const remainingTextStr = formatRemainingTime(remainingMinutes);
-          
-          if (remainingText) {
-            remainingText.innerHTML = `<i class="far fa-clock"></i> Reste: ${remainingTextStr}`;
+        // Ajouter les éléments de progression s'ils n'existent pas
+        if (!item.querySelector('.meeting-status-badge')) {
+          const meetingTime = item.querySelector('.meeting-time');
+          if (meetingTime) {
+            const startTimeStr = startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const endTimeStr = endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            
+            const progressHTML = `
+              <div class="meeting-status-badge">En cours</div>
+              <div class="meeting-progress-container">
+                <div class="meeting-progress-bar" style="width: 0%"></div>
+              </div>
+              <div class="time-info">
+                <span>${startTimeStr} - ${endTimeStr}</span>
+                <span class="time-remaining"><i class="fas fa-hourglass-half"></i> Calcul...</span>
+              </div>
+            `;
+            
+            meetingTime.insertAdjacentHTML('beforebegin', progressHTML);
           }
         }
+      }
+      
+      // Mettre à jour la barre de progression
+      const progressBar = item.querySelector('.meeting-progress-bar');
+      const timeRemaining = item.querySelector('.time-remaining');
+      
+      if (progressBar) {
+        const totalDuration = endTime - startTime;
+        const elapsed = now - startTime;
+        const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+        progressBar.style.width = `${progress}%`;
+      }
+      
+      if (timeRemaining) {
+        const remainingMs = endTime - now;
+        const remainingMinutes = Math.ceil(remainingMs / 60000);
+        const remainingText = remainingMinutes < 60 
+          ? `${remainingMinutes} min` 
+          : `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}min`;
+        
+        timeRemaining.innerHTML = `<i class="fas fa-hourglass-half"></i> ${remainingText}`;
+      }
+    }
+    // Réunion terminée
+    else if (endTime <= now) {
+      if (!item.classList.contains('past')) {
+        item.classList.remove('current', 'upcoming');
+        item.classList.add('past');
+        
+        // Supprimer les éléments de progression
+        const badge = item.querySelector('.meeting-status-badge');
+        const progressContainer = item.querySelector('.meeting-progress-container');
+        const timeInfo = item.querySelector('.time-info');
+        
+        if (badge) badge.remove();
+        if (progressContainer) progressContainer.remove();
+        if (timeInfo) timeInfo.remove();
+      }
+    }
+    // Réunion à venir
+    else {
+      if (!item.classList.contains('upcoming')) {
+        item.classList.remove('current', 'past');
+        item.classList.add('upcoming');
       }
     }
   });
 }
 
-/**
- * Formater un temps restant en minutes en chaîne lisible
- */
-function formatRemainingTime(remainingMinutes) {
-  const remainingHours = Math.floor(remainingMinutes / 60);
-  const remainingMins = remainingMinutes % 60;
-  
-  if (remainingHours > 0) {
-    return `${remainingHours}h ${remainingMins}min`;
-  } else {
-    return `${remainingMins}min`;
-  }
-}
-
-/**
- * Convertir une heure au format HH:MM en Date
- */
-function timeStringToDate(timeString) {
-  const today = new Date();
-  const [hours, minutes] = timeString.split(':').map(Number);
-  
-  today.setHours(hours, minutes, 0, 0);
-  return new Date(today);
-}
-
-// Initialisation
+// Attacher le gestionnaire d'événements au chargement du document
 document.addEventListener('DOMContentLoaded', () => {
-  // Premier chargement
-  fetchMeetings();
-  
-  // Mise à jour régulière
-  const refreshInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETINGS) || 20000;
-  const timerInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETING_TIMERS) || 60000;
-  
-  setInterval(fetchMeetings, refreshInterval);
-  setInterval(updateMeetingTimers, timerInterval);
-  
-  // Associer le bouton de rafraîchissement
   const refreshBtn = document.getElementById('refreshBtn');
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', fetchMeetings);
+    refreshBtn.addEventListener('click', () => fetchMeetings(true));
   }
+  
+  // Premier chargement des réunions
+  fetchMeetings(true);
+  
+  // Rafraîchissement périodique en arrière-plan
+  const refreshInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETINGS) || 20000;
+  setInterval(() => fetchMeetings(false), refreshInterval);
+  
+  // Mise à jour des timers plus fréquente
+  const timerInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETING_TIMERS) || 60000;
+  setInterval(updateMeetingTimers, timerInterval);
 });
-
-// Exporter les fonctions pour utilisation ailleurs
-window.fetchMeetings = fetchMeetings;
-window.updateMeetingTimers = updateMeetingTimers;
