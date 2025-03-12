@@ -1,224 +1,294 @@
 /**
- * Gestion de l'affichage des salles et de leur statut
+ * Gestion des salles de réunion
+ * Affiche et met à jour le statut des salles
  */
 
+// Système de gestion des salles
 const RoomsSystem = {
-  // État
-  rooms: [],
-  visibleRooms: [],
-  showOccupied: true,
-  showAvailable: true,
+  // État du système
+  rooms: {},
+  isRoomsVisible: false,
+  isInitialized: false,
   
   /**
-   * Initialise le système de gestion des salles
+   * Initialise le système de salles
    */
   init() {
-    // Charger la configuration des salles
+    console.log("Initialisation du système de salles");
+    
+    // Créer la structure HTML si elle n'existe pas
+    this.createRoomsSection();
+    
+    // Charger les salles depuis la configuration
     this.loadRooms();
     
     // Initialiser les événements
     this.initEvents();
     
-    // Mettre à jour périodiquement le statut des salles
-    this.scheduleStatusUpdates();
+    // Mettre à jour le statut initial
+    this.updateRoomStatus();
     
-    console.log("Système de gestion des salles initialisé");
+    // Définir comme initialisé
+    this.isInitialized = true;
+    
+    // Configurer les mises à jour périodiques
+    this.setupPeriodicUpdates();
   },
   
   /**
-   * Charge la liste des salles depuis la configuration
+   * Crée la structure HTML pour la section des salles
+   */
+  createRoomsSection() {
+    console.log("Création de la section des salles");
+    
+    // Vérifier si la section existe déjà
+    let roomsSection = document.querySelector('.rooms-section');
+    
+    if (!roomsSection) {
+      // Créer la section
+      roomsSection = document.createElement('div');
+      roomsSection.className = 'rooms-section';
+      
+      // Structure HTML
+      roomsSection.innerHTML = `
+        <div class="rooms-container">
+          <div class="rooms">
+            <!-- Les cartes de salles seront ajoutées ici -->
+          </div>
+        </div>
+      `;
+      
+      // Ajouter au body
+      document.body.appendChild(roomsSection);
+    }
+    
+    // Créer le bouton flottant s'il n'existe pas
+    let floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    
+    if (!floatingButton) {
+      floatingButton = document.createElement('button');
+      floatingButton.className = 'rooms-toggle-button-floating';
+      floatingButton.innerHTML = '<i class="fas fa-door-open"></i> <span>Afficher les salles</span>';
+      
+      // Ajouter au body
+      document.body.appendChild(floatingButton);
+    }
+  },
+  
+  /**
+   * Charge les salles depuis la configuration
    */
   loadRooms() {
-    if (!window.SALLES) {
-      console.error("Configuration des salles non disponible");
+    // Charger les salles depuis window.SALLES
+    if (window.SALLES) {
+      this.rooms = {};
+      
+      // Convertir l'objet en tableau d'objets
+      for (const [name, email] of Object.entries(window.SALLES)) {
+        this.rooms[name.toLowerCase()] = {
+          name,
+          email,
+          status: 'unknown', // État initial
+          currentMeeting: null,
+          nextMeeting: null
+        };
+      }
+      
+      console.log(`${Object.keys(this.rooms).length} salles chargées depuis la configuration`);
+    } else {
+      console.warn("Configuration des salles introuvable (window.SALLES)");
+    }
+  },
+  
+  /**
+   * Initialise les événements pour les salles
+   */
+  initEvents() {
+    // Bouton dans le menu latéral
+    const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
+    if (sideMenuButton) {
+      sideMenuButton.addEventListener('click', () => {
+        this.toggleRoomsVisibility();
+      });
+    }
+    
+    // Bouton flottant
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    if (floatingButton) {
+      floatingButton.addEventListener('click', () => {
+        this.toggleRoomsVisibility();
+      });
+    }
+    
+    // Bouton dans la barre de contrôle
+    const controlButton = document.getElementById('toggleRoomsBtn');
+    if (controlButton) {
+      controlButton.addEventListener('click', () => {
+        this.toggleRoomsVisibility();
+      });
+    }
+    
+    // Clic en dehors pour fermer
+    document.addEventListener('click', (e) => {
+      if (this.isRoomsVisible) {
+        const roomsSection = document.querySelector('.rooms-section');
+        const roomsButton = document.querySelector('.rooms-toggle-button-floating');
+        const controlButton = document.getElementById('toggleRoomsBtn');
+        const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
+        
+        // Vérifier si le clic est en dehors des éléments de salles
+        if (roomsSection && 
+            !roomsSection.contains(e.target) && 
+            !(roomsButton && roomsButton.contains(e.target)) && 
+            !(controlButton && controlButton.contains(e.target)) && 
+            !(sideMenuButton && sideMenuButton.contains(e.target))) {
+          this.hideRooms();
+        }
+      }
+    });
+  },
+  
+  /**
+   * Configure les mises à jour périodiques
+   */
+  setupPeriodicUpdates() {
+    // Mise à jour du statut des salles
+    const interval = window.REFRESH_INTERVALS?.ROOM_STATUS || 60000; // 1 minute par défaut
+    
+    setInterval(() => {
+      this.updateRoomStatus();
+    }, interval);
+  },
+  
+  /**
+   * Bascule la visibilité des salles
+   */
+  toggleRoomsVisibility() {
+    if (this.isRoomsVisible) {
+      this.hideRooms();
+    } else {
+      this.showRooms();
+    }
+  },
+  
+  /**
+   * Affiche la section des salles
+   */
+  showRooms() {
+    console.log("Affichage des salles");
+    
+    const roomsSection = document.querySelector('.rooms-section');
+    if (roomsSection) {
+      roomsSection.classList.add('visible');
+      this.isRoomsVisible = true;
+      
+      // Mettre à jour les textes des boutons
+      this.updateButtonsText();
+      
+      // Mettre à jour les statuts
+      this.updateRoomStatus();
+    }
+  },
+  
+  /**
+   * Masque la section des salles
+   */
+  hideRooms() {
+    console.log("Masquage des salles");
+    
+    const roomsSection = document.querySelector('.rooms-section');
+    if (roomsSection) {
+      roomsSection.classList.remove('visible');
+      this.isRoomsVisible = false;
+      
+      // Mettre à jour les textes des boutons
+      this.updateButtonsText();
+    }
+  },
+  
+  /**
+   * Met à jour le texte des boutons selon l'état
+   */
+  updateButtonsText() {
+    const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    const controlButton = document.getElementById('toggleRoomsBtn');
+    
+    const showText = '<i class="fas fa-door-open"></i> <span>Afficher les salles</span>';
+    const hideText = '<i class="fas fa-times"></i> <span>Masquer les salles</span>';
+    
+    if (sideMenuButton) {
+      sideMenuButton.innerHTML = this.isRoomsVisible ? hideText : showText;
+    }
+    
+    if (floatingButton) {
+      floatingButton.innerHTML = this.isRoomsVisible ? hideText : showText;
+    }
+    
+    if (controlButton) {
+      controlButton.innerHTML = this.isRoomsVisible 
+        ? '<i class="fas fa-times"></i> Masquer les salles' 
+        : '<i class="fas fa-door-open"></i> Afficher les salles';
+    }
+  },
+  
+  /**
+   * Met à jour le statut des salles en fonction des réunions
+   */
+  updateRoomStatus() {
+    // Ne pas mettre à jour si les salles ne sont pas affichées (économie de ressources)
+    if (!this.isRoomsVisible && this.isInitialized) {
       return;
     }
     
-    this.rooms = Object.keys(window.SALLES).map(name => ({
-      id: name.toLowerCase(),
-      name: name,
-      email: window.SALLES[name],
-      status: 'loading', // Statut initial en attendant la vérification
-      nextMeeting: null
-    }));
+    console.log("Mise à jour du statut des salles");
     
-    // Charger les statuts
-    this.updateRoomStatuses();
-  },
-  
-  /**
-   * Initialise les événements liés aux salles
-   */
-  initEvents() {
-    // Bouton d'affichage/masquage des salles
-    const toggleRoomsBtn = document.querySelector('.toggle-rooms-button, .rooms-toggle-button-floating');
-    if (toggleRoomsBtn) {
-      toggleRoomsBtn.addEventListener('click', () => {
-        this.toggleRoomsSection();
-      });
+    // Récupérer les réunions courantes
+    const meetings = JSON.parse(previousMeetings || '[]');
+    const now = new Date();
+    
+    // Réinitialiser les données des salles
+    for (const roomKey in this.rooms) {
+      this.rooms[roomKey].status = 'available';
+      this.rooms[roomKey].currentMeeting = null;
+      this.rooms[roomKey].nextMeeting = null;
     }
     
-    // Filtres des salles
-    const roomsFilterInput = document.getElementById('rooms-filter');
-    if (roomsFilterInput) {
-      roomsFilterInput.addEventListener('input', () => {
-        this.filterRooms(roomsFilterInput.value);
-      });
-    }
-    
-    // Filtre de statut
-    const statusFilter = document.getElementById('status-filter');
-    if (statusFilter) {
-      statusFilter.addEventListener('change', () => {
-        const value = statusFilter.value;
-        this.showOccupied = value === 'all' || value === 'occupied';
-        this.showAvailable = value === 'all' || value === 'available';
-        this.updateRoomsDisplay();
-      });
-    }
-    
-    // Bouton de rafraîchissement
-    const refreshBtn = document.getElementById('refresh-rooms-btn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => {
-        this.updateRoomStatuses();
-      });
-    }
-  },
-  
-  /**
-   * Programme la mise à jour périodique des statuts
-   */
-  scheduleStatusUpdates() {
-    // Intervalle de rafraîchissement des statuts
-    const intervalMs = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.ROOM_STATUS) || 60000;
-    
-    setInterval(() => {
-      this.updateRoomStatuses();
-    }, intervalMs);
-  },
-  
-  /**
-   * Met à jour le statut de toutes les salles
-   */
-  async updateRoomStatuses() {
-    try {
-      // Marquer toutes les salles comme en cours de chargement
-      this.rooms.forEach(room => {
-        room.status = 'loading';
-      });
-      
-      // Mettre à jour l'affichage avec l'état de chargement
-      this.updateRoomsDisplay();
-      
-      // Récupérer les réunions
-      const apiUrl = window.API_URLS && window.API_URLS.GET_MEETINGS 
-        ? window.API_URLS.GET_MEETINGS 
-        : '/meetings.json';
-      
-      const response = await fetch(`${apiUrl}?t=${Date.now()}`);
-      
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
-      }
-      
-      const meetings = await response.json();
-      const now = new Date();
-      
-      // Pour chaque salle, vérifier les réunions en cours et à venir
-      this.rooms.forEach(room => {
-        const roomMeetings = meetings.filter(m => 
-          m.salle && m.salle.toLowerCase() === room.id.toLowerCase()
-        );
+    // Traiter chaque réunion
+    meetings.forEach(meeting => {
+      const roomName = (meeting.salle || '').toLowerCase();
+      if (this.rooms[roomName]) {
+        const startTime = new Date(meeting.start);
+        const endTime = new Date(meeting.end);
         
-        // Chercher une réunion en cours
-        const currentMeeting = roomMeetings.find(m => {
-          const startTime = new Date(m.start);
-          const endTime = new Date(m.end);
-          return startTime <= now && now < endTime;
-        });
-        
-        if (currentMeeting) {
-          room.status = 'occupied';
-          room.currentMeeting = currentMeeting;
-          room.timeRemaining = this.calculateTimeRemaining(currentMeeting.end);
-        } else {
-          room.status = 'available';
-          room.currentMeeting = null;
+        // Déterminer le statut de la salle
+        if (startTime <= now && endTime > now) {
+          // Réunion en cours
+          this.rooms[roomName].status = 'occupied';
+          this.rooms[roomName].currentMeeting = meeting;
           
-          // Chercher la prochaine réunion
-          const upcomingMeetings = roomMeetings
-            .filter(m => new Date(m.start) > now)
-            .sort((a, b) => new Date(a.start) - new Date(b.start));
-          
-          if (upcomingMeetings.length > 0) {
-            room.nextMeeting = upcomingMeetings[0];
+          // Calculer le temps restant
+          const remainingMs = endTime - now;
+          const remainingMinutes = Math.ceil(remainingMs / 60000);
+          this.rooms[roomName].remainingTime = remainingMinutes;
+        } else if (startTime > now) {
+          // Réunion future
+          if (!this.rooms[roomName].nextMeeting || 
+              startTime < new Date(this.rooms[roomName].nextMeeting.start)) {
+            this.rooms[roomName].nextMeeting = meeting;
             
-            // Si la prochaine réunion est dans moins de 15 minutes, marquer comme "bientôt occupée"
-            const timeUntilNext = (new Date(room.nextMeeting.start) - now) / 60000; // en minutes
-            if (timeUntilNext <= 15) {
-              room.status = 'soon';
-              room.timeUntilNext = timeUntilNext;
+            // Si la prochaine réunion commence dans moins de 30 minutes
+            const minutesUntilStart = Math.floor((startTime - now) / 60000);
+            if (minutesUntilStart <= 30) {
+              this.rooms[roomName].status = 'soon';
+              this.rooms[roomName].minutesUntilNext = minutesUntilStart;
             }
-          } else {
-            room.nextMeeting = null;
           }
         }
-      });
-      
-      // Mettre à jour l'affichage avec les statuts à jour
-      this.updateRoomsDisplay();
-      
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour des statuts de salles:", error);
-      
-      // En cas d'erreur, marquer toutes les salles comme ayant un statut inconnu
-      this.rooms.forEach(room => {
-        room.status = 'unknown';
-      });
-      
-      // Mettre à jour l'affichage
-      this.updateRoomsDisplay();
-    }
-  },
-  
-  /**
-   * Calcule le temps restant jusqu'à une date
-   */
-  calculateTimeRemaining(endTimeStr) {
-    const now = new Date();
-    const endTime = new Date(endTimeStr);
+      }
+    });
     
-    // Différence en millisecondes
-    const diffMs = endTime - now;
-    if (diffMs <= 0) return '0min';
-    
-    // Convertir en minutes
-    const diffMinutes = Math.floor(diffMs / 60000);
-    
-    // Formater
-    if (diffMinutes >= 60) {
-      const hours = Math.floor(diffMinutes / 60);
-      const minutes = diffMinutes % 60;
-      return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`;
-    } else {
-      return `${diffMinutes}min`;
-    }
-  },
-  
-  /**
-   * Filtre les salles par nom
-   */
-  filterRooms(filterText) {
-    if (!filterText) {
-      this.visibleRooms = [...this.rooms];
-    } else {
-      const lowerFilter = filterText.toLowerCase();
-      this.visibleRooms = this.rooms.filter(room => 
-        room.name.toLowerCase().includes(lowerFilter)
-      );
-    }
-    
+    // Mettre à jour l'interface
     this.updateRoomsDisplay();
   },
   
@@ -229,133 +299,55 @@ const RoomsSystem = {
     const roomsContainer = document.querySelector('.rooms');
     if (!roomsContainer) return;
     
-    // Filtrer selon les options de visibilité
-    let displayedRooms = this.visibleRooms.filter(room => {
-      if (room.status === 'occupied' || room.status === 'soon') {
-        return this.showOccupied;
-      } else if (room.status === 'available') {
-        return this.showAvailable;
-      }
-      return true; // Toujours afficher les salles avec d'autres statuts (loading, unknown)
-    });
+    // Vider le conteneur
+    roomsContainer.innerHTML = '';
     
-    // Trier les salles (occupées en premier, puis bientôt occupées, puis disponibles)
-    displayedRooms.sort((a, b) => {
-      const statusOrder = { 'occupied': 0, 'soon': 1, 'available': 2, 'loading': 3, 'unknown': 4 };
-      return statusOrder[a.status] - statusOrder[b.status] || a.name.localeCompare(b.name);
-    });
-    
-    // Générer le HTML
-    let html = '';
-    
-    // Message si aucune salle ne correspond aux filtres
-    if (displayedRooms.length === 0) {
-      html = `
-        <div class="no-rooms-message">
-          <i class="fas fa-search"></i>
-          <p>Aucune salle ne correspond aux critères de recherche.</p>
-        </div>
-      `;
-    } else {
-      // Générer les cartes de salles
-      displayedRooms.forEach(room => {
-        html += this.createRoomCard(room);
-      });
-    }
-    
-    roomsContainer.innerHTML = html;
-    
-    // Attacher les événements aux cartes
-    this.attachRoomCardEvents();
-  },
-  
-  /**
-   * Crée le HTML d'une carte de salle
-   */
-  createRoomCard(room) {
-    let statusText = '';
-    let statusClass = '';
-    let timeInfo = '';
-    
-    switch (room.status) {
-      case 'loading':
-        statusText = 'Chargement...';
-        statusClass = 'loading';
-        break;
-      case 'occupied':
+    // Ajouter chaque salle
+    for (const [key, room] of Object.entries(this.rooms)) {
+      const card = document.createElement('div');
+      card.className = `room-card ${room.status}`;
+      card.dataset.room = key;
+      
+      // Déterminer le texte de statut et l'icône
+      let statusText = 'Disponible';
+      let timeText = '';
+      
+      if (room.status === 'occupied' && room.currentMeeting) {
         statusText = 'Occupée';
-        statusClass = 'occupied';
-        timeInfo = room.timeRemaining ? `Libre dans: ${room.timeRemaining}` : '';
-        break;
-      case 'soon':
-        statusText = 'Bientôt occupée';
-        statusClass = 'soon';
-        timeInfo = room.nextMeeting ? 
-          `Début dans: ${Math.floor(room.timeUntilNext)}min` : '';
-        break;
-      case 'available':
-        statusText = 'Disponible';
-        statusClass = 'available';
-        timeInfo = room.nextMeeting ? 
-          `Prochaine: ${new Date(room.nextMeeting.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '';
-        break;
-      case 'unknown':
-        statusText = 'Statut inconnu';
-        statusClass = 'unknown';
-        break;
-    }
-    
-    return `
-      <div class="room-card ${statusClass}" data-room-id="${room.id}">
+        timeText = `${room.remainingTime || '?'} min`;
+      } else if (room.status === 'soon' && room.nextMeeting) {
+        statusText = 'Bientôt';
+        timeText = `Dans ${room.minutesUntilNext || '?'} min`;
+      }
+      
+      // HTML de la carte
+      card.innerHTML = `
         <div class="room-name">${room.name}</div>
         <div class="room-status">
-          <span class="status-icon ${statusClass}"></span>
+          <span class="status-icon ${room.status}"></span>
           ${statusText}
         </div>
-        ${timeInfo ? `<div class="room-time">${timeInfo}</div>` : ''}
-      </div>
-    `;
-  },
-  
-  /**
-   * Attache les événements aux cartes de salles
-   */
-  attachRoomCardEvents() {
-    document.querySelectorAll('.room-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const roomId = card.dataset.roomId;
-        this.navigateToRoom(roomId);
-      });
-    });
-  },
-  
-  /**
-   * Navigue vers la page d'une salle spécifique
-   */
-  navigateToRoom(roomId) {
-    window.location.href = `/${roomId}`;
-  },
-  
-  /**
-   * Affiche ou masque la section des salles
-   */
-  toggleRoomsSection() {
-    const roomsSection = document.querySelector('.rooms-section');
-    if (roomsSection) {
-      roomsSection.classList.toggle('visible');
+        ${timeText ? `<div class="room-time">${timeText}</div>` : ''}
+      `;
       
-      // Si on affiche la section, mettre à jour les statuts
-      if (roomsSection.classList.contains('visible')) {
-        this.updateRoomStatuses();
-      }
+      // Ajouter un événement de clic pour ouvrir la page de la salle
+      card.addEventListener('click', () => {
+        // Rediriger vers la page de la salle
+        const currentLocation = window.location.origin;
+        window.location.href = `${currentLocation}/${room.name.toLowerCase()}`;
+      });
+      
+      // Ajouter au conteneur
+      roomsContainer.appendChild(card);
     }
   }
 };
 
-// Initialisation au chargement de la page
+// Initialiser le système de salles au chargement du document
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("Chargement du système de salles");
   RoomsSystem.init();
 });
 
-// Exposer le système pour utilisation dans d'autres modules
+// Exporter pour utilisation dans d'autres modules
 window.RoomsSystem = RoomsSystem;
