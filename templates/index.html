@@ -1,384 +1,352 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="default">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta id="salle-name" name="salle-name" content="">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salle de Réunion</title>
-  
-  <!-- Font Awesome pour les icônes -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  
-  <!-- Chargement des feuilles de style -->
-  <link rel="stylesheet" href="/static/css/main.css">
-  <link rel="stylesheet" href="/static/css/layout.css">
-  <link rel="stylesheet" href="/static/css/menu.css">
-  <link rel="stylesheet" href="/static/css/rooms.css">
-  <link rel="stylesheet" href="/static/css/meetings.css">
-  <link rel="stylesheet" href="/static/css/modal.css">
-  <link rel="stylesheet" href="/static/css/responsive-universal.css">
-  <link rel="stylesheet" href="/static/css/auth.css">
-  <link rel="stylesheet" href="/static/css/admin.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Salles de Réunion | Anecoop</title>
+    
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <!-- Styles CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/menu.css">
+    <link rel="stylesheet" href="/static/css/meetings.css">
+    <link rel="stylesheet" href="/static/css/rooms.css">
+    <link rel="stylesheet" href="/static/css/modal.css">
+    <link rel="stylesheet" href="/static/css/auth.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
 </head>
 <body>
-  <!-- Arrière-plan -->
-  <div id="background-container"></div>
-
-  <!-- Bouton de menu principal, toujours visible -->
-  <button class="menu-toggle-visible" id="menuToggleBtn"><i class="fas fa-bars"></i></button>
-
-  <!-- Structure principale -->
-  <div class="main-container layout-user">
-    <!-- Menu latéral -->
-    <div class="side-menu" id="sideMenu">
-      <div class="menu-logo">
-        <!-- Logo de l'entreprise -->
-        <svg width="100" height="40" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="40" rx="5" fill="#6264A7"/>
-          <text x="50" y="25" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ANECOOP</text>
-        </svg>
-      </div>
-      
-      <h3 class="menu-title">Tableau de bord</h3>
-      
-      <div class="menu-items">
-        <!-- Accueil -->
-        <a href="#" class="menu-item active" data-menu-id="home">
-          <span class="menu-item-icon"><i class="fas fa-home"></i></span>
-          <span class="menu-item-text">Accueil</span>
-        </a>
-        
-        <!-- Administration - visible seulement pour les administrateurs -->
-        <a href="#" class="menu-item admin-only" data-menu-id="admin" id="adminBtn">
-          <span class="menu-item-icon"><i class="fas fa-shield-alt"></i></span>
-          <span class="menu-item-text">Administration</span>
-        </a>
-        
-        <!-- Réservations -->
-        <div class="menu-group-title">Réservations</div>
-        
-        <a href="#" class="menu-item" data-menu-id="rooms" id="roomReservationBtn">
-          <span class="menu-item-icon"><i class="fas fa-calendar-alt"></i></span>
-          <span class="menu-item-text">Salle de réunion</span>
-        </a>
-        
-        <a href="#" class="menu-item" data-menu-id="vehicles">
-          <span class="menu-item-icon"><i class="fas fa-car"></i></span>
-          <span class="menu-item-text">Réservation voiture</span>
-        </a>
-        
-        <a href="#" class="menu-item" data-menu-id="equipment">
-          <span class="menu-item-icon"><i class="fas fa-laptop"></i></span>
-          <span class="menu-item-text">Prêt de matériel</span>
-        </a>
-        
-        <!-- Applications -->
-        <div class="menu-separator"></div>
-        <div class="menu-group-title">Applications</div>
-        
-        <a href="https://teams.microsoft.com" target="_blank" class="menu-item" data-menu-id="teams">
-          <span class="menu-item-icon"><i class="fas fa-users"></i></span>
-          <span class="menu-item-text">Teams</span>
-        </a>
-        
-        <a href="#" class="menu-item" data-menu-id="sage">
-          <span class="menu-item-icon"><i class="fas fa-briefcase"></i></span>
-          <span class="menu-item-text">SAGE</span>
-        </a>
-        
-        <a href="#" class="menu-item" data-menu-id="3cx">
-          <span class="menu-item-icon"><i class="fas fa-phone"></i></span>
-          <span class="menu-item-text">3CX</span>
-        </a>
-        
-        <a href="#" class="menu-item" data-menu-id="pulse">
-          <span class="menu-item-icon"><i class="fas fa-sync-alt"></i></span>
-          <span class="menu-item-text">AnecoopPulse</span>
-        </a>
-      </div>
-      
-      <div class="menu-bottom">
-        <button class="toggle-rooms-button" id="toggleRoomsBtn">
-          <i class="fas fa-eye"></i> <span class="button-text">Afficher salles</span>
-        </button>
-      </div>
-    </div>
+    <!-- Conteneur d'arrière-plan -->
+    <div id="background-container"></div>
     
-    <!-- Section d'en-tête -->
-    <div class="header">
-      <!-- Date/Heure -->
-      <div class="datetime glass-container-light">
-        <p id="current-date">Chargement...</p>
-        <p id="current-time">00:00:00</p>
-      </div>
-      
-      <!-- Composant profil utilisateur -->
-      <div class="user-profile">
-        <div class="user-profile-button">
-          <span class="user-initials">IN</span>
-          <div class="user-info">
-            <span id="userDisplayName">Invité</span>
-            <span id="userRole" class="user-role">Non connecté</span>
-          </div>
-          <i class="fas fa-chevron-down"></i>
-        </div>
-        
-        <div class="user-dropdown">
-          <div class="user-dropdown-header">
-            <span id="userDisplayNameFull">Invité</span>
-            <span id="userRoleFull" class="user-role-full">Non connecté</span>
-          </div>
-          
-          <div class="user-dropdown-links">
-            <a href="#" class="user-dropdown-link auth-required">
-              <i class="fas fa-user-cog"></i> Mon profil
-            </a>
-            <a href="#" class="user-dropdown-link auth-required admin-only" id="adminLink">
-              <i class="fas fa-cogs"></i> Administration
-            </a>
-            <a href="#" class="user-dropdown-link">
-              <i class="fas fa-palette"></i> Changer de thème
-            </a>
-            <a href="#" class="user-dropdown-link auth-required" id="logoutBtn">
-              <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </a>
-            <a href="#" class="user-dropdown-link auth-hidden" id="loginBtn">
-              <i class="fas fa-sign-in-alt"></i> Connexion
-            </a>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Titre principal -->
-      <div class="title-container">
-        <div class="title" id="salle-title">Salle de Réunion</div>
-      </div>
-    </div>
-    
-    <!-- Section des salles (fenêtre flottante) -->
-    <div class="rooms-section" id="roomsSection">
-      <div class="rooms-container">
-        <div class="rooms" id="roomsList"></div>
-      </div>
-    </div>
-    
-    <!-- Zone centrale -->
-    <div class="content">
-      <!-- Zone vide par défaut pour l'arrière-plan -->
-    </div>
-    
-    <!-- Conteneur des réunions -->
-    <div class="meetings-container">
-      <!-- En-tête séparé pour le titre -->
-      <div class="meetings-title-bar">
-        <h2>RÉUNIONS D'AUJOURD'HUI</h2>
-        <!-- Bouton de création intégré sous le titre, centré -->
-        <button class="create-meeting-integrated" id="createMeetingBtn">
-          <i class="fas fa-plus"></i> <span>Créer une réunion Teams</span>
-        </button>
-      </div>
-      
-      <!-- Contenu principal -->
-      <div class="meetings">
-        <!-- Liste des réunions -->
-        <div id="meetingsContainer" class="meetings-list">
-          <!-- Placeholder de chargement -->
-          <div class="loading-indicator">
-            <i class="fas fa-circle-notch fa-spin"></i>
-            <span>Chargement des réunions...</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Zone pour rejoindre une réunion (repositionnée) -->
-      <div class="join-meeting-container">
-        <div class="meeting-join-integrated">
-          <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
-          <button id="joinMeetingBtn"><i class="fas fa-sign-in-alt"></i> Rejoindre</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Section des contrôles -->
-    <div class="controls-container">
-      <div class="control-buttons">
-        <button id="refreshBtn" class="btn-primary">
-          <i class="fas fa-sync-alt"></i> <span>Rafraîchir</span>
-        </button>
-        
-        <button id="roomReservationBtn" class="btn-success">
-          <i class="fas fa-calendar-plus"></i> <span>Créer une réservation</span>
-        </button>
-        
-        <button id="fullscreenBtn" class="btn-ghost">
-          <i class="fas fa-expand"></i> <span>Plein écran</span>
-        </button>
-        <button id="toggleRoomsBtn" class="control-button rooms-toggle">
-  <i class="fas fa-door-open"></i> Afficher les salles
-</button>
-        
-        <button id="helpBtn" class="btn-ghost hide-in-room-mode">
-          <i class="fas fa-question-circle"></i> <span>Aide</span>
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Zone des IDs récents (flottante) -->
-  <div id="recent-ids"></div>
-  
-  <!-- Modal de réservation -->
-  <div class="booking-modal" id="bookingModal">
-    <div class="booking-modal-content">
-      <div class="booking-modal-header">
-        <h2><i class="fas fa-calendar-plus"></i> Créer une réunion Teams</h2>
-        <button class="modal-close" id="closeBookingModalBtn">&times;</button>
-      </div>
-      
-      <div class="booking-modal-body">
-        <form class="booking-form" id="bookingForm">
-          <div class="form-group">
-            <label for="booking-title">Titre de la réunion</label>
-            <div class="input-with-icon">
-              <input type="text" id="booking-title" placeholder="Entrez le titre de la réunion" required>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="booking-room">Salle</label>
-            <div class="input-with-icon">
-              <select id="booking-room" required>
-                <option value="">Sélectionner une salle</option>
-                <!-- Options ajoutées dynamiquement par JavaScript -->
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="booking-date">Date</label>
-            <div class="input-with-icon">
-              <input type="date" id="booking-date" required>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="booking-start">Heure de début</label>
-            <div class="input-with-icon">
-              <input type="time" id="booking-start" required>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label>Durée</label>
-            <div class="quick-duration-buttons">
-              <div class="duration-button" data-minutes="15">15 min</div>
-              <div class="duration-button active" data-minutes="30">30 min</div>
-              <div class="duration-button" data-minutes="60">1 heure</div>
-              <div class="duration-button" data-minutes="120">2 heures</div>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="booking-end">Heure de fin</label>
-            <div class="input-with-icon">
-              <input type="time" id="booking-end" required>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="booking-participants">Participants (emails séparés par des virgules)</label>
-            <div class="input-with-icon">
-              <input type="text" id="booking-participants" placeholder="exemple@anecoop-france.com, ...">
-            </div>
-          </div>
-          
-          <div class="room-availability" id="room-availability">
-            <!-- Message de disponibilité rempli dynamiquement -->
-          </div>
-        </form>
-      </div>
-      
-      <div class="booking-modal-footer">
-        <button class="cancel-button" id="cancelBookingBtn">
-          <i class="fas fa-times"></i> Annuler
-        </button>
-        <button class="create-button" id="createTeamsMeetingBtn">
-          <i class="fas fa-check"></i> Créer la réunion
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Modal de connexion -->
-  <div class="auth-modal" id="loginModal">
-    <div class="auth-modal-content">
-      <div class="auth-modal-header">
-        <h3><i class="fas fa-sign-in-alt"></i> Connexion</h3>
-        <button class="auth-modal-close" id="closeLoginModalBtn">&times;</button>
-      </div>
-      
-      <div class="auth-modal-body">
-        <div class="auth-form">
-          <div class="auth-logo">
-            <!-- Logo de l'entreprise -->
-            <svg width="100" height="40" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100" height="40" rx="5" fill="#6264A7"/>
-              <text x="50" y="25" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ANECOOP</text>
-            </svg>
-            <h4>Système de réservation de salles</h4>
-          </div>
-          
-          <form id="loginForm">
-            <div class="form-group">
-              <label for="login-username">Nom d'utilisateur</label>
-              <div class="input-with-icon">
-                <i class="fas fa-user"></i>
-                <input type="text" id="login-username" placeholder="Entrez votre nom d'utilisateur" required>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="login-password">Mot de passe</label>
-              <div class="input-with-icon">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="login-password" placeholder="Entrez votre mot de passe" required>
-              </div>
-            </div>
-            
-            <div class="form-options">
-              <label>
-                <input type="checkbox" id="remember-me">
-                Se souvenir de moi
-              </label>
-              <a href="#" class="forgot-password">Mot de passe oublié?</a>
-            </div>
-            
-            <div id="login-status" class="login-status"></div>
-            
-            <button type="submit" class="login-button">
-              <span>Se connecter</span>
-              <i class="fas fa-arrow-right"></i>
+    <!-- Conteneur principal -->
+    <div class="main-container">
+        <!-- Menu latéral -->
+        <div class="side-menu">
+            <button class="menu-toggle-visible">
+                <i class="fas fa-bars"></i>
             </button>
-          </form>
-          
-          <div class="login-footer">
-            <p>Pour accéder à cette application, veuillez vous connecter avec vos identifiants ou contacter votre administrateur système.</p>
-          </div>
+            
+            <div class="menu-logo">
+                <h2>ANECOOP</h2>
+            </div>
+            
+            <div class="menu-title">TABLEAU DE BORD</div>
+            
+            <div class="menu-items">
+                <!-- Section principale -->
+                <a href="/" class="menu-item active">
+                    <i class="fas fa-home menu-item-icon"></i>
+                    <span class="menu-item-text">Accueil</span>
+                </a>
+                
+                <a href="/admin" class="menu-item" data-role="administrator">
+                    <i class="fas fa-user-shield menu-item-icon"></i>
+                    <span class="menu-item-text">Administration</span>
+                </a>
+                
+                <div class="menu-separator"></div>
+                
+                <div class="menu-group">
+                    <div class="menu-group-title">RÉSERVATIONS</div>
+                    
+                    <a href="/rooms" class="menu-item">
+                        <i class="fas fa-calendar-alt menu-item-icon"></i>
+                        <span class="menu-item-text">Salle de réunion</span>
+                    </a>
+                    
+                    <a href="/vehicles" class="menu-item">
+                        <i class="fas fa-car menu-item-icon"></i>
+                        <span class="menu-item-text">Réservation voiture</span>
+                    </a>
+                    
+                    <a href="/equipment" class="menu-item">
+                        <i class="fas fa-laptop menu-item-icon"></i>
+                        <span class="menu-item-text">Prêt de matériel</span>
+                    </a>
+                </div>
+                
+                <div class="menu-separator"></div>
+                
+                <div class="menu-group">
+                    <div class="menu-group-title">APPLICATIONS</div>
+                    
+                    <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
+                        <i class="fas fa-users menu-item-icon"></i>
+                        <span class="menu-item-text">Teams</span>
+                    </a>
+                    
+                    <a href="#" class="menu-item">
+                        <i class="fas fa-briefcase menu-item-icon"></i>
+                        <span class="menu-item-text">SAGE</span>
+                    </a>
+                    
+                    <a href="#" class="menu-item">
+                        <i class="fas fa-phone menu-item-icon"></i>
+                        <span class="menu-item-text">3CX</span>
+                    </a>
+                    
+                    <a href="#" class="menu-item">
+                        <i class="fas fa-sync-alt menu-item-icon"></i>
+                        <span class="menu-item-text">AnecoopPulse</span>
+                    </a>
+                </div>
+            </div>
         </div>
-      </div>
+        
+        <!-- Overlay pour mobile -->
+        <div class="menu-overlay"></div>
+        
+        <!-- En-tête -->
+        <header class="header">
+            <div class="datetime">
+                <p id="current-date">Lundi 9 mars 2025</p>
+                <p id="current-time">00:00:00</p>
+            </div>
+            
+            <div class="title-container">
+                <h1 class="title" id="salle-title">Toutes les salles</h1>
+            </div>
+            
+            <!-- Bouton de connexion / profil utilisateur -->
+            <div class="user-profile" style="display: none;">
+                <button class="user-profile-button">
+                    <div class="user-initials">--</div>
+                    <div class="user-info">
+                        <span id="userDisplayName">Utilisateur</span>
+                        <span class="user-role" id="userRole">Invité</span>
+                    </div>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="user-dropdown">
+                    <div class="user-dropdown-header">
+                        <span id="userDisplayNameFull">Utilisateur</span>
+                        <span class="user-role-full" id="userRoleFull">Invité</span>
+                    </div>
+                    <div class="user-dropdown-links">
+                        <a href="#" class="user-dropdown-link" id="profileLink">
+                            <i class="fas fa-user"></i> Profil
+                        </a>
+                        <a href="#" class="user-dropdown-link" id="settingsLink">
+                            <i class="fas fa-cog"></i> Paramètres
+                        </a>
+                        <a href="#" class="user-dropdown-link" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i> Déconnexion
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="loginBtn" class="auth-button">
+                <i class="fas fa-sign-in-alt"></i> Connexion
+            </button>
+        </header>
+        
+        <!-- Contenu principal -->
+        <main class="content">
+            <!-- Contenu de la page -->
+            <div class="content-inner">
+                <!-- Cette partie sera remplie dynamiquement selon la page affichée -->
+            </div>
+        </main>
+        
+        <!-- Panneau des réunions -->
+        <div class="meetings-container">
+            <div class="meetings-title-bar">
+                <h2>RÉUNIONS D'AUJOURD'HUI</h2>
+                <button class="create-meeting-integrated">
+                    <i class="fas fa-plus"></i> Créer une réunion Teams
+                </button>
+            </div>
+            
+            <div class="meetings" id="meetingsContainer">
+                <!-- Contenu chargé dynamiquement par meetings.js -->
+                <div class="loading-indicator">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span>Chargement des réunions...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barre de contrôle -->
+        <div class="controls-container">
+            <div class="meeting-join-inline">
+                <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
+                <button id="joinMeetingBtn"><i class="fas fa-sign-in-alt"></i> Rejoindre</button>
+            </div>
+            
+            <div class="control-buttons">
+                <button id="refreshBtn" class="control-button refresh">
+                    <i class="fas fa-sync-alt"></i> Rafraîchir
+                </button>
+                
+                <button id="toggleRoomsBtn" class="control-button rooms-toggle">
+                    <i class="fas fa-door-open"></i> Afficher les salles
+                </button>
+                
+                <button id="createMeetingBtn" class="control-button create">
+                    <i class="fas fa-plus"></i> Créer une réservation
+                </button>
+                
+                <button id="fullscreenBtn" class="control-button fullscreen">
+                    <i class="fas fa-expand"></i> Plein écran
+                </button>
+                
+                <button id="helpBtn" class="control-button help">
+                    <i class="fas fa-question-circle"></i> Aide
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <!-- Scripts JavaScript chargés dans le bon ordre -->
-  <script src="/static/js/background.js"></script>
-  <script src="/static/js/config.js"></script>
-<script src="/static/js/datetime.js"></script>
-<script src="/static/js/auth.js"></script>
-<script src="/static/js/ui.js"></script>
-<script src="/static/js/meetings.js"></script>
-<script src="/static/js/rooms.js"></script>
-<script src="/static/js/join.js"></script>
-<script src="/static/js/booking.js"></script>
-  <script src="/static/js/admin.js"></script>
+    
+    <!-- Section des salles (invisible par défaut) -->
+    <div class="rooms-section">
+        <div class="rooms-container">
+            <div class="rooms">
+                <!-- Les cartes de salles seront ajoutées ici -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bouton flottant pour les salles -->
+    <button class="rooms-toggle-button-floating">
+        <i class="fas fa-door-open"></i> <span>Afficher les salles</span>
+    </button>
+    
+    <!-- Modal de connexion -->
+    <div id="loginModal" class="auth-modal">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h3><i class="fas fa-sign-in-alt"></i> Connexion</h3>
+                <button id="closeLoginModalBtn" class="auth-modal-close">&times;</button>
+            </div>
+            <div class="auth-modal-body">
+                <div class="auth-logo">
+                    <h2>ANECOOP</h2>
+                    <h4>Système de réservation</h4>
+                </div>
+                
+                <form id="loginForm" class="auth-form">
+                    <div id="login-status" class="login-status" style="display: none;"></div>
+                    
+                    <div class="form-group">
+                        <label for="login-username">Nom d'utilisateur</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="login-username" name="username" placeholder="Entrez votre nom d'utilisateur">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Mot de passe</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="login-password" name="password" placeholder="Entrez votre mot de passe">
+                        </div>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label>
+                            <input type="checkbox" name="remember"> Se souvenir de moi
+                        </label>
+                        <a href="#" class="forgot-password">Mot de passe oublié?</a>
+                    </div>
+                    
+                    <button type="submit" class="login-button">
+                        <i class="fas fa-sign-in-alt"></i> Connexion
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>© 2025 Anecoop. Tous droits réservés.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de réservation -->
+    <div id="bookingModal" class="booking-modal">
+        <div class="booking-modal-content">
+            <div class="booking-modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Créer une réunion Teams</h2>
+                <button id="closeBookingModalBtn" class="modal-close">&times;</button>
+            </div>
+            
+            <div class="booking-modal-body">
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label for="booking-title">Titre de la réunion</label>
+                        <input type="text" id="booking-title" placeholder="Entrez le titre de la réunion">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-room">Salle</label>
+                        <select id="booking-room">
+                            <option value="">Sélectionner une salle</option>
+                            <!-- Options ajoutées par JS -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-date">Date</label>
+                        <input type="date" id="booking-date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-start">Heure de début</label>
+                        <input type="time" id="booking-start">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Durée</label>
+                        <div class="quick-duration-buttons">
+                            <button type="button" class="duration-button" data-minutes="15">15 min</button>
+                            <button type="button" class="duration-button active" data-minutes="30">30 min</button>
+                            <button type="button" class="duration-button" data-minutes="60">1 heure</button>
+                            <button type="button" class="duration-button" data-minutes="120">2 heures</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-end">Heure de fin</label>
+                        <input type="time" id="booking-end">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-participants">Participants (emails séparés par des virgules)</label>
+                        <input type="text" id="booking-participants" placeholder="exemple@anecoop-france.com, ...">
+                    </div>
+                    
+                    <div id="room-availability"></div>
+                </form>
+            </div>
+            
+            <div class="booking-modal-footer">
+                <button id="cancelBookingBtn" class="cancel-button">
+                    <i class="fas fa-times"></i> Annuler
+                </button>
+                <button id="createTeamsMeetingBtn" class="create-button">
+                    <i class="fas fa-check"></i> Créer la réunion
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Zone d'ID récents -->
+    <div id="recent-ids"></div>
+    
+    <!-- Scripts -->
+    <script src="/static/js/config.js"></script>
+    <script src="/static/js/background.js"></script>
+    <script src="/static/js/datetime.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/ui.js"></script>
+    <script src="/static/js/meetings.js"></script>
+    <script src="/static/js/rooms.js"></script>
+    <script src="/static/js/join.js"></script>
+    <script src="/static/js/booking.js"></script>
 </body>
 </html>
