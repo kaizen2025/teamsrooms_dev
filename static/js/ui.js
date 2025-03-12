@@ -1,368 +1,325 @@
 /**
- * Système de gestion de l'interface utilisateur
- * Gérer les menus, l'affichage modal et les éléments interactifs
+ * Fonctions de gestion de l'interface utilisateur
  */
 
+// Système de gestion de l'interface utilisateur
 const UISystem = {
   // État de l'interface
-  isMenuExpanded: false,
-  isFullscreen: false,
-  currentTheme: 'default',
+  menuExpanded: false,
+  roomsVisible: false,
+  darkMode: false,
   
   /**
    * Initialise le système d'interface utilisateur
    */
   init() {
-    // Initialiser les différents éléments d'interface
+    console.log("Initialisation du système d'interface utilisateur");
+    
+    // Initialiser le menu
     this.initMenu();
-    this.initModals();
-    this.initToggles();
-    this.initDropdowns();
-    this.initBackgroundImage();
     
-    // Gérer le mode plein écran
-    this.initFullscreenMode();
+    // Initialiser le menu utilisateur
+    this.initUserProfileMenu();
     
-    console.log('UI System initialized');
+    // Initialiser le mode sombre/clair
+    this.initThemeToggle();
+    
+    // Initialiser les événements généraux
+    this.initGeneralEvents();
   },
   
   /**
    * Initialise le menu latéral
    */
   initMenu() {
-    // Bouton d'ouverture/fermeture du menu
-    const menuToggleBtn = document.querySelector('.menu-toggle-visible');
+    const menuToggle = document.querySelector('.menu-toggle-visible');
     const sideMenu = document.querySelector('.side-menu');
     const mainContainer = document.querySelector('.main-container');
     const menuOverlay = document.querySelector('.menu-overlay');
     
-    if (menuToggleBtn && sideMenu) {
-      // Gestionnaire de clic pour le bouton de menu
-      menuToggleBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.isMenuExpanded = !this.isMenuExpanded;
+    if (menuToggle && sideMenu && mainContainer) {
+      menuToggle.addEventListener('click', () => {
+        this.menuExpanded = !this.menuExpanded;
         
-        // Mettre à jour les classes
-        sideMenu.classList.toggle('expanded', this.isMenuExpanded);
-        if (mainContainer) {
-          mainContainer.classList.toggle('menu-expanded', this.isMenuExpanded);
-        }
+        sideMenu.classList.toggle('expanded', this.menuExpanded);
+        mainContainer.classList.toggle('menu-expanded', this.menuExpanded);
         
-        // Activer l'overlay sur mobile
-        if (menuOverlay && window.innerWidth <= 768) {
-          menuOverlay.classList.toggle('active', this.isMenuExpanded);
-        }
-        
-        // Animation du bouton
-        menuToggleBtn.classList.toggle('active');
-      });
-      
-      // Fermer le menu si on clique en dehors (sur mobile)
-      if (menuOverlay) {
-        menuOverlay.addEventListener('click', () => {
-          this.closeMenu();
-        });
-      }
-      
-      // Fermer le menu lors du redimensionnement de la fenêtre (si on passe de mobile à desktop)
-      window.addEventListener('resize', () => {
-        if (window.innerWidth > 768 && menuOverlay && menuOverlay.classList.contains('active')) {
-          this.closeMenu();
+        if (menuOverlay) {
+          menuOverlay.classList.toggle('active', this.menuExpanded);
         }
       });
     }
     
-    // Initialiser les éléments de menu
-    this.initMenuItems();
-  },
-  
-  /**
-   * Ferme le menu latéral
-   */
-  closeMenu() {
-    const sideMenu = document.querySelector('.side-menu');
-    const mainContainer = document.querySelector('.main-container');
-    const menuOverlay = document.querySelector('.menu-overlay');
-    const menuToggleBtn = document.querySelector('.menu-toggle-visible');
+    // Fermer le menu au clic sur l'overlay
+    if (menuOverlay) {
+      menuOverlay.addEventListener('click', () => {
+        this.menuExpanded = false;
+        sideMenu.classList.remove('expanded');
+        mainContainer.classList.remove('menu-expanded');
+        menuOverlay.classList.remove('active');
+      });
+    }
     
-    if (sideMenu) sideMenu.classList.remove('expanded');
-    if (mainContainer) mainContainer.classList.remove('menu-expanded');
-    if (menuOverlay) menuOverlay.classList.remove('active');
-    if (menuToggleBtn) menuToggleBtn.classList.remove('active');
-    
-    this.isMenuExpanded = false;
-  },
-  
-  /**
-   * Initialise les éléments du menu
-   */
-  initMenuItems() {
-    // Gérer les liens actifs du menu
-    const menuItems = document.querySelectorAll('.menu-item');
-    if (menuItems.length > 0) {
-      // Obtenir le chemin courant
-      const currentPath = window.location.pathname;
-      
-      menuItems.forEach(item => {
-        const link = item.getAttribute('href') || '';
-        
-        // Marquer comme actif si le chemin correspond
-        if (link && currentPath.includes(link)) {
-          item.classList.add('active');
+    // Gestionnaire pour les items du menu
+    document.querySelectorAll('.menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        // Ajouter ici la logique de navigation
+        const target = item.getAttribute('data-target');
+        if (target) {
+          console.log(`Navigation vers ${target}`);
+          
+          // Si on est en mobile, fermer le menu après la navigation
+          if (window.innerWidth < 768) {
+            this.menuExpanded = false;
+            sideMenu.classList.remove('expanded');
+            mainContainer.classList.remove('menu-expanded');
+            if (menuOverlay) menuOverlay.classList.remove('active');
+          }
         }
-        
-        // Éviter de fermer le menu sur les clics de sous-menu
-        item.addEventListener('click', (e) => {
-          // Si c'est un lien avec sous-menu
-          if (item.classList.contains('has-submenu')) {
+      });
+    });
+  },
+  
+  /**
+   * Initialise le menu utilisateur
+   */
+  initUserProfileMenu() {
+    console.log("Initialisation du menu utilisateur");
+    
+    const userProfile = document.querySelector('.user-profile-button');
+    const userDropdown = document.querySelector('.user-dropdown');
+    
+    if (userProfile && userDropdown) {
+      console.log("Composants du menu utilisateur trouvés");
+      
+      // Gestion du clic sur le bouton de profil
+      userProfile.addEventListener('click', function(e) {
+        console.log("Clic sur le profil utilisateur");
+        e.preventDefault();
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+      });
+      
+      // Fermer le menu au clic ailleurs
+      document.addEventListener('click', function(e) {
+        if (userDropdown.classList.contains('show') && !userProfile.contains(e.target)) {
+          userDropdown.classList.remove('show');
+        }
+      });
+      
+      // Maintenir ouvert au survol
+      userProfile.addEventListener('mouseenter', () => {
+        userDropdown.classList.add('show');
+      });
+      
+      let timeoutId;
+      userProfile.addEventListener('mouseleave', () => {
+        timeoutId = setTimeout(() => {
+          if (!userDropdown.matches(':hover')) {
+            userDropdown.classList.remove('show');
+          }
+        }, 300);
+      });
+      
+      userDropdown.addEventListener('mouseenter', () => {
+        clearTimeout(timeoutId);
+      });
+      
+      userDropdown.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          if (!userProfile.matches(':hover')) {
+            userDropdown.classList.remove('show');
+          }
+        }, 300);
+      });
+      
+      // Gestionnaire pour les liens du menu
+      userDropdown.querySelectorAll('.user-dropdown-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          const action = link.id;
+          
+          if (action === 'logoutBtn' && window.AuthSystem) {
             e.preventDefault();
-            item.classList.toggle('expanded');
+            window.AuthSystem.logout();
+          } else if (action === 'profileLink') {
+            e.preventDefault();
+            console.log("Affichage du profil utilisateur");
+            // Ajouter la logique pour afficher le profil
+          } else if (action === 'settingsLink') {
+            e.preventDefault();
+            console.log("Affichage des paramètres utilisateur");
+            // Ajouter la logique pour afficher les paramètres
           }
         });
       });
-    }
-    
-    // Gestion du bouton d'affichage des salles
-    const roomsToggleBtn = document.querySelector('.toggle-rooms-button');
-    if (roomsToggleBtn) {
-      roomsToggleBtn.addEventListener('click', () => {
-        this.toggleRoomsSection();
-      });
+    } else {
+      console.warn("Composants du menu utilisateur non trouvés");
     }
   },
   
   /**
-   * Affiche/masque la section des salles
+   * Initialise le basculement de thème (clair/sombre)
    */
-  toggleRoomsSection() {
-    const roomsSection = document.querySelector('.rooms-section');
-    if (roomsSection) {
-      roomsSection.classList.toggle('visible');
-    }
-  },
-  
-  /**
-   * Initialise les fenêtres modales
-   */
-  initModals() {
-    // Trouver tous les boutons qui ouvrent des modals
-    const modalTriggers = document.querySelectorAll('[data-modal]');
+  initThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
     
-    modalTriggers.forEach(trigger => {
-      trigger.addEventListener('click', () => {
-        const modalId = trigger.getAttribute('data-modal');
-        this.openModal(modalId);
-      });
-    });
-    
-    // Trouver tous les boutons de fermeture
-    const closeButtons = document.querySelectorAll('.modal-close, [data-close-modal]');
-    
-    closeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const modal = button.closest('.modal');
-        if (modal) {
-          this.closeModal(modal.id);
-        }
-      });
-    });
-    
-    // Fermer les modals en cliquant en dehors du contenu
-    const modals = document.querySelectorAll('.modal');
-    
-    modals.forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          this.closeModal(modal.id);
-        }
-      });
-    });
-  },
-  
-  /**
-   * Ouvre une fenêtre modale
-   */
-  openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.style.display = 'flex';
-      document.body.style.overflow = 'hidden'; // Empêcher le défilement de la page
+    if (themeToggle) {
+      // Vérifier le thème sauvegardé
+      const savedTheme = localStorage.getItem('theme');
+      this.darkMode = savedTheme === 'dark';
       
-      // Animer l'entrée
-      setTimeout(() => {
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-          modalContent.style.opacity = '1';
-          modalContent.style.transform = 'translateY(0)';
-        }
-      }, 50);
+      // Appliquer le thème initial
+      document.body.classList.toggle('dark-mode', this.darkMode);
+      themeToggle.innerHTML = this.darkMode 
+        ? '<i class="fas fa-sun"></i>' 
+        : '<i class="fas fa-moon"></i>';
+      
+      // Gestionnaire d'événement
+      themeToggle.addEventListener('click', () => {
+        this.darkMode = !this.darkMode;
+        document.body.classList.toggle('dark-mode', this.darkMode);
+        
+        themeToggle.innerHTML = this.darkMode 
+          ? '<i class="fas fa-sun"></i>' 
+          : '<i class="fas fa-moon"></i>';
+        
+        // Sauvegarder la préférence
+        localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+      });
     }
   },
   
   /**
-   * Ferme une fenêtre modale
+   * Initialise les événements généraux de l'interface
    */
-  closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      // Animer la sortie
-      const modalContent = modal.querySelector('.modal-content');
-      if (modalContent) {
-        modalContent.style.opacity = '0';
-        modalContent.style.transform = 'translateY(-20px)';
-        
-        setTimeout(() => {
-          modal.style.display = 'none';
-          document.body.style.overflow = ''; // Rétablir le défilement
-        }, 300);
-      } else {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-      }
-    }
-  },
-  
-  /**
-   * Initialise les toggles et switches
-   */
-  initToggles() {
-    const toggleButtons = document.querySelectorAll('.toggle-button');
-    
-    toggleButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        button.classList.toggle('active');
-        
-        // Exécuter l'action associée au toggle
-        const action = button.getAttribute('data-action');
-        if (action && typeof this[action] === 'function') {
-          this[action]();
-        }
-      });
-    });
-  },
-  
-  /**
-   * Initialise les menus déroulants
-   */
-  initDropdowns() {
-    const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
-    
-    dropdownTriggers.forEach(trigger => {
-      trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        const dropdown = trigger.nextElementSibling;
-        if (dropdown && dropdown.classList.contains('dropdown-menu')) {
-          dropdown.classList.toggle('show');
-          
-          // Fermer les autres dropdowns
-          dropdownTriggers.forEach(otherTrigger => {
-            if (otherTrigger !== trigger) {
-              const otherDropdown = otherTrigger.nextElementSibling;
-              if (otherDropdown && otherDropdown.classList.contains('dropdown-menu')) {
-                otherDropdown.classList.remove('show');
-              }
-            }
-          });
-        }
-      });
-    });
-    
-    // Fermer les dropdowns en cliquant ailleurs
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-        menu.classList.remove('show');
-      });
-    });
-  },
-  
-  /**
-   * Initialise la gestion du mode plein écran
-   */
-  initFullscreenMode() {
+  initGeneralEvents() {
+    // Gestion du passage en plein écran
     const fullscreenBtn = document.getElementById('fullscreenBtn');
+    
     if (fullscreenBtn) {
       fullscreenBtn.addEventListener('click', () => {
-        this.toggleFullscreen();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Erreur lors du passage en plein écran: ${err.message}`);
+          });
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
       });
-    }
-    
-    // Détecter les changements d'état du plein écran
-    document.addEventListener('fullscreenchange', () => {
-      this.isFullscreen = !!document.fullscreenElement;
-      if (fullscreenBtn) {
-        fullscreenBtn.innerHTML = this.isFullscreen
-          ? '<i class="fas fa-compress"></i> Quitter'
+      
+      // Mettre à jour l'icône selon l'état du plein écran
+      document.addEventListener('fullscreenchange', () => {
+        fullscreenBtn.innerHTML = document.fullscreenElement
+          ? '<i class="fas fa-compress"></i> Quitter le plein écran'
           : '<i class="fas fa-expand"></i> Plein écran';
-      }
-    });
-  },
-  
-  /**
-   * Bascule le mode plein écran
-   */
-  toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      // Passer en plein écran
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Erreur lors du passage en plein écran: ${err.message}`);
       });
-    } else {
-      // Quitter le plein écran
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+    }
+    
+    // Gestion de l'affichage des salles
+    const roomsToggleBtn = document.getElementById('toggleRoomsBtn');
+    const roomsSection = document.querySelector('.rooms-section');
+    
+    if (roomsToggleBtn && roomsSection) {
+      roomsToggleBtn.addEventListener('click', () => {
+        this.roomsVisible = !this.roomsVisible;
+        roomsSection.classList.toggle('visible', this.roomsVisible);
+        
+        roomsToggleBtn.innerHTML = this.roomsVisible
+          ? '<i class="fas fa-times"></i> Masquer les salles'
+          : '<i class="fas fa-door-open"></i> Afficher les salles';
+      });
     }
   },
   
   /**
-   * Initialise l'image d'arrière-plan
+   * Ajoute une notification temporaire
    */
-  initBackgroundImage() {
-    const bgContainer = document.getElementById('background-container');
-    if (!bgContainer) return;
+  showNotification(message, type = 'info', duration = 5000) {
+    const notificationContainer = document.getElementById('notificationContainer');
     
-    // Vérifier si BACKGROUNDS est défini
-    if (!window.BACKGROUNDS || window.BACKGROUNDS.length === 0) {
-      // Définir un tableau par défaut
-      window.BACKGROUNDS = [
-        '/static/Images/iStock-1137376794.jpg',
-        '/static/Images/iStock-1512013316.jpg',
-        '/static/Images/iStock-2019872476.jpg',
-        '/static/Images/iStock-2154828608.jpg',
-        '/static/Images/iStock-2157915069.jpg',
-        '/static/Images/iStock-2162113462.jpg'
-      ];
+    if (!notificationContainer) {
+      // Créer le conteneur s'il n'existe pas
+      const container = document.createElement('div');
+      container.id = 'notificationContainer';
+      container.className = 'notification-container';
+      document.body.appendChild(container);
     }
     
-    // Sélectionner une image aléatoire
-    const randomIndex = Math.floor(Math.random() * window.BACKGROUNDS.length);
-    const imagePath = window.BACKGROUNDS[randomIndex];
+    // Créer la notification
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+      <div class="notification-content">
+        <i class="fas ${this.getIconForType(type)}"></i>
+        <span>${message}</span>
+      </div>
+      <button class="notification-close">
+        <i class="fas fa-times"></i>
+      </button>
+    `;
     
-    // Définir l'image de fond
-    bgContainer.style.backgroundImage = `url('${imagePath}')`;
+    // Ajouter au conteneur
+    notificationContainer.appendChild(notification);
     
-    // Rotation périodique si configuré
-    if (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.BACKGROUND) {
-      setInterval(() => {
-        const newIndex = Math.floor(Math.random() * window.BACKGROUNDS.length);
-        const newImage = window.BACKGROUNDS[newIndex];
-        
-        // Animation de transition
-        bgContainer.style.opacity = '0';
-        setTimeout(() => {
-          bgContainer.style.backgroundImage = `url('${newImage}')`;
-          bgContainer.style.opacity = '1';
-        }, 500);
-      }, window.REFRESH_INTERVALS.BACKGROUND);
+    // Animation d'entrée
+    setTimeout(() => {
+      notification.classList.add('show');
+    }, 10);
+    
+    // Bouton de fermeture
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.closeNotification(notification);
+      });
+    }
+    
+    // Fermeture automatique après la durée spécifiée
+    if (duration > 0) {
+      setTimeout(() => {
+        this.closeNotification(notification);
+      }, duration);
+    }
+  },
+  
+  /**
+   * Ferme une notification avec animation
+   */
+  closeNotification(notification) {
+    notification.classList.remove('show');
+    
+    // Supprimer après l'animation
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  },
+  
+  /**
+   * Obtient l'icône Font Awesome pour le type de notification
+   */
+  getIconForType(type) {
+    switch (type) {
+      case 'success':
+        return 'fa-check-circle';
+      case 'error':
+        return 'fa-exclamation-circle';
+      case 'warning':
+        return 'fa-exclamation-triangle';
+      case 'info':
+      default:
+        return 'fa-info-circle';
     }
   }
 };
 
-// Initialisation au chargement de la page
+// Initialiser le système d'interface au chargement du document
 document.addEventListener('DOMContentLoaded', () => {
   UISystem.init();
 });
 
-// Exposer le système pour utilisation dans d'autres modules
+// Exporter pour utilisation dans d'autres modules
 window.UISystem = UISystem;
