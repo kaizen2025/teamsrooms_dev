@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Salles de Réunion | Anecoop</title>
+    <title>Salles de Réunion | Anecoop France</title>
     
-    <!-- Font Awesome pour les icônes -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/static/Images/favicon.ico" type="image/x-icon">
     
-    <!-- Styles CSS -->
+    <!-- Fontawesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Base Stylesheets -->
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/layout.css">
     <link rel="stylesheet" href="/static/css/menu.css">
@@ -17,114 +20,123 @@
     <link rel="stylesheet" href="/static/css/modal.css">
     <link rel="stylesheet" href="/static/css/auth.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    
+    <!-- Interface Improvements CSS -->
+    <link rel="stylesheet" href="/static/css/interface-improvements.css">
 </head>
 <body>
-    <!-- Conteneur d'arrière-plan -->
+    <!-- Background Container -->
     <div id="background-container"></div>
     
-    <!-- Conteneur principal -->
-    <div class="main-container">
-        <!-- Menu latéral -->
-        <div class="side-menu">
-            <button class="menu-toggle-visible">
-                <i class="fas fa-bars"></i>
-            </button>
-            
+    <!-- Overlay for Mobile Menu -->
+    <div class="menu-overlay"></div>
+    
+    <!-- Main Container with Grid Layout -->
+    <div class="main-container menu-expanded">
+        <!-- Left Side Menu -->
+        <div class="side-menu expanded">
             <div class="menu-logo">
-                <h2>ANECOOP</h2>
+                <img src="/static/Images/logo-anecoop.svg" alt="Logo Anecoop" height="50">
             </div>
             
             <div class="menu-title">TABLEAU DE BORD</div>
             
             <div class="menu-items">
-                <!-- Section principale -->
-                <a href="/" class="menu-item active">
-                    <i class="fas fa-home menu-item-icon"></i>
-                    <span class="menu-item-text">Accueil</span>
-                </a>
-                
-                <a href="/admin" class="menu-item" data-role="administrator">
-                    <i class="fas fa-user-shield menu-item-icon"></i>
-                    <span class="menu-item-text">Administration</span>
-                </a>
-                
-                <div class="menu-separator"></div>
-                
                 <div class="menu-group">
-                    <div class="menu-group-title">RÉSERVATIONS</div>
-                    
-                    <a href="/rooms" class="menu-item">
+                    <a href="/" class="menu-item active">
+                        <i class="fas fa-home menu-item-icon"></i>
+                        <span class="menu-item-text">Accueil</span>
+                    </a>
+                    <a href="/reservations" class="menu-item">
                         <i class="fas fa-calendar-alt menu-item-icon"></i>
-                        <span class="menu-item-text">Salle de réunion</span>
+                        <span class="menu-item-text">Réservation</span>
                     </a>
-                    
-                    <a href="/vehicles" class="menu-item">
-                        <i class="fas fa-car menu-item-icon"></i>
-                        <span class="menu-item-text">Réservation voiture</span>
-                    </a>
-                    
-                    <a href="/equipment" class="menu-item">
-                        <i class="fas fa-laptop menu-item-icon"></i>
-                        <span class="menu-item-text">Prêt de matériel</span>
-                    </a>
-                </div>
-                
-                <div class="menu-separator"></div>
-                
-                <div class="menu-group">
-                    <div class="menu-group-title">APPLICATIONS</div>
-                    
                     <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
                         <i class="fas fa-users menu-item-icon"></i>
                         <span class="menu-item-text">Teams</span>
                     </a>
-                    
-                    <a href="#" class="menu-item">
-                        <i class="fas fa-briefcase menu-item-icon"></i>
+                </div>
+                
+                <div class="menu-separator"></div>
+                
+                <div class="menu-group">
+                    <div class="menu-group-title">Applications</div>
+                    <a href="https://sage.anecoop-france.com" target="_blank" class="menu-item">
+                        <i class="fas fa-calculator menu-item-icon"></i>
                         <span class="menu-item-text">SAGE</span>
                     </a>
-                    
-                    <a href="#" class="menu-item">
-                        <i class="fas fa-phone menu-item-icon"></i>
-                        <span class="menu-item-text">3CX</span>
+                    <a href="/prets" class="menu-item">
+                        <i class="fas fa-boxes menu-item-icon"></i>
+                        <span class="menu-item-text">Demande de prêt</span>
                     </a>
-                    
-                    <a href="#" class="menu-item">
-                        <i class="fas fa-sync-alt menu-item-icon"></i>
+                    <a href="/pulse" class="menu-item">
+                        <i class="fas fa-chart-line menu-item-icon"></i>
                         <span class="menu-item-text">AnecoopPulse</span>
+                    </a>
+                    <a href="/mistral" class="menu-item">
+                        <i class="fas fa-robot menu-item-icon"></i>
+                        <span class="menu-item-text">Mistral AI</span>
+                    </a>
+                </div>
+                
+                <div class="menu-separator"></div>
+                
+                <div class="menu-group" data-role="administrator,manager">
+                    <div class="menu-group-title">Administration</div>
+                    <a href="/admin" class="menu-item">
+                        <i class="fas fa-cog menu-item-icon"></i>
+                        <span class="menu-item-text">Paramètres</span>
+                    </a>
+                    <a href="/admin/users" class="menu-item">
+                        <i class="fas fa-user-cog menu-item-icon"></i>
+                        <span class="menu-item-text">Utilisateurs</span>
                     </a>
                 </div>
             </div>
+            
+            <div class="menu-bottom">
+                <button class="toggle-rooms-button">
+                    <i class="fas fa-door-open"></i>
+                    <span class="button-text">Afficher les salles</span>
+                </button>
+            </div>
         </div>
         
-        <!-- Overlay pour mobile -->
-        <div class="menu-overlay"></div>
-        
-        <!-- En-tête -->
+        <!-- Header -->
         <header class="header">
+            <!-- Menu Toggle Button -->
+            <button class="menu-toggle-visible" title="Menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- Date & Time -->
             <div class="datetime">
-                <p id="current-date">Lundi 9 mars 2025</p>
-                <p id="current-time">00:00:00</p>
+                <p>Mercredi 12 mars 2025</p>
+                <p>02:33:52</p>
             </div>
             
+            <!-- Title -->
             <div class="title-container">
-                <h1 class="title" id="salle-title">Toutes les salles</h1>
+                <h1 class="title">Salle de Réunion <span id="salle-title">Toutes les salles</span></h1>
             </div>
             
-            <!-- Bouton de connexion / profil utilisateur -->
-            <div class="user-profile" style="display: none;">
-                <button class="user-profile-button">
+            <!-- User Profile Section -->
+            <div class="user-profile">
+                <!-- If logged in, show user profile button -->
+                <button class="user-profile-button" id="userProfileBtn" style="display: none;">
                     <div class="user-initials">--</div>
                     <div class="user-info">
-                        <span id="userDisplayName">Utilisateur</span>
-                        <span class="user-role" id="userRole">Invité</span>
+                        <span>Utilisateur</span>
+                        <span class="user-role">Invité</span>
                     </div>
                     <i class="fas fa-chevron-down"></i>
                 </button>
+                
+                <!-- User Dropdown Menu -->
                 <div class="user-dropdown">
                     <div class="user-dropdown-header">
-                        <span id="userDisplayNameFull">Utilisateur</span>
-                        <span class="user-role-full" id="userRoleFull">Invité</span>
+                        <span>Utilisateur</span>
+                        <span class="user-role-full">Invité</span>
                     </div>
                     <div class="user-dropdown-links">
                         <a href="#" class="user-dropdown-link" id="profileLink">
@@ -138,23 +150,33 @@
                         </a>
                     </div>
                 </div>
+                
+                <!-- Login Button (shown if not logged in) -->
+                <button class="btn btn-primary" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Connexion
+                </button>
             </div>
-            
-            <button id="loginBtn" class="auth-button">
-                <i class="fas fa-sign-in-alt"></i> Connexion
-            </button>
         </header>
         
-        <!-- Contenu principal -->
+        <!-- Main Content Area -->
         <main class="content">
-            <!-- Contenu de la page -->
-            <div class="content-inner">
-                <!-- Cette partie sera remplie dynamiquement selon la page affichée -->
+            <!-- Default Welcome Content -->
+            <div class="welcome-container glass-container">
+                <div class="welcome-header">
+                    <h2><i class="fas fa-door-open"></i> Bienvenue dans le système de réservation</h2>
+                </div>
+                <div class="welcome-content">
+                    <p>Sélectionnez une salle dans le menu ou utilisez le bouton "Afficher les salles" pour voir les disponibilités.</p>
+                    <p>Vous pouvez également créer une nouvelle réservation en utilisant le bouton en haut du panneau des réunions.</p>
+                </div>
             </div>
+            
+            <!-- Room-specific content will be loaded here -->
+            <div id="room-details" style="display: none;"></div>
         </main>
         
-        <!-- Panneau des réunions -->
-        <div class="meetings-container">
+        <!-- Meetings Panel -->
+        <aside class="meetings-container">
             <div class="meetings-title-bar">
                 <h2>RÉUNIONS D'AUJOURD'HUI</h2>
                 <button class="create-meeting-integrated">
@@ -162,142 +184,240 @@
                 </button>
             </div>
             
-            <div class="meetings" id="meetingsContainer">
-                <!-- Contenu chargé dynamiquement par meetings.js -->
-                <div class="loading-indicator">
-                    <i class="fas fa-circle-notch fa-spin"></i>
-                    <span>Chargement des réunions...</span>
+            <div class="meetings">
+                <div class="meetings-list">
+                    <!-- Current Meetings Section -->
+                    <div class="status-section">
+                        <h4><i class="fas fa-clock"></i> En cours</h4>
+                    </div>
+                    
+                    <!-- Example of a current meeting item -->
+                    <div class="meeting-item current" data-start="14:00" data-end="16:00">
+                        <div class="meeting-status-badge">
+                            <i class="fas fa-clock"></i> En cours
+                        </div>
+                        <h3>Réunion point d'avancement dossiers IFS Broker</h3>
+                        <p class="meeting-time"><i class="far fa-clock"></i> 14:00 - 16:00</p>
+                        <p class="meeting-salle"><i class="fas fa-door-open"></i> Salle: Castillet</p>
+                        
+                        <!-- Progress Bar -->
+                        <div class="meeting-progress-container">
+                            <div class="meeting-progress-bar" style="width: 58%;"></div>
+                        </div>
+                        
+                        <div class="time-info">
+                            <span>14:00</span>
+                            <span class="time-remaining"><i class="far fa-hourglass"></i> 20 min restantes</span>
+                            <span>16:00</span>
+                        </div>
+                        
+                        <button class="meeting-join-btn">
+                            <i class="fas fa-sign-in-alt"></i> Rejoindre
+                        </button>
+                    </div>
+                    
+                    <!-- Upcoming Meetings Section -->
+                    <div class="status-section">
+                        <h4><i class="fas fa-hourglass-start"></i> À venir</h4>
+                    </div>
+                    
+                    <!-- Example of an upcoming meeting item -->
+                    <div class="meeting-item upcoming" data-start="17:00" data-end="18:00">
+                        <div class="meeting-status-badge" style="background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));">
+                            <i class="fas fa-hourglass-start"></i> À venir
+                        </div>
+                        <h3>Point RH</h3>
+                        <p class="meeting-time"><i class="far fa-clock"></i> 17:00 - 18:00</p>
+                        <p class="meeting-salle"><i class="fas fa-door-open"></i> Salle: Tramontane</p>
+                        
+                        <button class="meeting-join-btn">
+                            <i class="fas fa-sign-in-alt"></i> Rejoindre
+                        </button>
+                    </div>
+                    
+                    <!-- Past Meetings Section -->
+                    <div class="status-section">
+                        <h4><i class="fas fa-check"></i> Terminées</h4>
+                    </div>
+                    
+                    <!-- Example of a past meeting item -->
+                    <div class="meeting-item past" data-start="09:00" data-end="10:00" style="opacity: 0.7;">
+                        <div class="meeting-status-badge" style="background: linear-gradient(to right, #777, #999); opacity: 0.8;">
+                            <i class="fas fa-check"></i> Terminée
+                        </div>
+                        <h3>RDV CARSAT FINALISATION DOSSIER</h3>
+                        <p class="meeting-time"><i class="far fa-clock"></i> 09:00 - 10:00</p>
+                        <p class="meeting-salle"><i class="fas fa-door-open"></i> Salle: Tramontane</p>
+                    </div>
+                    
+                    <!-- Empty state when no meetings are available -->
+                    <div class="empty-meetings-message" style="display: none;">
+                        <i class="fas fa-calendar-day"></i>
+                        <p>Aucune réunion prévue aujourd'hui</p>
+                    </div>
+                    
+                    <!-- Loading indicator for meetings -->
+                    <div class="loading-indicator" style="display: none;">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                        <p>Chargement des réunions...</p>
+                    </div>
+                </div>
+                
+                <!-- Join Meeting (ID Entry) -->
+                <div class="join-meeting-container">
+                    <div class="meeting-join-integrated">
+                        <input type="text" id="meetingIdInput" placeholder="Entrez l'ID de la réunion">
+                        <button id="joinMeetingBtn">
+                            <i class="fas fa-sign-in-alt"></i> Rejoindre
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </aside>
         
-        <!-- Barre de contrôle -->
+        <!-- Controls Container -->
         <div class="controls-container">
-            <div class="meeting-join-inline">
-                <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
-                <button id="joinMeetingBtn"><i class="fas fa-sign-in-alt"></i> Rejoindre</button>
-            </div>
-            
             <div class="control-buttons">
-                <button id="refreshBtn" class="control-button refresh">
-                    <i class="fas fa-sync-alt"></i> Rafraîchir
-                </button>
-                
-                <button id="toggleRoomsBtn" class="control-button rooms-toggle">
+                <button id="showRoomsBtn">
                     <i class="fas fa-door-open"></i> Afficher les salles
                 </button>
                 
-                <button id="createMeetingBtn" class="control-button create">
-                    <i class="fas fa-plus"></i> Créer une réservation
+                <button id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Rafraîchir
                 </button>
                 
-                <button id="fullscreenBtn" class="control-button fullscreen">
+                <button id="createMeetingBtn">
+                    <i class="fas fa-calendar-plus"></i> Créer une réunion
+                </button>
+                
+                <button id="fullscreenBtn">
                     <i class="fas fa-expand"></i> Plein écran
                 </button>
                 
-                <button id="helpBtn" class="control-button help">
+                <button id="helpBtn">
                     <i class="fas fa-question-circle"></i> Aide
                 </button>
             </div>
         </div>
     </div>
     
-    <!-- Section des salles (invisible par défaut) -->
+    <!-- Rooms Display Floating Section -->
     <div class="rooms-section">
         <div class="rooms-container">
             <div class="rooms">
-                <!-- Les cartes de salles seront ajoutées ici -->
+                <!-- Room cards will be added here dynamically -->
+                <div class="room-card available" data-room="canigou">
+                    <div class="room-name">Canigou</div>
+                    <div class="room-status">
+                        <span class="status-icon available"></span> Disponible
+                    </div>
+                </div>
+                
+                <div class="room-card occupied" data-room="castillet">
+                    <div class="room-name">Castillet</div>
+                    <div class="room-status">
+                        <span class="status-icon occupied"></span> Occupée
+                    </div>
+                    <div class="room-time">Jusqu'à 16:00</div>
+                </div>
+                
+                <div class="room-card available" data-room="florensud">
+                    <div class="room-name">Florensud</div>
+                    <div class="room-status">
+                        <span class="status-icon available"></span> Disponible
+                    </div>
+                </div>
+                
+                <div class="room-card occupied" data-room="mallorca">
+                    <div class="room-name">Mallorca</div>
+                    <div class="room-status">
+                        <span class="status-icon occupied"></span> Occupée
+                    </div>
+                    <div class="room-time">Toute la journée</div>
+                </div>
+                
+                <div class="room-card available" data-room="mimosa">
+                    <div class="room-name">Mimosa</div>
+                    <div class="room-status">
+                        <span class="status-icon available"></span> Disponible
+                    </div>
+                </div>
+                
+                <div class="room-card available" data-room="pivoine">
+                    <div class="room-name">Pivoine</div>
+                    <div class="room-status">
+                        <span class="status-icon available"></span> Disponible
+                    </div>
+                </div>
+                
+                <div class="room-card soon" data-room="renoncule">
+                    <div class="room-name">Renoncule</div>
+                    <div class="room-status">
+                        <span class="status-icon soon"></span> Bientôt
+                    </div>
+                    <div class="room-time">À 13:00</div>
+                </div>
+                
+                <div class="room-card available" data-room="tramontane">
+                    <div class="room-name">Tramontane</div>
+                    <div class="room-status">
+                        <span class="status-icon available"></span> Disponible
+                    </div>
+                </div>
+                
+                <div class="room-card available" data-room="massane">
+                    <div class="room-name">Massane</div>
+                    <div class="room-status">
+                        <span class="status-icon available"></span> Disponible
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Bouton flottant pour les salles -->
+    <!-- Floating Rooms Toggle Button (Mobile) -->
     <button class="rooms-toggle-button-floating">
-        <i class="fas fa-door-open"></i> <span>Afficher les salles</span>
+        <i class="fas fa-door-open"></i> Salles
     </button>
     
-    <!-- Modal de connexion -->
-    <div id="loginModal" class="auth-modal">
-        <div class="auth-modal-content">
-            <div class="auth-modal-header">
-                <h3><i class="fas fa-sign-in-alt"></i> Connexion</h3>
-                <button id="closeLoginModalBtn" class="auth-modal-close">&times;</button>
-            </div>
-            <div class="auth-modal-body">
-                <div class="auth-logo">
-                    <h2>ANECOOP</h2>
-                    <h4>Système de réservation</h4>
-                </div>
-                
-                <form id="loginForm" class="auth-form">
-                    <div id="login-status" class="login-status" style="display: none;"></div>
-                    
-                    <div class="form-group">
-                        <label for="login-username">Nom d'utilisateur</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-user"></i>
-                            <input type="text" id="login-username" name="username" placeholder="Entrez votre nom d'utilisateur">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="login-password">Mot de passe</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-lock"></i>
-                            <input type="password" id="login-password" name="password" placeholder="Entrez votre mot de passe">
-                        </div>
-                    </div>
-                    
-                    <div class="form-options">
-                        <label>
-                            <input type="checkbox" name="remember"> Se souvenir de moi
-                        </label>
-                        <a href="#" class="forgot-password">Mot de passe oublié?</a>
-                    </div>
-                    
-                    <button type="submit" class="login-button">
-                        <i class="fas fa-sign-in-alt"></i> Connexion
-                    </button>
-                </form>
-                
-                <div class="login-footer">
-                    <p>© 2025 Anecoop. Tous droits réservés.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal de réservation -->
-    <div id="bookingModal" class="booking-modal">
+    <!-- Booking Modal -->
+    <div class="booking-modal" id="bookingModal">
         <div class="booking-modal-content">
             <div class="booking-modal-header">
-                <h2><i class="fas fa-plus-circle"></i> Créer une réunion Teams</h2>
-                <button id="closeBookingModalBtn" class="modal-close">&times;</button>
+                <h2><i class="fas fa-calendar-plus"></i> Nouvelle réunion Teams</h2>
+                <button class="modal-close" id="closeBookingModalBtn">&times;</button>
             </div>
             
             <div class="booking-modal-body">
-                <form id="bookingForm">
+                <form id="bookingForm" class="booking-form">
                     <div class="form-group">
-                        <label for="booking-title">Titre de la réunion</label>
-                        <input type="text" id="booking-title" placeholder="Entrez le titre de la réunion">
+                        <label for="booking-title">Titre de la réunion *</label>
+                        <input type="text" id="booking-title" placeholder="Entrez un titre pour la réunion" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="booking-room">Salle</label>
-                        <select id="booking-room">
-                            <option value="">Sélectionner une salle</option>
-                            <!-- Options ajoutées par JS -->
+                        <label for="booking-room">Salle *</label>
+                        <select id="booking-room" required>
+                            <option value="" selected disabled>Sélectionnez une salle</option>
+                            <!-- Options will be populated dynamically -->
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="booking-date">Date</label>
-                        <input type="date" id="booking-date">
+                        <label for="booking-date">Date *</label>
+                        <input type="date" id="booking-date" required>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="booking-start">Heure de début</label>
-                        <input type="time" id="booking-start">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="booking-start">Heure de début *</label>
+                            <input type="time" id="booking-start" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="booking-end">Heure de fin *</label>
+                            <input type="time" id="booking-end" required>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -311,13 +431,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="booking-end">Heure de fin</label>
-                        <input type="time" id="booking-end">
-                    </div>
-                    
-                    <div class="form-group">
                         <label for="booking-participants">Participants (emails séparés par des virgules)</label>
-                        <input type="text" id="booking-participants" placeholder="exemple@anecoop-france.com, ...">
+                        <input type="text" id="booking-participants" placeholder="participant1@anecoop-france.com, participant2@anecoop-france.com">
                     </div>
                     
                     <div id="room-availability"></div>
@@ -335,18 +450,102 @@
         </div>
     </div>
     
-    <!-- Zone d'ID récents -->
-    <div id="recent-ids"></div>
+    <!-- Login Modal -->
+    <div class="auth-modal" id="loginModal">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h3><i class="fas fa-sign-in-alt"></i> Connexion</h3>
+                <button class="auth-modal-close" id="closeLoginModalBtn">&times;</button>
+            </div>
+            
+            <div class="auth-modal-body">
+                <div class="auth-logo">
+                    <img src="/static/Images/logo-anecoop.svg" alt="Logo Anecoop" height="50">
+                    <h4>Système de réservation de salles</h4>
+                </div>
+                
+                <form id="loginForm" class="auth-form">
+                    <div class="login-status" id="login-status"></div>
+                    
+                    <div class="form-group">
+                        <label for="login-username">Nom d'utilisateur</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="login-username" placeholder="Entrez votre nom d'utilisateur" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Mot de passe</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="login-password" placeholder="Entrez votre mot de passe" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label>
+                            <input type="checkbox" id="remember-me"> Se souvenir de moi
+                        </label>
+                        <a href="#" class="forgot-password">Mot de passe oublié?</a>
+                    </div>
+                    
+                    <button type="submit" class="login-button">
+                        <i class="fas fa-sign-in-alt"></i> Connexion
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    &copy; 2025 Anecoop France. Tous droits réservés.
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <!-- Scripts -->
+    <!-- Base Scripts -->
     <script src="/static/js/config.js"></script>
-    <script src="/static/js/background.js"></script>
     <script src="/static/js/datetime.js"></script>
+    <script src="/static/js/background.js"></script>
     <script src="/static/js/auth.js"></script>
-    <script src="/static/js/ui.js"></script>
     <script src="/static/js/meetings.js"></script>
     <script src="/static/js/rooms.js"></script>
     <script src="/static/js/join.js"></script>
     <script src="/static/js/booking.js"></script>
+    <script src="/static/js/ui.js"></script>
+    
+    <!-- Interface Improvements Script -->
+    <script src="/static/js/interface-improvements.js"></script>
+    
+    <script>
+        // Initialize room name from URL or config
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get room name from URL or set default
+            const path = window.location.pathname.split('/')[1] || '';
+            let roomName = path && path !== '' ? path : 'Toutes les salles';
+            
+            // Format room name (capitalize first letter)
+            roomName = roomName.charAt(0).toUpperCase() + roomName.slice(1).toLowerCase();
+            
+            // Set room name in title
+            const salleTitle = document.getElementById('salle-title');
+            if (salleTitle) {
+                salleTitle.textContent = roomName;
+            }
+            
+            // Update document title
+            document.title = `Salle ${roomName} | Anecoop France`;
+            
+            // Highlight the current room in rooms section if applicable
+            if (roomName.toLowerCase() !== 'toutes les salles') {
+                const roomCards = document.querySelectorAll('.room-card');
+                roomCards.forEach(card => {
+                    if (card.dataset.room && card.dataset.room.toLowerCase() === roomName.toLowerCase()) {
+                        card.style.borderColor = 'var(--primary-color)';
+                        card.style.transform = 'scale(1.05)';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
