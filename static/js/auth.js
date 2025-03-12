@@ -23,16 +23,22 @@ const AuthSystem = {
     
     // Ajouter les écouteurs d'événements
     document.addEventListener('DOMContentLoaded', () => {
+      // Gestion de l'affichage du modal de connexion
+      const loginBtn = document.getElementById('loginBtn');
+      if (loginBtn) {
+        loginBtn.addEventListener('click', () => this.showLoginModal());
+      }
+      
       // Formulaire de connexion
       const loginForm = document.getElementById('loginForm');
       if (loginForm) {
-        loginForm.addEventListener('submit', this.handleLogin.bind(this));
+        loginForm.addEventListener('submit', (e) => this.handleLogin(e));
       }
       
       // Bouton de déconnexion
       const logoutBtn = document.getElementById('logoutBtn');
       if (logoutBtn) {
-        logoutBtn.addEventListener('click', this.logout.bind(this));
+        logoutBtn.addEventListener('click', () => this.logout());
       }
       
       // Correction du menu utilisateur pour éviter qu'il ne disparaisse
@@ -47,7 +53,7 @@ const AuthSystem = {
    * Initialise le menu du profil utilisateur avec des interactions améliorées
    */
   initUserProfileMenu() {
-    const userProfile = document.querySelector('.user-profile');
+    const userProfile = document.querySelector('.user-profile-button');
     const userDropdown = document.querySelector('.user-dropdown');
     
     if (userProfile && userDropdown) {
@@ -134,6 +140,52 @@ const AuthSystem = {
   },
   
   /**
+   * Affiche le modal de connexion
+   */
+  showLoginModal() {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+      loginModal.style.display = 'flex';
+      
+      // Animation d'entrée
+      setTimeout(() => {
+        const modalContent = loginModal.querySelector('.auth-modal-content');
+        if (modalContent) {
+          modalContent.style.opacity = '1';
+          modalContent.style.transform = 'translateY(0)';
+        }
+      }, 50);
+      
+      // Focus sur le champ d'utilisateur
+      const usernameField = document.getElementById('login-username');
+      if (usernameField) {
+        setTimeout(() => usernameField.focus(), 300);
+      }
+    }
+  },
+  
+  /**
+   * Masque le modal de connexion
+   */
+  hideLoginModal() {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+      // Animation de sortie
+      const modalContent = loginModal.querySelector('.auth-modal-content');
+      if (modalContent) {
+        modalContent.style.opacity = '0';
+        modalContent.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          loginModal.style.display = 'none';
+        }, 300);
+      } else {
+        loginModal.style.display = 'none';
+      }
+    }
+  },
+  
+  /**
    * Gère la soumission du formulaire de connexion
    */
   async handleLogin(event) {
@@ -158,6 +210,7 @@ const AuthSystem = {
       if (loginStatus) {
         loginStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authentification en cours...';
         loginStatus.className = 'login-status info';
+        loginStatus.style.display = 'flex';
       }
       
       // Appel au service d'authentification
@@ -173,10 +226,7 @@ const AuthSystem = {
         this.applyUserRole(loginResult.user.role);
         
         // Masquer la modal de connexion
-        const loginModal = document.getElementById('loginModal');
-        if (loginModal) {
-          loginModal.style.display = 'none';
-        }
+        this.hideLoginModal();
         
         // Mettre à jour l'interface
         this.updateUI();
@@ -200,9 +250,285 @@ const AuthSystem = {
     }
   },
   
-  // Le reste du fichier reste inchangé...
-
-  // Code existant...
+  /**
+   * Authentifie un utilisateur avec les identifiants fournis
+   * Pour la démonstration, simule une requête d'authentification
+   */
+  async authenticateUser(username, password) {
+    // Dans un environnement réel, on ferait une requête à un serveur d'authentification
+    // Ici, on simule une authentification avec le fichier JSON des utilisateurs
+    
+    // Simuler un délai de requête
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    try {
+      // Essayer de charger les utilisateurs depuis le fichier JSON
+      const response = await fetch('/static/data/users.json');
+      const data = await response.json();
+      
+      // Trouver l'utilisateur par son nom d'utilisateur
+      const user = (data.users || []).find(u => u.username === username);
+      
+      // Vérifier si l'utilisateur existe et si le mot de passe correspond
+      // Note: Dans un système réel, les mots de passe seraient hachés
+      if (user) {
+        // Simuler une vérification de mot de passe (en production, utiliser bcrypt ou similaire)
+        // Pour cet exemple, on accepte "password" pour tous les utilisateurs
+        if (password === 'password') {
+          // Générer un token
+          const token = this.generateToken(user);
+          
+          return {
+            success: true,
+            token,
+            user: {
+              id: user.id,
+              username: user.username,
+              displayName: user.displayName,
+              email: user.email,
+              role: user.role,
+              permissions: user.permissions
+            }
+          };
+        }
+      }
+      
+      // Identifiants incorrects
+      return {
+        success: false,
+        message: 'Nom d\'utilisateur ou mot de passe incorrect.'
+      };
+    } catch (error) {
+      console.error('Erreur lors de la requête d\'authentification:', error);
+      return {
+        success: false,
+        message: 'Erreur de connexion au service d\'authentification.'
+      };
+    }
+  },
+  
+  /**
+   * Génère un token JWT simulé
+   */
+  generateToken(user) {
+    // Dans un système réel, on générerait un vrai JWT signé
+    // Ici, on simule un token simple pour la démonstration
+    
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT'
+    };
+    
+    const now = Date.now();
+    const exp = now + this.TOKEN_EXPIRY;
+    
+    const payload = {
+      sub: user.id,
+      name: user.displayName,
+      email: user.email,
+      role: user.role,
+      iat: Math.floor(now / 1000),
+      exp: Math.floor(exp / 1000)
+    };
+    
+    // Encoder en base64
+    const headerB64 = btoa(JSON.stringify(header));
+    const payloadB64 = btoa(JSON.stringify(payload));
+    
+    // Simuler une signature (dans un système réel, ce serait une vraie signature cryptographique)
+    const signature = btoa(`${headerB64}.${payloadB64}`);
+    
+    return `${headerB64}.${payloadB64}.${signature}`;
+  },
+  
+  /**
+   * Décode un token
+   */
+  decodeToken(token) {
+    try {
+      // Diviser le token en ses parties
+      const parts = token.split('.');
+      if (parts.length !== 3) throw new Error('Format de token invalide');
+      
+      // Décoder la partie du payload
+      const payload = JSON.parse(atob(parts[1]));
+      
+      return payload;
+    } catch (e) {
+      console.error('Erreur lors du décodage du token:', e);
+      return null;
+    }
+  },
+  
+  /**
+   * Stocke les données d'authentification
+   */
+  setAuthData(token, user) {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  },
+  
+  /**
+   * Supprime les données d'authentification
+   */
+  clearAuthData() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+  },
+  
+  /**
+   * Déconnecte l'utilisateur
+   */
+  logout(reload = true) {
+    // Supprimer les données d'authentification
+    this.clearAuthData();
+    
+    // Réinitialiser l'état
+    this.currentUser = null;
+    this.isAuthenticated = false;
+    
+    // Mettre à jour l'interface
+    this.updateUI();
+    
+    console.log('Déconnexion réussie');
+    
+    // Recharger la page pour réinitialiser l'état de l'application
+    if (reload) {
+      window.location.reload();
+    }
+  },
+  
+  /**
+   * Applique les permissions et configurations spécifiques au rôle
+   */
+  applyUserRole(role) {
+    // Appliquer les classes CSS spécifiques au rôle
+    document.body.classList.remove('role-administrator', 'role-manager', 'role-user', 'role-teams_room');
+    document.body.classList.add(`role-${role}`);
+    
+    // Appliquer la configuration de mise en page spécifique au rôle
+    const layoutClasses = document.querySelector('.main-container')?.classList;
+    if (layoutClasses) {
+      layoutClasses.remove('layout-administrator', 'layout-manager', 'layout-user', 'layout-teams_room');
+      layoutClasses.add(`layout-${role}`);
+    }
+    
+    // Afficher/masquer les éléments en fonction du rôle
+    document.querySelectorAll('[data-role]').forEach(element => {
+      const allowedRoles = element.dataset.role.split(',');
+      if (allowedRoles.includes(role) || allowedRoles.includes('all')) {
+        element.style.display = '';
+      } else {
+        element.style.display = 'none';
+      }
+    });
+  },
+  
+  /**
+   * Met à jour l'interface utilisateur en fonction de l'état d'authentification
+   */
+  updateUI() {
+    // Section utilisateur en haut à droite
+    const userProfileSection = document.querySelector('.user-profile');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    if (this.isAuthenticated && this.currentUser) {
+      // Utilisateur connecté
+      if (userProfileSection) {
+        // Afficher les informations de l'utilisateur
+        userProfileSection.innerHTML = `
+          <button class="user-profile-button">
+            <div class="user-initials">${this.getUserInitials()}</div>
+            <div class="user-info">
+              <span>${this.currentUser.displayName}</span>
+              <span class="user-role">${this.formatRoleName(this.currentUser.role)}</span>
+            </div>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown">
+            <div class="user-dropdown-header">
+              <span>${this.currentUser.displayName}</span>
+              <span class="user-role-full">${this.formatRoleName(this.currentUser.role)}</span>
+            </div>
+            <div class="user-dropdown-links">
+              <a href="#" class="user-dropdown-link" id="profileLink">
+                <i class="fas fa-user"></i> Profil
+              </a>
+              <a href="#" class="user-dropdown-link" id="settingsLink">
+                <i class="fas fa-cog"></i> Paramètres
+              </a>
+              <a href="#" class="user-dropdown-link" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
+              </a>
+            </div>
+          </div>
+        `;
+        userProfileSection.style.display = 'block';
+        
+        // Reconnecter les événements du menu utilisateur
+        this.initUserProfileMenu();
+        
+        // Reconnecter le bouton de déconnexion
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', () => this.logout());
+        }
+      }
+      
+      // Masquer le bouton de connexion
+      if (loginBtn) loginBtn.style.display = 'none';
+      
+    } else {
+      // Utilisateur non connecté
+      if (userProfileSection) {
+        userProfileSection.innerHTML = '';
+        userProfileSection.style.display = 'none';
+      }
+      
+      // Afficher le bouton de connexion
+      if (loginBtn) loginBtn.style.display = 'block';
+    }
+  },
+  
+  /**
+   * Obtient les initiales de l'utilisateur pour l'affichage
+   */
+  getUserInitials() {
+    if (!this.currentUser || !this.currentUser.displayName) return '??';
+    
+    const names = this.currentUser.displayName.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    } else {
+      return names[0].substr(0, 2).toUpperCase();
+    }
+  },
+  
+  /**
+   * Formate le nom du rôle pour l'affichage
+   */
+  formatRoleName(role) {
+    const roleNames = {
+      administrator: 'Administrateur',
+      manager: 'Manager',
+      user: 'Utilisateur',
+      teams_room: 'Salle Teams'
+    };
+    
+    return roleNames[role] || role;
+  },
+  
+  /**
+   * Affiche un message d'erreur dans le modal de connexion
+   */
+  showLoginError(message) {
+    const loginStatus = document.getElementById('login-status');
+    if (loginStatus) {
+      loginStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+      loginStatus.className = 'login-status error';
+      loginStatus.style.display = 'flex';
+    }
+  }
 };
 
 // Initialiser le système d'authentification
