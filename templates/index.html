@@ -213,6 +213,9 @@
         <button id="fullscreenBtn" class="btn-ghost">
           <i class="fas fa-expand"></i> <span>Plein écran</span>
         </button>
+        <button id="toggleRoomsBtn" class="control-button rooms-toggle">
+  <i class="fas fa-door-open"></i> Afficher les salles
+</button>
         
         <button id="helpBtn" class="btn-ghost hide-in-room-mode">
           <i class="fas fa-question-circle"></i> <span>Aide</span>
@@ -367,14 +370,15 @@
   </div>
 
   <!-- Scripts JavaScript chargés dans le bon ordre -->
+  <script src="/static/js/background.js"></script>
   <script src="/static/js/config.js"></script>
-  <script src="/static/js/ui.js"></script>
-  <script src="/static/js/auth.js"></script>
-  <script src="/static/js/datetime.js"></script>
-  <script src="/static/js/rooms.js"></script>
-  <script src="/static/js/meetings.js"></script>
-  <script src="/static/js/booking.js"></script>
-  <script src="/static/js/join.js"></script>
+<script src="/static/js/datetime.js"></script>
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/ui.js"></script>
+<script src="/static/js/meetings.js"></script>
+<script src="/static/js/rooms.js"></script>
+<script src="/static/js/join.js"></script>
+<script src="/static/js/booking.js"></script>
   <script src="/static/js/admin.js"></script>
 </body>
 </html>
