@@ -165,313 +165,6 @@
     <!-- Zone centrale -->
     <div class="content">
       <!-- Zone vide par défaut pour l'arrière-plan -->
-      
-      <!-- NOUVEAU CODE INSÉRÉ ICI -->
-      <div id="reservationSection" class="resource-reservation-section glass-container">
-        <div class="reservation-header">
-            <h2><i class="fas fa-calendar-check"></i> Système de réservation</h2>
-            <div class="reservation-tabs">
-                <button class="reservation-tab active" data-tab="room-booking">
-                    <i class="fas fa-door-open"></i> Salles
-                </button>
-                <button class="reservation-tab" data-tab="vehicle-booking">
-                    <i class="fas fa-car"></i> Véhicules
-                </button>
-                <button class="reservation-tab" data-tab="equipment-booking">
-                    <i class="fas fa-laptop"></i> Matériel
-                </button>
-            </div>
-        </div>
-        
-        <div class="reservation-content">
-            <!-- Réservation de salles -->
-            <div class="reservation-tab-content active" id="room-booking-tab">
-                <div class="resource-list-section">
-                    <h3>Salles disponibles</h3>
-                    <div class="resource-filter">
-                        <input type="text" placeholder="Filtrer les salles..." id="roomFilter">
-                        <select id="roomCapacityFilter">
-                            <option value="all">Toutes capacités</option>
-                            <option value="small">Petite (1-4 pers.)</option>
-                            <option value="medium">Moyenne (5-10 pers.)</option>
-                            <option value="large">Grande (10+ pers.)</option>
-                        </select>
-                    </div>
-                    <div class="resources-grid" id="roomsGrid"></div>
-                </div>
-                
-                <div class="resource-details-section" id="roomDetails">
-                    <div class="placeholder-message">
-                        <i class="fas fa-hand-point-left"></i>
-                        <p>Sélectionnez une salle pour voir les détails</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Réservation de véhicules -->
-            <div class="reservation-tab-content" id="vehicle-booking-tab">
-                <div class="resource-list-section">
-                    <h3>Véhicules disponibles</h3>
-                    <div class="resource-filter">
-                        <input type="text" placeholder="Filtrer les véhicules..." id="vehicleFilter">
-                        <select id="vehicleTypeFilter">
-                            <option value="all">Tous types</option>
-                            <option value="car">Voiture</option>
-                            <option value="van">Utilitaire</option>
-                        </select>
-                    </div>
-                    <div class="resources-grid" id="vehiclesGrid"></div>
-                </div>
-                
-                <div class="resource-details-section" id="vehicleDetails">
-                    <div class="placeholder-message">
-                        <i class="fas fa-hand-point-left"></i>
-                        <p>Sélectionnez un véhicule pour voir les détails</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Prêt de matériel -->
-            <div class="reservation-tab-content" id="equipment-booking-tab">
-                <div class="resource-list-section">
-                    <h3>Équipements disponibles</h3>
-                    <div class="resource-filter">
-                        <input type="text" placeholder="Filtrer les équipements..." id="equipmentFilter">
-                        <select id="equipmentTypeFilter">
-                            <option value="all">Tous types</option>
-                            <option value="computer">Ordinateur</option>
-                            <option value="projector">Vidéoprojecteur</option>
-                            <option value="phone">Téléphone</option>
-                            <option value="misc">Divers</option>
-                        </select>
-                    </div>
-                    <div class="resources-grid" id="equipmentGrid"></div>
-                </div>
-                
-                <div class="resource-details-section" id="equipmentDetails">
-                    <div class="placeholder-message">
-                        <i class="fas fa-hand-point-left"></i>
-                        <p>Sélectionnez un équipement pour voir les détails</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
-      <!-- FIN DU NOUVEAU CODE -->
-      
-      <!-- Section d'administration (visible uniquement pour les admins) -->
-      <div class="admin-section" id="adminSection" style="display: none;">
-        <div class="admin-header">
-          <h2><i class="fas fa-shield-alt"></i> Administration du système</h2>
-          <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="users">
-              <i class="fas fa-users"></i> Utilisateurs
-            </button>
-            <button class="admin-tab" data-tab="roles">
-              <i class="fas fa-user-tag"></i> Rôles
-            </button>
-            <button class="admin-tab" data-tab="rooms">
-              <i class="fas fa-door-open"></i> Salles
-            </button>
-            <button class="admin-tab" data-tab="settings">
-              <i class="fas fa-cogs"></i> Paramètres
-            </button>
-          </div>
-        </div>
-        
-        <div class="admin-content">
-          <!-- Gestion des utilisateurs -->
-          <div class="admin-tab-content active" id="users-tab">
-            <div class="admin-controls">
-              <div class="search-box">
-                <input type="text" id="user-search" placeholder="Rechercher un utilisateur...">
-                <button><i class="fas fa-search"></i></button>
-              </div>
-              <button class="admin-add-btn" id="addUserBtn">
-                <i class="fas fa-plus"></i> Nouvel utilisateur
-              </button>
-            </div>
-            
-            <div class="admin-table-container">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Nom d'utilisateur</th>
-                    <th>Nom complet</th>
-                    <th>Email</th>
-                    <th>Rôle</th>
-                    <th>Dernière connexion</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="users-table-body">
-                  <!-- Les utilisateurs seront insérés ici par JavaScript -->
-                </tbody>
-              </table>
-            </div>
-            
-            <div class="admin-pagination">
-              <button class="pagination-btn" disabled><i class="fas fa-chevron-left"></i></button>
-              <span class="pagination-info">Page 1 sur 1</span>
-              <button class="pagination-btn" disabled><i class="fas fa-chevron-right"></i></button>
-            </div>
-          </div>
-          
-          <!-- Gestion des rôles -->
-          <div class="admin-tab-content" id="roles-tab">
-            <div class="roles-container">
-              <div class="role-card">
-                <div class="role-header administrator">
-                  <h3>Administrateur</h3>
-                  <span class="role-badge">Accès complet</span>
-                </div>
-                <div class="role-content">
-                  <p>Accès complet à toutes les fonctionnalités du système, y compris l'administration des utilisateurs et des paramètres.</p>
-                  <ul class="role-permissions">
-                    <li><i class="fas fa-check"></i> Création d'utilisateurs</li>
-                    <li><i class="fas fa-check"></i> Gestion des rôles</li>
-                    <li><i class="fas fa-check"></i> Configuration du système</li>
-                    <li><i class="fas fa-check"></i> Toutes les fonctions de réservation</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div class="role-card">
-                <div class="role-header manager">
-                  <h3>Manager</h3>
-                  <span class="role-badge">Accès étendu</span>
-                </div>
-                <div class="role-content">
-                  <p>Peut gérer les réservations et créer des réunions pour son équipe.</p>
-                  <ul class="role-permissions">
-                    <li><i class="fas fa-check"></i> Réservation de salles</li>
-                    <li><i class="fas fa-check"></i> Création de réunions Teams</li>
-                    <li><i class="fas fa-check"></i> Gestion des ressources</li>
-                    <li><i class="fas fa-times"></i> Administration système</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div class="role-card">
-                <div class="role-header user">
-                  <h3>Utilisateur</h3>
-                  <span class="role-badge">Accès standard</span>
-                </div>
-                <div class="role-content">
-                  <p>Peut consulter et rejoindre des réunions.</p>
-                  <ul class="role-permissions">
-                    <li><i class="fas fa-check"></i> Affichage des réunions</li>
-                    <li><i class="fas fa-check"></i> Rejoindre des réunions</li>
-                    <li><i class="fas fa-times"></i> Création de réunions</li>
-                    <li><i class="fas fa-times"></i> Administration</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div class="role-card">
-                <div class="role-header teams_room">
-                  <h3>Salle Teams</h3>
-                  <span class="role-badge">Affichage</span>
-                </div>
-                <div class="role-content">
-                  <p>Affichage optimisé pour les écrans de salle de réunion.</p>
-                  <ul class="role-permissions">
-                    <li><i class="fas fa-check"></i> Affichage des réunions</li>
-                    <li><i class="fas fa-check"></i> Mode d'affichage optimisé</li>
-                    <li><i class="fas fa-times"></i> Interaction limitée</li>
-                    <li><i class="fas fa-times"></i> Administration</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Gestion des salles -->
-          <div class="admin-tab-content" id="rooms-tab">
-            <div class="admin-controls">
-              <div class="search-box">
-                <input type="text" id="room-search" placeholder="Rechercher une salle...">
-                <button><i class="fas fa-search"></i></button>
-              </div>
-              <button class="admin-add-btn" id="addRoomBtn">
-                <i class="fas fa-plus"></i> Nouvelle salle
-              </button>
-            </div>
-            
-            <div class="rooms-management">
-              <div class="rooms-grid" id="rooms-management-grid">
-                <!-- Les salles seront insérées ici par JavaScript -->
-              </div>
-            </div>
-          </div>
-          
-          <!-- Paramètres système -->
-          <div class="admin-tab-content" id="settings-tab">
-            <div class="settings-form">
-              <div class="settings-group">
-                <h3>Paramètres généraux</h3>
-                
-                <div class="form-group">
-                  <label for="setting-title">Titre de l'application</label>
-                  <input type="text" id="setting-title" value="Salle de Réunion">
-                </div>
-                
-                <div class="form-group">
-                  <label for="setting-refresh">Intervalle de rafraîchissement (secondes)</label>
-                  <input type="number" id="setting-refresh" value="20" min="5" max="60">
-                </div>
-                
-                <div class="form-group">
-                  <label>Thème visuel</label>
-                  <div class="theme-selector">
-                    <div class="theme-option active" data-theme="default">
-                      <div class="theme-preview default"></div>
-                      <span>Par défaut</span>
-                    </div>
-                    <div class="theme-option" data-theme="light">
-                      <div class="theme-preview light"></div>
-                      <span>Clair</span>
-                    </div>
-                    <div class="theme-option" data-theme="dark">
-                      <div class="theme-preview dark"></div>
-                      <span>Sombre</span>
-                    </div>
-                    <div class="theme-option" data-theme="custom">
-                      <div class="theme-preview custom"></div>
-                      <span>Personnalisé</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="settings-group">
-                <h3>Paramètres de sécurité</h3>
-                
-                <div class="form-group">
-                  <label for="setting-session">Durée de session (heures)</label>
-                  <input type="number" id="setting-session" value="8" min="1" max="24">
-                </div>
-                
-                <div class="form-group">
-                  <label>
-                    <input type="checkbox" id="setting-enforceAuth" checked>
-                    Exiger l'authentification pour toutes les fonctions
-                  </label>
-                </div>
-              </div>
-              
-              <div class="settings-actions">
-                <button class="settings-save-btn" id="saveSettingsBtn">
-                  <i class="fas fa-save"></i> Enregistrer les paramètres
-                </button>
-                <button class="settings-reset-btn" id="resetSettingsBtn">
-                  <i class="fas fa-undo"></i> Réinitialiser
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     
     <!-- Conteneur des réunions -->
@@ -488,11 +181,11 @@
       <!-- Contenu principal -->
       <div class="meetings">
         <!-- Liste des réunions -->
-        <div class="meetings-list" id="meetingsContainer">
+        <div id="meetingsContainer" class="meetings-list">
           <!-- Placeholder de chargement -->
           <div class="loading-indicator">
             <i class="fas fa-circle-notch fa-spin"></i>
-            <p>Chargement des réunions...</p>
+            <span>Chargement des réunions...</span>
           </div>
         </div>
       </div>
@@ -514,7 +207,7 @@
         </button>
         
         <button id="roomReservationBtn" class="btn-success">
-          <i class="fas fa-calendar-plus"></i> <span>Créer une réunion</span>
+          <i class="fas fa-calendar-plus"></i> <span>Créer une réservation</span>
         </button>
         
         <button id="fullscreenBtn" class="btn-ghost">
@@ -613,62 +306,6 @@
     </div>
   </div>
   
-  <!-- Modal pour ajouter/éditer un utilisateur -->
-  <div class="admin-modal" id="userModal">
-    <div class="admin-modal-content">
-      <div class="admin-modal-header">
-        <h3 id="userModalTitle">Nouvel utilisateur</h3>
-        <button class="admin-modal-close" id="closeUserModalBtn">&times;</button>
-      </div>
-      
-      <div class="admin-modal-body">
-        <form id="userForm">
-          <input type="hidden" id="user-id" value="">
-          
-          <div class="form-group">
-            <label for="user-username">Nom d'utilisateur</label>
-            <input type="text" id="user-username" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-displayname">Nom complet</label>
-            <input type="text" id="user-displayname" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-email">Email</label>
-            <input type="email" id="user-email" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-role">Rôle</label>
-            <select id="user-role" required>
-              <option value="administrator">Administrateur</option>
-              <option value="manager">Manager</option>
-              <option value="user">Utilisateur</option>
-              <option value="teams_room">Salle Teams</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-password">Mot de passe</label>
-            <input type="password" id="user-password" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="user-password-confirm">Confirmer le mot de passe</label>
-            <input type="password" id="user-password-confirm" required>
-          </div>
-        </form>
-      </div>
-      
-      <div class="admin-modal-footer">
-        <button class="admin-cancel-btn" id="cancelUserBtn">Annuler</button>
-        <button class="admin-save-btn" id="saveUserBtn">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-  
   <!-- Modal de connexion -->
   <div class="auth-modal" id="loginModal">
     <div class="auth-modal-content">
@@ -729,73 +366,15 @@
     </div>
   </div>
 
-  <!-- Scripts JavaScript -->
+  <!-- Scripts JavaScript chargés dans le bon ordre -->
   <script src="/static/js/config.js"></script>
-  <script src="/static/js/datetime.js"></script>
-  <script src="/static/js/meetings.js"></script>
-  <script src="/static/js/rooms.js"></script>
-  <script src="/static/js/join.js"></script>
-  <script src="/static/js/booking.js"></script>
-  <script src="/static/js/auth.js"></script>
-  <script src="/static/js/admin.js"></script>
   <script src="/static/js/ui.js"></script>
-  
-  <!-- Initialisation des modules d'authentification et d'administration -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initialisation du bouton de connexion
-      const loginBtn = document.getElementById('loginBtn');
-      if (loginBtn) {
-        loginBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          const loginModal = document.getElementById('loginModal');
-          if (loginModal) {
-            loginModal.style.display = 'flex';
-          }
-        });
-      }
-      
-      // Initialisation du bouton de fermeture du modal de connexion
-      const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
-      if (closeLoginModalBtn) {
-        closeLoginModalBtn.addEventListener('click', function() {
-          const loginModal = document.getElementById('loginModal');
-          if (loginModal) {
-            loginModal.style.display = 'none';
-          }
-        });
-      }
-      
-      // Initialisation du bouton d'administration
-      const adminBtn = document.getElementById('adminBtn');
-      const adminLink = document.getElementById('adminLink');
-      
-      function showAdminPanel() {
-        // Masquer les autres contenus
-        document.querySelectorAll('.content > div').forEach(el => {
-          if (el.id !== 'adminSection') {
-            el.style.display = 'none';
-          }
-        });
-        
-        // Afficher la section d'administration
-        const adminSection = document.getElementById('adminSection');
-        if (adminSection) {
-          adminSection.style.display = 'flex';
-        }
-      }
-      
-      if (adminBtn) {
-        adminBtn.addEventListener('click', showAdminPanel);
-      }
-      
-      if (adminLink) {
-        adminLink.addEventListener('click', function(e) {
-          e.preventDefault();
-          showAdminPanel();
-        });
-      }
-    });
-  </script>
+  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/datetime.js"></script>
+  <script src="/static/js/rooms.js"></script>
+  <script src="/static/js/meetings.js"></script>
+  <script src="/static/js/booking.js"></script>
+  <script src="/static/js/join.js"></script>
+  <script src="/static/js/admin.js"></script>
 </body>
 </html>
