@@ -1,0 +1,305 @@
+/* 
+ * TeamsRooms Interface Improvements
+ * This CSS fixes the layout issues and restores the previous design
+ */
+
+/* -----------------------------
+ * 1. RESTORE LEFT MENU
+ * ----------------------------- */
+.side-menu {
+  display: flex !important;
+  position: fixed;
+  left: 0;
+  width: var(--sidebar-width-expanded);
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(30, 30, 30, 0.95) 0%, rgba(35, 35, 35, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  padding: var(--spacing-lg) 0;
+  z-index: var(--z-index-above);
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Fix main container to include side menu */
+.main-container {
+  grid-template-columns: var(--sidebar-width-expanded) 1fr var(--meetings-panel-width) !important;
+  grid-template-areas:
+    "menu header header"
+    "menu content meetings"
+    "menu controls controls" !important;
+}
+
+/* Ensure menu content is visible */
+.side-menu .menu-logo,
+.side-menu .menu-title,
+.side-menu .menu-item-text,
+.side-menu .menu-bottom {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Fix menu toggle button */
+.menu-toggle-visible {
+  z-index: var(--z-index-overlay);
+}
+
+/* -----------------------------
+ * 2. REMOVE TOP BANNER
+ * ----------------------------- */
+.header {
+  height: auto;
+  min-height: var(--header-height);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px 20px;
+}
+
+/* Simplify and clean up title area */
+.title-container {
+  position: relative;
+  width: auto;
+  height: auto;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.title {
+  font-size: 1.7rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 25px;
+  border-radius: 10px;
+  max-width: 70%;
+}
+
+/* -----------------------------
+ * 3. IMPROVE MEETINGS SECTION
+ * ----------------------------- */
+.meetings-container {
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  background: rgba(40, 40, 40, 0.75);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Better meetings title bar */
+.meetings-title-bar {
+  background: linear-gradient(to right, rgba(50, 50, 50, 0.9), rgba(70, 70, 70, 0.9));
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.meetings-title-bar h2 {
+  text-align: center;
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: white;
+}
+
+/* Create meeting button */
+.create-meeting-integrated {
+  margin: 10px auto;
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
+  padding: 8px 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.create-meeting-integrated:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Meeting items styling */
+.meeting-item {
+  background: linear-gradient(to right, rgba(40, 40, 40, 0.85), rgba(50, 50, 50, 0.85));
+  margin: 10px;
+  border-radius: 8px;
+  padding: 12px 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.meeting-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Status badge for meetings */
+.meeting-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: linear-gradient(to right, var(--success-color), #43a047);
+  color: white;
+  font-weight: bold;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+}
+
+/* Room status badges */
+.room-status-card {
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: rgba(50, 50, 50, 0.7);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.room-status-card .room-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.room-status-card.available {
+  border-left: 3px solid var(--success-color);
+}
+
+.room-status-card.occupied {
+  border-left: 3px solid var(--danger-color);
+}
+
+.room-status-card.soon {
+  border-left: 3px solid var(--warning-color);
+}
+
+/* Section headers */
+.status-section {
+  padding: 10px 15px;
+  margin-top: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-section h4 {
+  font-size: 1rem;
+  margin: 0;
+  color: #ddd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-section h4 i {
+  color: var(--primary-color-light);
+}
+
+/* -----------------------------
+ * 4. GENERAL LAYOUT IMPROVEMENTS
+ * ----------------------------- */
+/* Better content area */
+.content {
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: transparent;
+}
+
+/* Controls area */
+.controls-container {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(30, 30, 30, 0.7);
+  padding: 10px 20px;
+}
+
+.control-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.control-buttons button {
+  padding: 8px 15px;
+  background: rgba(50, 50, 50, 0.8);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.control-buttons button:hover {
+  background: rgba(70, 70, 70, 0.9);
+  transform: translateY(-2px);
+}
+
+/* Show the room cards section */
+.rooms-section.visible {
+  display: block !important;
+}
+
+/* Background improvements */
+#background-container::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.3) 100%) !important;
+  z-index: 0 !important;
+}
+
+/* -----------------------------
+ * 5. RESPONSIVE ADJUSTMENTS
+ * ----------------------------- */
+@media (max-width: 992px) {
+  .main-container {
+    grid-template-columns: var(--sidebar-width-collapsed) 1fr var(--meetings-panel-width) !important;
+  }
+  
+  .side-menu {
+    width: 250px;
+    left: -250px;
+    transition: left 0.3s ease;
+  }
+  
+  .side-menu.expanded {
+    left: 0;
+  }
+  
+  .title {
+    font-size: 1.4rem;
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr auto auto !important;
+    grid-template-areas:
+      "header"
+      "content"
+      "meetings"
+      "controls" !important;
+  }
+  
+  .meetings-container {
+    width: 100% !important;
+  }
+  
+  .header {
+    padding-left: 60px;
+  }
+  
+  .menu-overlay.active {
+    display: block;
+  }
+}
