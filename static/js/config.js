@@ -28,7 +28,7 @@ window.MATERIEL = {
   'Matériel': 'Reservationmateriel@anecoop-france.com'
 };
 
-// Arrière-plans disponibles
+// Arrière-plans disponibles - chemins corrigés
 window.BACKGROUNDS = [
   '/static/Images/iStock-1137376794.jpg',
   '/static/Images/iStock-1512013316.jpg',
@@ -85,12 +85,16 @@ const initResourceContext = () => {
   // Initialiser les variables globales
   window.resourceType = resourceType;
   window.resourceName = resourceName;
+  window.salleName = resourceName; // Pour compatibilité avec l'ancien code
   window.isAllResources = (resourceName === 'toutes les salles' || 
                            resourceName === 'tous les vehicules' || 
                            resourceName === 'tout le materiel');
+  window.isAllRooms = resourceName === 'toutes les salles';
   
   // Mettre à jour le titre de la page
   updatePageTitle(resourceType, resourceName);
+  
+  console.log(`Contexte initialisé: type=${resourceType}, nom=${resourceName}`);
 };
 
 // Mise à jour du titre de la page selon le type de ressource
@@ -107,7 +111,11 @@ const updatePageTitle = (type, name) => {
       title = `Réservation Matériel ${name !== 'tout le materiel' ? name : ''}`;
       break;
     default: // salle
-      title = `Salle ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+      if (name === 'toutes les salles') {
+        title = 'Toutes les salles';
+      } else {
+        title = `Salle ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+      }
   }
   
   titleElement.textContent = title;
