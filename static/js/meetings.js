@@ -1,39 +1,106 @@
 /**
  * Gestion des réunions
+ * Version améliorée avec meilleure gestion des erreurs et états de chargement
  */
 
 // Variable pour suivre les modifications des réunions
 let previousMeetings = JSON.stringify([]);
+let isLoadingMeetings = false;
 
 /**
  * Récupère les réunions depuis l'API
  */
 async function fetchMeetings() {
+  // Éviter les requêtes multiples simultanées
+  if (isLoadingMeetings) return;
+  isLoadingMeetings = true;
+
   try {
+    // Afficher l'indicateur de chargement
+    const container = document.getElementById('meetingsContainer');
+    if (container) {
+      container.innerHTML = `
+        <div class="loading-indicator">
+          <i class="fas fa-circle-notch fa-spin"></i>
+          <span>Chargement des réunions...</span>
+        </div>
+      `;
+    }
+
+    // URL de l'API avec un timestamp pour éviter la mise en cache
+    const apiUrl = window.API_URLS && window.API_URLS.GET_MEETINGS 
+      ? window.API_URLS.GET_MEETINGS 
+      : '/meetings.json';
+    
     // Ajouter un timestamp pour éviter le cache
-    const response = await fetch(`${window.API_URLS.GET_MEETINGS}?t=${Date.now()}`);
+    const response = await fetch(`${apiUrl}?t=${Date.now()}`);
+    
+    // Vérifier si la réponse est OK
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+
+    // Traiter la réponse
     let meetings = await response.json();
 
+    // Déterminer le contexte actuel (salle spécifique ou toutes les salles)
+    const salleName = window.resourceName || window.salleName;
+    const isAllRooms = !salleName || salleName === 'toutes les salles';
+
     // Filtrer par salle si ce n'est pas "toutes les salles"
-    if (!window.isAllRooms) {
-      meetings = meetings.filter(m => (m.salle || '').toLowerCase() === window.salleName);
+    if (!isAllRooms && salleName) {
+      meetings = meetings.filter(m => {
+        const meetingSalle = (m.salle || '').toLowerCase();
+        return meetingSalle === salleName.toLowerCase();
+      });
     }
     
     // Filtrer pour ne garder que celles du jour
     const today = new Date().toDateString();
-    meetings = meetings.filter(m => new Date(m.start).toDateString() === today);
+    meetings = meetings.filter(m => {
+      const meetingDate = new Date(m.start).toDateString();
+      return meetingDate === today;
+    });
+
+    // Trier les réunions par heure de début
+    meetings.sort((a, b) => new Date(a.start) - new Date(b.start));
 
     // Vérifier si les données ont changé pour éviter des rafraîchissements inutiles
     const currentMeetingsString = JSON.stringify(meetings);
-    if (previousMeetings === currentMeetingsString) return;
+    if (previousMeetings === currentMeetingsString) {
+      isLoadingMeetings = false;
+      return;
+    }
     previousMeetings = currentMeetingsString;
 
     // Mettre à jour l'affichage
     updateMeetingsDisplay(meetings);
+    
+    console.log(`Réunions chargées avec succès (${meetings.length} réunions)`);
+    
   } catch (error) {
     console.error("❌ Erreur lors du chargement des réunions :", error);
-    document.getElementById('meetingsContainer').innerHTML =
-      '<p style="color: red; font-weight: bold; text-align: center;"><i class="fas fa-exclamation-triangle"></i> Impossible de récupérer les réunions.</p>';
+    
+    const container = document.getElementById('meetingsContainer');
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-meetings-message">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Impossible de charger les réunions.</p>
+          <button id="retryBtn" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Réessayer
+          </button>
+        </div>
+      `;
+      
+      // Ajouter un bouton pour réessayer
+      const retryBtn = document.getElementById('retryBtn');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => fetchMeetings());
+      }
+    }
+  } finally {
+    isLoadingMeetings = false;
   }
 }
 
@@ -55,6 +122,7 @@ function updateMeetingsDisplay(meetings) {
   meetings.forEach(m => {
     const start = new Date(m.start);
     const end = new Date(m.end);
+    
     if (end < now) {
       pastMeetings.push(m);
     } else if (start <= now && now < end) {
@@ -69,48 +137,96 @@ function updateMeetingsDisplay(meetings) {
     // Aucune réunion
     container.innerHTML = `
       <div class="empty-meetings-message">
-        <p><i class="fas fa-calendar-times"></i> Aucune réunion prévue aujourd'hui.</p>
+        <i class="far fa-calendar-times"></i>
+        <p>Aucune réunion prévue aujourd'hui.</p>
+        <button id="createEmptyBtn" class="create-meeting-integrated">
+          <i class="fas fa-plus"></i> Créer une réunion
+        </button>
       </div>
     `;
+    
+    // Attacher l'événement au bouton de création
+    const createBtn = document.getElementById('createEmptyBtn');
+    if (createBtn && window.BookingSystem) {
+      createBtn.addEventListener('click', () => window.BookingSystem.openModal());
+    }
   } else {
     // Il y a des réunions
+    let html = '';
+    
+    // En cours
     if (currentMeetings.length > 0) {
-      container.innerHTML += `
+      html += `
         <div class="status-section">
           <h4 class="status-current"><i class="fas fa-circle"></i> En cours</h4>
         </div>
       `;
+      
       currentMeetings.forEach(m => {
-        container.innerHTML += createMeetingItem(m, 'En cours');
+        html += createMeetingItem(m, 'En cours');
       });
-    } else {
-      // Pas de réunion en cours mais d'autres types
-      container.innerHTML += `
-        <div class="status-section">
-          <h4><i class="fas fa-clock"></i> Aujourd'hui</h4>
-        </div>
-      `;
     }
     
     // À venir
     if (upcomingMeetings.length > 0) {
-      container.innerHTML += `<h4><i class="fas fa-circle text-info"></i> À venir</h4>`;
+      html += `
+        <div class="status-section">
+          <h4><i class="fas fa-clock"></i> À venir</h4>
+        </div>
+      `;
+      
       upcomingMeetings.forEach(m => {
-        container.innerHTML += createMeetingItem(m, 'À venir');
+        html += createMeetingItem(m, 'À venir');
       });
     }
     
     // Terminées
     if (pastMeetings.length > 0) {
-      container.innerHTML += `<h4><i class="far fa-circle"></i> Terminées</h4>`;
+      html += `
+        <div class="status-section">
+          <h4><i class="far fa-check-circle"></i> Terminées</h4>
+        </div>
+      `;
+      
       pastMeetings.forEach(m => {
-        container.innerHTML += createMeetingItem(m, 'Terminée');
+        html += createMeetingItem(m, 'Terminée');
       });
     }
+    
+    container.innerHTML = html;
+    
+    // Attacher les événements aux boutons
+    attachMeetingEventHandlers();
   }
   
   // Mettre à jour les chronomètres après création des éléments
   updateMeetingTimers();
+}
+
+/**
+ * Attache les gestionnaires d'événements aux éléments de réunion
+ */
+function attachMeetingEventHandlers() {
+  // Boutons "Rejoindre"
+  document.querySelectorAll('.meeting-item button').forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const joinUrl = button.getAttribute('data-url');
+      if (joinUrl) {
+        window.open(joinUrl, '_blank');
+      }
+    });
+  });
+  
+  // Clic sur une réunion pour afficher les détails
+  document.querySelectorAll('.meeting-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const meetingId = item.getAttribute('data-id');
+      if (meetingId && window.showMeetingDetails) {
+        window.showMeetingDetails(meetingId);
+      }
+    });
+  });
 }
 
 /**
@@ -122,6 +238,9 @@ function createMeetingItem(meeting, category) {
   const now = new Date();
   const startTime = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const endTime = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+  // ID unique pour la réunion
+  const meetingId = meeting.id || `meeting_${start.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
 
   // Badge de statut
   let statusBadge = '';
@@ -160,20 +279,21 @@ function createMeetingItem(meeting, category) {
     `;
   }
 
-  // Afficher la salle si "Toutes les salles"
+  // Afficher la salle si on affiche toutes les salles
   let salleHTML = '';
-  if (window.isAllRooms && meeting.salle) {
+  const isAllRooms = !window.salleName || window.salleName === 'toutes les salles';
+  if (isAllRooms && meeting.salle) {
     salleHTML = `<p class="meeting-salle"><i class="fas fa-map-marker-alt"></i> Salle : ${meeting.salle}</p>`;
   }
 
   // Bouton "Rejoindre"
   let joinButton = '';
   if (meeting.joinUrl) {
-    joinButton = `<button onclick="window.open('${meeting.joinUrl}', '_blank')"><i class="fas fa-link"></i> Rejoindre</button>`;
+    joinButton = `<button data-url="${meeting.joinUrl}"><i class="fas fa-link"></i> Rejoindre</button>`;
   }
 
   return `
-    <div class="meeting-item ${category === 'Terminée' ? 'past' : ''}">
+    <div class="meeting-item ${category === 'Terminée' ? 'past' : ''}" data-id="${meetingId}">
       ${statusBadge}
       <h3>${meeting.subject || 'Réunion sans titre'}</h3>
       <p><i class="far fa-clock"></i> ${startTime} - ${endTime}</p>
@@ -216,8 +336,14 @@ function updateMeetingTimers() {
       const [_, startStr, endStr] = times;
       
       // Convertir en objets Date
-      const start = timeStringToDate(startStr);
-      const end = timeStringToDate(endStr);
+      const startParts = startStr.split(':').map(Number);
+      const endParts = endStr.split(':').map(Number);
+      
+      const today = new Date();
+      
+      const start = new Date(today.setHours(startParts[0], startParts[1], 0, 0));
+      today.setHours(endParts[0], endParts[1], 0, 0);
+      const end = new Date(today);
       
       // Si c'est une réunion en cours, mettre à jour la barre de progression
       if (start <= now && now < end) {
@@ -248,13 +374,42 @@ function updateMeetingTimers() {
   });
 }
 
+/**
+ * Formater un temps restant en minutes en chaîne lisible
+ */
+function formatRemainingTime(remainingMinutes) {
+  const remainingHours = Math.floor(remainingMinutes / 60);
+  const remainingMins = remainingMinutes % 60;
+  
+  if (remainingHours > 0) {
+    return `${remainingHours}h ${remainingMins}min`;
+  } else {
+    return `${remainingMins}min`;
+  }
+}
+
+/**
+ * Convertir une heure au format HH:MM en Date
+ */
+function timeStringToDate(timeString) {
+  const today = new Date();
+  const [hours, minutes] = timeString.split(':').map(Number);
+  
+  today.setHours(hours, minutes, 0, 0);
+  return new Date(today);
+}
+
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-  fetchMeetings(); // Premier chargement
+  // Premier chargement
+  fetchMeetings();
   
   // Mise à jour régulière
-  setInterval(fetchMeetings, window.REFRESH_INTERVALS.MEETINGS);
-  setInterval(updateMeetingTimers, window.REFRESH_INTERVALS.MEETING_TIMERS);
+  const refreshInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETINGS) || 20000;
+  const timerInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETING_TIMERS) || 60000;
+  
+  setInterval(fetchMeetings, refreshInterval);
+  setInterval(updateMeetingTimers, timerInterval);
   
   // Associer le bouton de rafraîchissement
   const refreshBtn = document.getElementById('refreshBtn');
@@ -262,3 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshBtn.addEventListener('click', fetchMeetings);
   }
 });
+
+// Exporter les fonctions pour utilisation ailleurs
+window.fetchMeetings = fetchMeetings;
+window.updateMeetingTimers = updateMeetingTimers;
