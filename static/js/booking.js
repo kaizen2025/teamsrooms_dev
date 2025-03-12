@@ -3,8 +3,9 @@
  * Version améliorée avec meilleure gestion des états et des erreurs
  */
 
-// État global pour le modal de réservation
+// Système de réservation de salles
 const BookingSystem = {
+  // État du système
   isLoading: false,
   selectedRoom: '',
   selectedDate: '',
@@ -19,15 +20,28 @@ const BookingSystem = {
     // Initialiser les événements
     this.initializeEvents();
     
-    // Associer le bouton de création
-    const createMeetingBtns = document.querySelectorAll('.create-meeting-integrated, #createMeetingBtn');
-    createMeetingBtns.forEach(btn => {
-      if (btn) {
-        btn.addEventListener('click', this.openModal.bind(this));
-      }
-    });
+    // Associer les boutons de création
+    this.attachCreateButtons();
     
     console.log("Système de réservation initialisé");
+  },
+  
+  /**
+   * Attache les gestionnaires d'événements aux boutons de création
+   */
+  attachCreateButtons() {
+    // Trouver tous les boutons de création de réunion
+    const createButtons = document.querySelectorAll(
+      '.create-meeting-integrated, #createMeetingBtn, button[data-action="create-meeting"]'
+    );
+    
+    createButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        this.openModal();
+      });
+    });
+    
+    console.log(`${createButtons.length} boutons de création attachés`);
   },
   
   /**
@@ -35,7 +49,10 @@ const BookingSystem = {
    */
   openModal() {
     const modal = document.getElementById('bookingModal');
-    if (!modal) return;
+    if (!modal) {
+      console.error("Modal de réservation introuvable");
+      return;
+    }
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Empêche le défilement en arrière-plan
@@ -85,7 +102,10 @@ const BookingSystem = {
     // Animation d'entrée
     setTimeout(() => {
       const modalContent = modal.querySelector('.booking-modal-content');
-      if (modalContent) modalContent.style.opacity = '1';
+      if (modalContent) {
+        modalContent.style.opacity = '1';
+        modalContent.style.transform = 'translateY(0)';
+      }
     }, 50);
   },
   
@@ -100,13 +120,14 @@ const BookingSystem = {
     const modalContent = modal.querySelector('.booking-modal-content');
     if (modalContent) {
       modalContent.style.opacity = '0';
+      modalContent.style.transform = 'translateY(-20px)';
       setTimeout(() => {
         modal.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Restaurer le défilement
-      }, 200);
+        document.body.style.overflow = ''; // Restaurer le défilement
+      }, 300);
     } else {
       modal.style.display = 'none';
-      document.body.style.overflow = 'auto'; // Restaurer le défilement
+      document.body.style.overflow = '';
     }
     
     // Réinitialiser les états
@@ -119,7 +140,7 @@ const BookingSystem = {
    */
   populateRooms() {
     const roomSelect = document.getElementById('booking-room');
-    if (!roomSelect || roomSelect.children.length > 1) return;
+    if (!roomSelect) return;
     
     // Vider les options sauf la première
     while (roomSelect.children.length > 1) {
@@ -136,16 +157,24 @@ const BookingSystem = {
       }
       
       // Sélectionner la salle actuelle si on est sur une page spécifique de salle
-      if (window.salleName && window.salleName !== 'toutes les salles') {
-        const normalized = window.salleName.charAt(0).toUpperCase() + window.salleName.slice(1).toLowerCase();
-        if (Array.from(roomSelect.options).some(opt => opt.value === normalized)) {
-          roomSelect.value = normalized;
-          this.selectedRoom = normalized;
-          
-          // Vérifier la disponibilité
-          setTimeout(() => this.checkRoomAvailability(), 300);
+      const currentRoom = window.salleName || window.resourceName;
+      if (currentRoom && currentRoom !== 'toutes les salles') {
+        const normalized = currentRoom.charAt(0).toUpperCase() + currentRoom.slice(1).toLowerCase();
+        
+        // Trouver l'option correspondante
+        for (let i = 0; i < roomSelect.options.length; i++) {
+          if (roomSelect.options[i].value.toLowerCase() === normalized.toLowerCase()) {
+            roomSelect.selectedIndex = i;
+            this.selectedRoom = roomSelect.options[i].value;
+            
+            // Vérifier la disponibilité
+            setTimeout(() => this.checkRoomAvailability(), 300);
+            break;
+          }
         }
       }
+    } else {
+      console.warn("Configuration des salles non trouvée (window.SALLES)");
     }
   },
   
@@ -201,7 +230,7 @@ const BookingSystem = {
     const endTimeInput = document.getElementById('booking-end');
     const dateInput = document.getElementById('booking-date');
     
-    if (!roomSelect || !availabilityDiv || !startTimeInput || !dateInput) return;
+    if (!roomSelect || !availabilityDiv || !startTimeInput || !endTimeInput || !dateInput) return;
     
     const selectedRoom = roomSelect.value;
     this.selectedRoom = selectedRoom;
@@ -240,7 +269,16 @@ const BookingSystem = {
     
     try {
       // Récupérer les réunions du jour
-      const response = await fetch(`${window.API_URLS.GET_MEETINGS}?t=${Date.now()}`);
+      const apiUrl = window.API_URLS && window.API_URLS.GET_MEETINGS 
+        ? window.API_URLS.GET_MEETINGS 
+        : '/meetings.json';
+      
+      const response = await fetch(`${apiUrl}?t=${Date.now()}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+      
       const meetings = await response.json();
       
       // Vérifier les conflits
@@ -372,8 +410,13 @@ const BookingSystem = {
     this.showLoading(true);
     
     try {
+      // URL de l'API
+      const apiUrl = window.API_URLS && window.API_URLS.CREATE_MEETING 
+        ? window.API_URLS.CREATE_MEETING 
+        : '/api/create-meeting';
+      
       // Appel à l'API pour créer la réunion
-      const response = await fetch(window.API_URLS.CREATE_MEETING, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -381,6 +424,7 @@ const BookingSystem = {
         body: JSON.stringify(meetingData)
       });
       
+      // Analyser la réponse
       const result = await response.json();
       
       if (!response.ok) {
@@ -395,8 +439,8 @@ const BookingSystem = {
         this.closeModal();
         
         // Rafraîchir la liste des réunions
-        if (typeof fetchMeetings === 'function') {
-          fetchMeetings();
+        if (typeof window.fetchMeetings === 'function') {
+          window.fetchMeetings();
         }
       }, 1500);
       
@@ -571,3 +615,6 @@ const BookingSystem = {
 document.addEventListener('DOMContentLoaded', () => {
   BookingSystem.init();
 });
+
+// Exporter le système pour utilisation dans d'autres modules
+window.BookingSystem = BookingSystem;
