@@ -18,15 +18,26 @@ const AuthSystem = {
    * Initialise le système d'authentification
    */
   init() {
+    console.log("Initialisation du système d'authentification");
+    
     // Vérifier si un token est déjà présent
     this.checkAuthState();
     
     // Ajouter les écouteurs d'événements
     document.addEventListener('DOMContentLoaded', () => {
       // Gestion de l'affichage du modal de connexion
-      const loginBtn = document.getElementById('loginBtn');
+      console.log("Recherche du bouton de connexion");
+      const loginBtn = document.querySelector('#loginBtn, .auth-hidden[id="loginBtn"]');
       if (loginBtn) {
-        loginBtn.addEventListener('click', () => this.showLoginModal());
+        console.log("Bouton de connexion trouvé, ajout du gestionnaire d'événements");
+        loginBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Clic sur le bouton de connexion");
+          this.showLoginModal();
+        });
+      } else {
+        console.warn("Bouton de connexion non trouvé");
       }
       
       // Formulaire de connexion
@@ -57,9 +68,12 @@ const AuthSystem = {
     const userDropdown = document.querySelector('.user-dropdown');
     
     if (userProfile && userDropdown) {
+      console.log("Composants du menu utilisateur trouvés");
+      
       // Au clic, alterne l'affichage du menu
       userProfile.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log("Clic sur le profil utilisateur");
         userDropdown.classList.toggle('show');
       });
       
@@ -99,6 +113,8 @@ const AuthSystem = {
           }
         }, 300);
       });
+    } else {
+      console.warn("Composants du menu utilisateur non trouvés");
     }
   },
   
@@ -145,6 +161,7 @@ const AuthSystem = {
   showLoginModal() {
     const loginModal = document.getElementById('loginModal');
     if (loginModal) {
+      console.log("Affichage du modal de connexion");
       loginModal.style.display = 'flex';
       
       // Animation d'entrée
@@ -161,6 +178,8 @@ const AuthSystem = {
       if (usernameField) {
         setTimeout(() => usernameField.focus(), 300);
       }
+    } else {
+      console.error("Modal de connexion non trouvé");
     }
   },
   
