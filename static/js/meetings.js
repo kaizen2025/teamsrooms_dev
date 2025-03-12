@@ -1,13 +1,15 @@
 /**
  * Gestion des réunions
- * Version améliorée avec meilleure gestion des erreurs et états de chargement
+ * Version améliorée avec chargement silencieux en arrière-plan
  */
 
 // Variables globales pour le système de réunions
 let previousMeetings = JSON.stringify([]);
 let isLoadingMeetings = false;
 let lastVisibleUpdate = 0;
-const MIN_VISIBLE_UPDATE_INTERVAL = 30000; // 30 secondes minimum entre les mises à jour visibles
+const MIN_VISIBLE_UPDATE_INTERVAL = 60000; // 60 secondes minimum entre les mises à jour visibles
+let meetingsContainer = null;
+let isFirstLoad = true;
 
 /**
  * Récupère les réunions depuis l'API
@@ -19,22 +21,44 @@ async function fetchMeetings(forceVisibleUpdate = false) {
   isLoadingMeetings = true;
 
   try {
-    // Requête silencieuse - ne pas afficher de chargement sauf si c'est le premier chargement
-    // ou si un rafraîchissement manuel a été demandé
-    const container = document.getElementById('meetingsContainer');
+    // Récupérer le conteneur une fois pour éviter les sélections multiples
+    if (!meetingsContainer) {
+      meetingsContainer = document.getElementById('meetingsContainer');
+      if (!meetingsContainer) {
+        console.error("Conteneur de réunions introuvable (meetingsContainer)");
+        isLoadingMeetings = false;
+        return;
+      }
+    }
+
+    // Déterminer si nous devons afficher l'indicateur de chargement
     const now = Date.now();
-    const isFirstLoad = !container.querySelector('.meeting-item');
-    const shouldShowLoading = isFirstLoad || 
-                             forceVisibleUpdate || 
+    const hasExistingMeetings = meetingsContainer.querySelector('.meeting-item') !== null;
+    const shouldShowLoading = forceVisibleUpdate || 
+                             isFirstLoad || 
+                             !hasExistingMeetings || 
                              (now - lastVisibleUpdate > MIN_VISIBLE_UPDATE_INTERVAL);
     
-    if (shouldShowLoading && container) {
-      container.innerHTML = `
-        <div class="loading-indicator">
-          <i class="fas fa-circle-notch fa-spin"></i>
-          <span>Chargement des réunions...</span>
-        </div>
+    // Afficher l'indicateur de chargement uniquement si nécessaire
+    let loadingIndicator = null;
+    if (shouldShowLoading) {
+      loadingIndicator = document.createElement('div');
+      loadingIndicator.className = 'loading-indicator';
+      loadingIndicator.innerHTML = `
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <span>Chargement des réunions...</span>
       `;
+      
+      // Sauvegarder le contenu actuel
+      const originalContent = meetingsContainer.innerHTML;
+      
+      // Vider et afficher l'indicateur
+      meetingsContainer.innerHTML = '';
+      meetingsContainer.appendChild(loadingIndicator);
+      
+      console.log("Affichage de l'indicateur de chargement");
+    } else {
+      console.log("Mise à jour silencieuse des réunions en arrière-plan");
     }
 
     // URL de l'API avec un timestamp pour éviter la mise en cache
@@ -42,7 +66,7 @@ async function fetchMeetings(forceVisibleUpdate = false) {
       ? window.API_URLS.GET_MEETINGS 
       : '/meetings.json';
     
-    // Effectuer la requête
+    // Effectuer la requête avec un timestamp pour éviter le cache
     const response = await fetch(`${apiUrl}?t=${Date.now()}`);
     
     if (!response.ok) {
@@ -75,51 +99,47 @@ async function fetchMeetings(forceVisibleUpdate = false) {
 
     // Vérifier si les données ont changé
     const currentMeetingsString = JSON.stringify(meetings);
+    const dataChanged = previousMeetings !== currentMeetingsString;
     
-    if (previousMeetings === currentMeetingsString) {
-      // Si les données n'ont pas changé et qu'il ne s'agit pas d'un chargement initial,
-      // ne pas mettre à jour l'affichage
-      if (!isFirstLoad && !forceVisibleUpdate) {
-        isLoadingMeetings = false;
-        return;
-      }
-    }
-    
-    // Mettre à jour les données et l'affichage uniquement si nécessaire
+    // Mettre à jour les données en mémoire
     previousMeetings = currentMeetingsString;
 
-    if (shouldShowLoading || isFirstLoad || forceVisibleUpdate) {
+    // Décider si on met à jour l'affichage
+    if (shouldShowLoading || dataChanged) {
+      // Mettre à jour l'interface complètement
       updateMeetingsDisplay(meetings);
       lastVisibleUpdate = now;
+      console.log(`Mise à jour complète de l'affichage (${meetings.length} réunions)`);
     } else {
-      // Mise à jour silencieuse - uniquement mettre à jour les timers/progress bars
+      // Mise à jour silencieuse - uniquement mettre à jour les timers et états
       updateMeetingTimers();
+      console.log("Mise à jour des timers uniquement");
     }
+    
+    // Marquer la fin du premier chargement
+    isFirstLoad = false;
     
   } catch (error) {
     console.error("Erreur lors du chargement des réunions:", error);
     
-    // N'afficher l'erreur que si c'est un rafraîchissement forcé ou le premier chargement
-    const container = document.getElementById('meetingsContainer');
-    if (!container) return;
-    
-    const isFirstLoad = !container.querySelector('.meeting-item');
-    
-    if ((isFirstLoad || forceVisibleUpdate) && container) {
-      container.innerHTML = `
-        <div class="empty-meetings-message">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>Impossible de charger les réunions.</p>
-          <button id="retryBtn" class="btn btn-primary">
-            <i class="fas fa-sync-alt"></i> Réessayer
-          </button>
-        </div>
-      `;
-      
-      // Ajouter un bouton pour réessayer
-      const retryBtn = document.getElementById('retryBtn');
-      if (retryBtn) {
-        retryBtn.addEventListener('click', () => fetchMeetings(true));
+    // Afficher l'erreur uniquement si c'est un rafraîchissement forcé ou le premier chargement
+    if (forceVisibleUpdate || isFirstLoad) {
+      if (meetingsContainer) {
+        meetingsContainer.innerHTML = `
+          <div class="empty-meetings-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Impossible de charger les réunions.</p>
+            <button id="retryBtn" class="btn btn-primary">
+              <i class="fas fa-sync-alt"></i> Réessayer
+            </button>
+          </div>
+        `;
+        
+        // Ajouter un bouton pour réessayer
+        const retryBtn = document.getElementById('retryBtn');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', () => fetchMeetings(true));
+        }
       }
     }
   } finally {
@@ -131,15 +151,20 @@ async function fetchMeetings(forceVisibleUpdate = false) {
  * Met à jour l'affichage des réunions en les triant par statut
  */
 function updateMeetingsDisplay(meetings) {
-  const container = document.getElementById('meetingsContainer');
-  if (!container) return;
+  if (!meetingsContainer) {
+    meetingsContainer = document.getElementById('meetingsContainer');
+    if (!meetingsContainer) {
+      console.error("Conteneur de réunions introuvable pour l'affichage");
+      return;
+    }
+  }
 
   // Vider le conteneur
-  container.innerHTML = '';
+  meetingsContainer.innerHTML = '';
 
   // Pas de réunions aujourd'hui
   if (meetings.length === 0) {
-    container.innerHTML = `
+    meetingsContainer.innerHTML = `
       <div class="empty-meetings-message">
         <i class="fas fa-calendar-day"></i>
         <p>Aucune réunion prévue aujourd'hui.</p>
@@ -170,44 +195,50 @@ function updateMeetingsDisplay(meetings) {
     }
   });
 
+  // Création des sections HTML
+  let sectionsHTML = '';
+
   // Réunions en cours
   if (currentMeetings.length > 0) {
-    container.innerHTML += `
+    sectionsHTML += `
       <div class="status-section">
         <h4><i class="fas fa-play-circle"></i> En cours</h4>
       </div>
     `;
 
     currentMeetings.forEach(meeting => {
-      container.innerHTML += createMeetingHTML(meeting);
+      sectionsHTML += createMeetingHTML(meeting);
     });
   }
 
   // Réunions à venir
   if (upcomingMeetings.length > 0) {
-    container.innerHTML += `
+    sectionsHTML += `
       <div class="status-section">
         <h4><i class="fas fa-clock"></i> À venir</h4>
       </div>
     `;
 
     upcomingMeetings.forEach(meeting => {
-      container.innerHTML += createMeetingHTML(meeting);
+      sectionsHTML += createMeetingHTML(meeting);
     });
   }
 
   // Réunions passées
   if (pastMeetings.length > 0) {
-    container.innerHTML += `
+    sectionsHTML += `
       <div class="status-section">
         <h4><i class="fas fa-check-circle"></i> Terminées</h4>
       </div>
     `;
 
     pastMeetings.forEach(meeting => {
-      container.innerHTML += createMeetingHTML(meeting);
+      sectionsHTML += createMeetingHTML(meeting);
     });
   }
+
+  // Ajouter les sections au conteneur
+  meetingsContainer.innerHTML = sectionsHTML;
 
   // Initialiser les barres de progression et les chronomètres
   initializeMeetingTimers();
@@ -299,8 +330,13 @@ function updateMeetingTimers() {
   const now = new Date();
   
   document.querySelectorAll('.meeting-item').forEach(item => {
+    if (!item.dataset.start || !item.dataset.end) return;
+    
     const startTime = new Date(item.dataset.start);
     const endTime = new Date(item.dataset.end);
+    
+    // Si l'élément n'a pas de données de temps valides, ignorer
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return;
     
     // Réunion en cours
     if (startTime <= now && endTime > now) {
@@ -381,9 +417,15 @@ function updateMeetingTimers() {
 
 // Attacher le gestionnaire d'événements au chargement du document
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("Initialisation du système de réunions");
+  
+  // Bouton de rafraîchissement manuel
   const refreshBtn = document.getElementById('refreshBtn');
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => fetchMeetings(true));
+    refreshBtn.addEventListener('click', () => {
+      console.log("Rafraîchissement manuel des réunions");
+      fetchMeetings(true);
+    });
   }
   
   // Premier chargement des réunions
@@ -391,9 +433,16 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Rafraîchissement périodique en arrière-plan
   const refreshInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETINGS) || 20000;
-  setInterval(() => fetchMeetings(false), refreshInterval);
+  console.log(`Configuration du rafraîchissement automatique toutes les ${refreshInterval/1000} secondes`);
+  
+  setInterval(() => {
+    fetchMeetings(false);
+  }, refreshInterval);
   
   // Mise à jour des timers plus fréquente
   const timerInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETING_TIMERS) || 60000;
   setInterval(updateMeetingTimers, timerInterval);
 });
+
+// Fonction globale pour rafraîchir les réunions (utilisée par d'autres modules)
+window.fetchMeetings = fetchMeetings;
