@@ -7,6 +7,266 @@
   --primary-color-dark: #4F5199;
   --primary-color-light: #7B7DC6;
   --primary-color-very-light: rgba(98, 100, 167, 0.2);
+
+   /* Ajoutez ces styles supplémentaires à votre fichier main.css */
+
+/* =============================
+   Correction pour l'arrière-plan
+   ============================= */
+#background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  animation: zoomBackground 30s infinite alternate ease-in-out;
+  filter: brightness(0.9);
+  opacity: 1; /* Assurer que l'arrière-plan est visible */
+  transition: background-image 1s ease-in-out;
+}
+
+@keyframes zoomBackground {
+  0%   { transform: scale(1); filter: brightness(0.9); }
+  50%  { transform: scale(1.05); filter: brightness(0.95); }
+  100% { transform: scale(1); filter: brightness(0.9); }
+}
+
+/* Overlay pour améliorer la lisibilité sur l'arrière-plan */
+#background-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 100%);
+  z-index: 0;
+}
+
+/* =============================
+   Correction pour le bouton des salles
+   ============================= */
+.rooms-toggle-button-floating {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));
+  border: none;
+  border-radius: var(--border-radius-md);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  z-index: var(--z-index-above);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-fast);
+}
+
+.rooms-toggle-button-floating:hover {
+  background: linear-gradient(to right, var(--primary-color-dark), var(--primary-color));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Styles pour le bouton dans le menu latéral */
+.side-menu .toggle-rooms-button {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: white;
+  padding: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+.side-menu .toggle-rooms-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* =============================
+   Améliorations pour la section des salles
+   ============================= */
+.rooms-section {
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  left: 20px;
+  z-index: var(--z-index-modal);
+  background: rgba(25, 25, 25, 0.9);
+  backdrop-filter: blur(10px);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  width: auto;
+  max-width: 550px;
+  transition: var(--transition-normal);
+  border: 1px solid rgba(98, 100, 167, 0.5);
+  animation: fadeOut 0.3s ease-in-out;
+}
+
+.rooms-section.visible {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(10px); }
+}
+
+/* Assurer que les cartes de salle sont visibles et bien stylisées */
+.room-card {
+  flex: 0 0 105px;
+  height: 65px;
+  background: rgba(40, 40, 40, 0.9);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-bottom: var(--spacing-xs);
+  border: 1px solid rgba(60, 60, 60, 0.8);
+}
+
+.room-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: rgba(98, 100, 167, 0.5);
+}
+
+/* Indicateurs de statut pour les salles */
+.room-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+}
+
+.room-card.available::before {
+  background-color: var(--success-color);
+}
+
+.room-card.occupied::before {
+  background-color: var(--danger-color);
+}
+
+.room-card.soon::before {
+  background-color: var(--warning-color);
+}
+
+/* Contenu des cartes */
+.room-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+  color: white;
+}
+
+.room-status {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #ddd;
+}
+
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.status-icon.available {
+  background-color: var(--success-color);
+  box-shadow: 0 0 5px var(--success-color);
+}
+
+.status-icon.occupied {
+  background-color: var(--danger-color);
+  box-shadow: 0 0 5px var(--danger-color);
+}
+
+.status-icon.soon {
+  background-color: var(--warning-color);
+  box-shadow: 0 0 5px var(--warning-color);
+}
+
+.room-time {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 3px;
+}
+
+/* Animation pour les salles occupées */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.room-card.occupied {
+  animation: pulse 2s infinite;
+}
+
+/* =============================
+   Optimisation du chargement des réunions
+   ============================= */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  color: var(--light-color);
+  animation: pulse 1.5s infinite alternate;
+  margin: auto;
+  height: 200px;
+}
+
+.loading-indicator i {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--primary-color);
+}
+
+/* Transition douce pour les mises à jour des réunions */
+.meeting-item {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#meetingsContainer {
+  transition: opacity 0.3s ease;
+  min-height: 200px;
+}
   
   /* Couleurs sémantiques */
   --success-color: #28a745;
