@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     
     <!-- Interface Improvements CSS -->
-    <link rel="stylesheet" href="/static/css/interface-improvements.css">
+    <link rel="stylesheet" href="/static/css/interface-improvements-updated.css">
 </head>
 <body>
     <!-- Background Container -->
@@ -32,9 +32,9 @@
     <div class="menu-overlay"></div>
     
     <!-- Main Container with Grid Layout -->
-    <div class="main-container menu-expanded">
+    <div class="main-container">
         <!-- Left Side Menu -->
-        <div class="side-menu expanded">
+        <div class="side-menu">
             <div class="menu-logo">
                 <img src="/static/Images/logo-anecoop.svg" alt="Logo Anecoop" height="50">
             </div>
@@ -160,19 +160,8 @@
         
         <!-- Main Content Area -->
         <main class="content">
-            <!-- Default Welcome Content -->
-            <div class="welcome-container glass-container">
-                <div class="welcome-header">
-                    <h2><i class="fas fa-door-open"></i> Bienvenue dans le système de réservation</h2>
-                </div>
-                <div class="welcome-content">
-                    <p>Sélectionnez une salle dans le menu ou utilisez le bouton "Afficher les salles" pour voir les disponibilités.</p>
-                    <p>Vous pouvez également créer une nouvelle réservation en utilisant le bouton en haut du panneau des réunions.</p>
-                </div>
-            </div>
-            
             <!-- Room-specific content will be loaded here -->
-            <div id="room-details" style="display: none;"></div>
+            <div id="room-details"></div>
         </main>
         
         <!-- Meetings Panel -->
@@ -256,21 +245,15 @@
                         <p>Aucune réunion prévue aujourd'hui</p>
                     </div>
                     
-                    <!-- Loading indicator for meetings -->
-                    <div class="loading-indicator" style="display: none;">
-                        <i class="fas fa-circle-notch fa-spin"></i>
-                        <p>Chargement des réunions...</p>
-                    </div>
+                            </div>
                 </div>
                 
                 <!-- Join Meeting (ID Entry) -->
-                <div class="join-meeting-container">
-                    <div class="meeting-join-integrated">
-                        <input type="text" id="meetingIdInput" placeholder="Entrez l'ID de la réunion">
-                        <button id="joinMeetingBtn">
-                            <i class="fas fa-sign-in-alt"></i> Rejoindre
-                        </button>
-                    </div>
+                <div class="meeting-id-entry">
+                    <input type="text" id="meetingIdInput" placeholder="Entrez l'ID de la réunion">
+                    <button id="joinMeetingBtn">
+                        <i class="fas fa-sign-in-alt"></i> Rejoindre
+                    </button>
                 </div>
             </div>
         </aside>
@@ -514,7 +497,7 @@
     <script src="/static/js/ui.js"></script>
     
     <!-- Interface Improvements Script -->
-    <script src="/static/js/interface-improvements.js"></script>
+    <script src="/static/js/interface-improvements-updated.js"></script>
     
     <script>
         // Initialize room name from URL or config
