@@ -1,5 +1,6 @@
 /**
  * Gestion des arrière-plans dynamiques
+ * Version optimisée pour une meilleure luminosité
  */
 
 // Système de gestion des arrière-plans
@@ -103,8 +104,11 @@ const BackgroundSystem = {
     img.onload = () => {
       // Une fois l'image chargée, l'appliquer comme arrière-plan
       backgroundContainer.style.backgroundImage = `url('${imagePath}')`;
-      backgroundContainer.style.opacity = '1';  // Assurer la visibilité
+      backgroundContainer.style.opacity = '1';
       this.currentBackgroundIndex = index;
+      
+      // Ajouter une classe pour indiquer que l'arrière-plan est chargé
+      document.body.classList.add('background-loaded');
     };
     
     img.onerror = () => {
