@@ -12,95 +12,8 @@ let meetingsContainer = null;
 let isFirstLoad = true;
 let lastRefreshTime = Date.now();
 let debugMode = true; // Activer pour plus de logs
-
-// Styles pour la popup des participants
-const participantsStyles = `
-  .meeting-participants {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 4px 0;
-  }
-  
-  .show-more-participants {
-    background: none;
-    border: none;
-    color: #ddd;
-    cursor: pointer;
-    padding: 2px 5px;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-  }
-  
-  .show-more-participants:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .participants-popup {
-    position: fixed;
-    z-index: 1000;
-    background-color: #2c2c2c;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 300px;
-    max-width: 90vw;
-    max-height: 80vh;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .participants-popup-content {
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-  }
-  
-  .participants-popup-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(60, 60, 60, 0.5);
-  }
-  
-  .participants-popup-header h4 {
-    margin: 0;
-    color: white;
-    font-size: 16px;
-  }
-  
-  .close-participants {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-  }
-  
-  .participants-list {
-    padding: 10px 15px;
-    overflow-y: auto;
-    max-height: 300px;
-  }
-  
-  .participant-item {
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: #ddd;
-  }
-  
-  .participant-item:last-child {
-    border-bottom: none;
-  }
-`;
-
-// Ajouter les styles au chargement du document
-document.addEventListener('DOMContentLoaded', function() {
-  const styleElem = document.createElement('style');
-  styleElem.textContent = participantsStyles;
-  document.head.appendChild(styleElem);
-});
+// Ajouter une variable pour stocker la dernière heure de synchronisation
+let lastSyncTimeFormatted = '';
 
 /**
  * Récupère les réunions depuis l'API
@@ -123,18 +36,16 @@ async function fetchMeetings(forceVisibleUpdate = false) {
     }
 
     // Déterminer si nous devons afficher l'indicateur de chargement
+    // CHANGEMENT: Ne jamais montrer le chargement sauf si explicitement demandé ou premier chargement
     const now = Date.now();
     const hasExistingMeetings = meetingsContainer.querySelector('.meeting-item') !== null;
-    const shouldShowLoading = forceVisibleUpdate || 
-                             isFirstLoad || 
-                             !hasExistingMeetings || 
-                             (now - lastVisibleUpdate > MIN_VISIBLE_UPDATE_INTERVAL);
+    const shouldShowLoading = forceVisibleUpdate || isFirstLoad || !hasExistingMeetings;
     
     // Afficher l'indicateur de chargement uniquement si nécessaire
     let loadingIndicator = null;
-    let originalContent = '';
     if (shouldShowLoading) {
-      originalContent = meetingsContainer.innerHTML;
+      // Sauvegarder le contenu original uniquement si on va montrer le chargement
+      const originalContent = meetingsContainer.innerHTML;
       loadingIndicator = document.createElement('div');
       loadingIndicator.className = 'loading-indicator';
       loadingIndicator.innerHTML = `
@@ -253,7 +164,6 @@ async function fetchMeetings(forceVisibleUpdate = false) {
     if (shouldShowLoading || dataChanged) {
       // Mettre à jour l'interface complètement
       updateMeetingsDisplay(meetings);
-      lastVisibleUpdate = now;
       if (debugMode) console.log(`Mise à jour complète de l'affichage (${meetings.length} réunions)`);
     } else {
       // Mise à jour silencieuse - uniquement mettre à jour les timers et états
@@ -261,9 +171,23 @@ async function fetchMeetings(forceVisibleUpdate = false) {
       if (debugMode) console.log("Mise à jour des timers uniquement");
     }
     
+    // NOUVEAU: Mettre à jour l'heure de dernière synchronisation
+    lastVisibleUpdate = now;
+    lastRefreshTime = now;
+    
+    // Formater l'heure de dernière synchronisation
+    const syncDate = new Date(now);
+    lastSyncTimeFormatted = syncDate.toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    // Mettre à jour l'affichage de l'heure de dernière synchronisation
+    updateLastSyncTimeDisplay();
+    
     // Marquer la fin du premier chargement
     isFirstLoad = false;
-    lastRefreshTime = Date.now();
     
   } catch (error) {
     console.error("Erreur lors du chargement des réunions:", error);
@@ -290,6 +214,48 @@ async function fetchMeetings(forceVisibleUpdate = false) {
     }
   } finally {
     isLoadingMeetings = false;
+  }
+}
+
+/**
+ * Fonction pour mettre à jour l'affichage de la dernière heure de synchronisation
+ */
+function updateLastSyncTimeDisplay() {
+  // Trouver ou créer l'élément d'affichage de la dernière synchronisation
+  let lastSyncDisplay = document.getElementById('last-sync-time');
+  
+  if (!lastSyncDisplay) {
+    // Créer l'élément s'il n'existe pas
+    lastSyncDisplay = document.createElement('div');
+    lastSyncDisplay.id = 'last-sync-time';
+    lastSyncDisplay.className = 'last-sync-time';
+    lastSyncDisplay.style.cssText = `
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+      margin-top: 5px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+    `;
+    
+    // Trouver le bouton de rafraîchissement
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn && refreshBtn.parentNode) {
+      // Insérer après le bouton de rafraîchissement
+      refreshBtn.parentNode.insertBefore(lastSyncDisplay, refreshBtn.nextSibling);
+    } else {
+      // Fallback: ajouter au conteneur de contrôles
+      const controlsContainer = document.querySelector('.control-buttons');
+      if (controlsContainer) {
+        controlsContainer.appendChild(lastSyncDisplay);
+      }
+    }
+  }
+  
+  // Mettre à jour le texte
+  if (lastSyncTimeFormatted) {
+    lastSyncDisplay.innerHTML = `<i class="fas fa-history"></i> Dernière synchro: ${lastSyncTimeFormatted}`;
   }
 }
 
@@ -456,7 +422,7 @@ function createMeetingHTML(meeting) {
   const isTeamsMeeting = meeting.isOnline || meeting.joinUrl;
   const meetingUrl = meeting.joinUrl || '';
   
-  // Affichage des participants
+  // Affichage des participants - Version améliorée selon paste.txt
   let participantsHTML = '';
   if (meeting.attendees && meeting.attendees.length > 0) {
     // Filtrer les emails des salles
@@ -480,17 +446,6 @@ function createMeetingHTML(meeting) {
              </button>` : 
             ''}
         </p>
-        <div class="participants-popup" id="participants-${meeting.id}" style="display:none;">
-          <div class="participants-popup-content">
-            <div class="participants-popup-header">
-              <h4>Participants</h4>
-              <button class="close-participants" data-meeting-id="${meeting.id}">&times;</button>
-            </div>
-            <div class="participants-list">
-              ${participants.map(p => `<div class="participant-item">${p}</div>`).join('')}
-            </div>
-          </div>
-        </div>
       `;
     }
   }
@@ -566,34 +521,222 @@ function initializeMeetingTimers() {
 }
 
 /**
- * Initialise les boutons pour afficher tous les participants
+ * Initialise les popups pour afficher tous les participants
+ * Version améliorée selon paste.txt
  */
 function initializeParticipantsPopups() {
-  // Gérer les clics sur "voir plus"
-  document.querySelectorAll('.show-more-participants').forEach(button => {
-    button.addEventListener('click', function(e) {
+  // Ajouter des styles améliorés pour les popups de participants
+  if (!document.getElementById('participants-popup-styles')) {
+    const styles = document.createElement('style');
+    styles.id = 'participants-popup-styles';
+    styles.textContent = `
+      .meeting-participants {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0;
+      }
+      
+      .show-more-participants {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #ddd;
+        cursor: pointer;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        margin-left: 4px;
+      }
+      
+      .show-more-participants:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+      
+      .participants-popup {
+        position: fixed;
+        z-index: 1000;
+        background-color: #2c2c2c;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        width: 300px;
+        max-width: 90vw;
+        max-height: 80vh;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        display: none;
+      }
+      
+      .participants-popup.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .participants-popup-content {
+        display: flex;
+        flex-direction: column;
+        max-height: 80vh;
+      }
+      
+      .participants-popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(60, 60, 60, 0.5);
+      }
+      
+      .participants-popup-header h4 {
+        margin: 0;
+        color: white;
+        font-size: 16px;
+      }
+      
+      .close-participants {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+      
+      .close-participants:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: scale(1.1);
+      }
+      
+      .participants-list {
+        padding: 10px 15px;
+        overflow-y: auto;
+        max-height: 300px;
+      }
+      
+      .participant-item {
+        padding: 8px 10px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        color: #ddd;
+        transition: background-color 0.2s ease;
+      }
+      
+      .participant-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+    `;
+    document.head.appendChild(styles);
+  }
+
+  // Supprimer les popups existants pour éviter les doublons
+  document.querySelectorAll('.participants-popup').forEach(popup => {
+    popup.remove();
+  });
+
+  // Recréer les popups avec le bon positionnement et les bons styles
+  document.querySelectorAll('.meeting-item').forEach(meetingItem => {
+    const meetingId = meetingItem.getAttribute('data-id');
+    if (!meetingId) return;
+
+    // Trouver le bouton "voir plus"
+    const moreButton = meetingItem.querySelector('.show-more-participants');
+    if (!moreButton) return;
+
+    // Créer une nouvelle popup pour cet élément
+    const popup = document.createElement('div');
+    popup.id = `participants-${meetingId}`;
+    popup.className = 'participants-popup';
+    
+    // Obtenir les participants depuis l'attribut de données ou l'élément
+    let participants = [];
+    
+    // Trouver les participants à partir du HTML existant
+    const participantsElement = meetingItem.querySelector('.meeting-participants');
+    if (participantsElement) {
+      const text = participantsElement.textContent.trim();
+      // Extraire seulement la partie participants, en excluant l'icône et le texte "voir plus"
+      const parts = text.split(',');
+      if (parts.length > 0) {
+        // Nettoyer les participants
+        participants = parts.map(p => p.trim())
+          .filter(p => p && !p.includes('...') && !p.includes('voir plus'));
+      }
+    }
+    
+    // Préparer le contenu de la popup
+    popup.innerHTML = `
+      <div class="participants-popup-content">
+        <div class="participants-popup-header">
+          <h4><i class="fas fa-users"></i> Participants (${participants.length})</h4>
+          <button class="close-participants" data-meeting-id="${meetingId}">&times;</button>
+        </div>
+        <div class="participants-list">
+          ${participants.map(p => `<div class="participant-item"><i class="fas fa-user"></i> ${p}</div>`).join('')}
+          ${participants.length === 0 ? '<div class="participant-item">Aucun participant trouvé</div>' : ''}
+        </div>
+      </div>
+    `;
+    
+    // Ajouter la popup au document
+    document.body.appendChild(popup);
+    
+    // Gérer le clic sur le bouton "voir plus"
+    moreButton.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       
-      const meetingId = this.getAttribute('data-meeting-id');
-      const popup = document.getElementById(`participants-${meetingId}`);
+      // Fermer toutes les autres popups
+      document.querySelectorAll('.participants-popup').forEach(p => {
+        if (p.id !== `participants-${meetingId}`) {
+          p.style.display = 'none';
+          p.classList.remove('visible');
+        }
+      });
       
-      if (popup) {
-        // Positionner la popup près du bouton
-        const rect = this.getBoundingClientRect();
-        popup.style.position = 'fixed';
-        popup.style.top = `${rect.bottom + 10}px`;
-        popup.style.left = `${rect.left}px`;
-        popup.style.display = 'block';
-        
-        // Ajouter un gestionnaire d'événements global pour fermer la popup lors d'un clic ailleurs
-        document.addEventListener('click', function closePopup(event) {
-          if (!popup.contains(event.target) && event.target !== button) {
+      // Positionner et afficher cette popup
+      const rect = this.getBoundingClientRect();
+      popup.style.position = 'fixed';
+      popup.style.top = `${rect.bottom + 10}px`;
+      
+      // Ajuster horizontalement pour éviter de sortir de l'écran
+      const leftPos = Math.min(rect.left, window.innerWidth - 320);
+      popup.style.left = `${leftPos}px`;
+      
+      // Afficher avec animation
+      popup.style.display = 'block';
+      
+      // Forcer un reflow pour que l'animation fonctionne
+      popup.offsetHeight;
+      
+      // Ajouter la classe visible pour l'animation
+      popup.classList.add('visible');
+      
+      // Ajouter un gestionnaire d'événements global pour fermer la popup lors d'un clic ailleurs
+      document.addEventListener('click', function closePopup(event) {
+        if (!popup.contains(event.target) && event.target !== moreButton) {
+          popup.classList.remove('visible');
+          
+          // Cacher complètement après la fin de l'animation
+          setTimeout(() => {
             popup.style.display = 'none';
-            document.removeEventListener('click', closePopup);
-          }
-        });
-      }
+          }, 300);
+          
+          document.removeEventListener('click', closePopup);
+        }
+      });
     });
   });
   
@@ -602,141 +745,16 @@ function initializeParticipantsPopups() {
     button.addEventListener('click', function() {
       const meetingId = this.getAttribute('data-meeting-id');
       const popup = document.getElementById(`participants-${meetingId}`);
-      if (popup) popup.style.display = 'none';
+      
+      if (popup) {
+        // Animer la fermeture
+        popup.classList.remove('visible');
+        
+        // Cacher complètement après la fin de l'animation
+        setTimeout(() => {
+          popup.style.display = 'none';
+        }, 300);
+      }
     });
   });
 }
-
-/**
- * Met à jour les chronomètres et barres de progression
- */
-function updateMeetingTimers() {
-  const now = new Date();
-  
-  document.querySelectorAll('.meeting-item').forEach(item => {
-    if (!item.dataset.start || !item.dataset.end) return;
-    
-    const startTime = new Date(item.dataset.start);
-    const endTime = new Date(item.dataset.end);
-    
-    // Si l'élément n'a pas de données de temps valides, ignorer
-    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return;
-    
-    // Réunion en cours
-    if (startTime <= now && endTime > now) {
-      // Mettre à jour la classe si ce n'était pas déjà 'current'
-      if (!item.classList.contains('current')) {
-        item.classList.remove('upcoming', 'past');
-        item.classList.add('current');
-        
-        // Ajouter les éléments de progression s'ils n'existent pas
-        if (!item.querySelector('.meeting-status-badge')) {
-          const meetingTime = item.querySelector('.meeting-time');
-          if (meetingTime) {
-            const startTimeStr = startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            const endTimeStr = endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            
-            const progressHTML = `
-              <div class="meeting-status-badge">En cours</div>
-              <div class="meeting-progress-container">
-                <div class="meeting-progress-bar" style="width: 0%"></div>
-              </div>
-              <div class="time-info">
-                <span>${startTimeStr} - ${endTimeStr}</span>
-                <span class="time-remaining"><i class="fas fa-hourglass-half"></i> Calcul...</span>
-              </div>
-            `;
-            
-            meetingTime.insertAdjacentHTML('beforebegin', progressHTML);
-          }
-        }
-      }
-      
-      // Mettre à jour la barre de progression
-      const progressBar = item.querySelector('.meeting-progress-bar');
-      const timeRemaining = item.querySelector('.time-remaining');
-      
-      if (progressBar) {
-        const totalDuration = endTime - startTime;
-        const elapsed = now - startTime;
-        const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-        progressBar.style.width = `${progress}%`;
-      }
-      
-      if (timeRemaining) {
-        const remainingMs = endTime - now;
-        const remainingMinutes = Math.ceil(remainingMs / 60000);
-        const remainingText = remainingMinutes < 60 
-          ? `${remainingMinutes} min` 
-          : `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}min`;
-        
-        timeRemaining.innerHTML = `<i class="fas fa-hourglass-half"></i> ${remainingText}`;
-      }
-    }
-    // Réunion terminée
-    else if (endTime <= now) {
-      if (!item.classList.contains('past')) {
-        item.classList.remove('current', 'upcoming');
-        item.classList.add('past');
-        
-        // Supprimer les éléments de progression
-        const badge = item.querySelector('.meeting-status-badge');
-        const progressContainer = item.querySelector('.meeting-progress-container');
-        const timeInfo = item.querySelector('.time-info');
-        
-        if (badge) badge.remove();
-        if (progressContainer) progressContainer.remove();
-        if (timeInfo) timeInfo.remove();
-      }
-    }
-    // Réunion à venir
-    else {
-      if (!item.classList.contains('upcoming')) {
-        item.classList.remove('current', 'past');
-        item.classList.add('upcoming');
-      }
-    }
-  });
-}
-
-// Attacher le gestionnaire d'événements au chargement du document
-document.addEventListener('DOMContentLoaded', () => {
-  if (debugMode) console.log("Initialisation du système de réunions amélioré");
-  
-  // Bouton de rafraîchissement manuel
-  const refreshBtn = document.getElementById('refreshBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
-      if (debugMode) console.log("Rafraîchissement manuel des réunions");
-      fetchMeetings(true);
-    });
-  }
-  
-  // Premier chargement des réunions
-  fetchMeetings(true);
-  
-  // Rafraîchissement périodique plus fréquent
-  const refreshInterval = 10000; // 10 secondes
-  if (debugMode) console.log(`Configuration du rafraîchissement automatique toutes les ${refreshInterval/1000} secondes`);
-  
-  setInterval(() => {
-    fetchMeetings(false);
-  }, refreshInterval);
-  
-  // Mise à jour des timers plus fréquente
-  const timerInterval = 30000; // 30 secondes
-  setInterval(updateMeetingTimers, timerInterval);
-  
-  // Détection de focus sur la fenêtre pour rafraîchir après une inactivité
-  window.addEventListener('focus', () => {
-    const now = Date.now();
-    // Si la dernière mise à jour date de plus de 30 secondes, force un rafraîchissement
-    if (now - lastRefreshTime > 30000) {
-      if (debugMode) console.log("Rafraîchissement après retour sur la fenêtre");
-      fetchMeetings(true);
-    }
-  });
-});
-
-// Fonction globale pour rafraîchir les réunions (utilisée par d'autres modules)
-window.fetchMeetings = fetchMeetings;
