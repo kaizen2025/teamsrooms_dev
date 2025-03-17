@@ -364,6 +364,26 @@ function createMeetingHTML(meeting) {
   const isTeamsMeeting = meeting.isOnline || meeting.joinUrl;
   const meetingUrl = meeting.joinUrl || '';
   
+  // Ajout de l'affichage des participants
+  let participantsHTML = '';
+  if (meeting.attendees && meeting.attendees.length > 0) {
+    // Filtrer les emails des salles
+    const salleMails = Object.values(window.SALLES || {}).map(mail => mail.toLowerCase());
+    const participants = meeting.attendees.filter(mail => 
+      !salleMails.includes(mail.toLowerCase())
+    ).slice(0, 3); // Limite aux 3 premiers pour économiser de l'espace
+    
+    if (participants.length > 0) {
+      participantsHTML = `
+        <p class="meeting-participants">
+          <i class="fas fa-users"></i> 
+          ${participants.join(', ')}
+          ${meeting.attendees.length > 3 ? ` et ${meeting.attendees.length - 3} autres...` : ''}
+        </p>
+      `;
+    }
+  }
+  
   // HTML de la réunion
   return `
     <div class="meeting-item ${statusClass}" 
@@ -376,6 +396,7 @@ function createMeetingHTML(meeting) {
       ${progressHTML}
       <p class="meeting-time"><i class="far fa-clock"></i> ${startTimeStr} - ${endTimeStr}</p>
       ${meeting.salle ? `<p class="meeting-salle"><i class="fas fa-door-open"></i> ${meeting.salle}</p>` : ''}
+      ${participantsHTML}
       ${isTeamsMeeting ? `<button class="meeting-join-btn" data-url="${meetingUrl}"><i class="fas fa-video"></i> Rejoindre</button>` : ''}
     </div>
   `;
