@@ -458,3 +458,124 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Exposer pour utilisation globale
 window.JoinSystem = JoinSystem;
+
+/**
+ * Initialise une fonction d'aide synthétique
+ */
+function initializeHelpFunction() {
+  const helpBtn = document.getElementById('helpBtn');
+  
+  if (helpBtn) {
+    helpBtn.addEventListener('click', showHelpModal);
+  }
+}
+
+/**
+ * Affiche un modal d'aide synthétique
+ */
+function showHelpModal() {
+  // Création du modal d'aide
+  const helpModal = document.createElement('div');
+  helpModal.className = 'help-modal';
+  helpModal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+  `;
+  
+  // Contenu du modal
+  helpModal.innerHTML = `
+    <div class="help-modal-content" style="
+      width: 80%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      background-color: #2c2c2c;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    ">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <h2 style="color: white; margin: 0;"><i class="fas fa-question-circle"></i> Guide d'utilisation</h2>
+        <button id="closeHelpBtn" style="
+          background: none;
+          border: none;
+          color: white;
+          font-size: 24px;
+          cursor: pointer;
+        ">&times;</button>
+      </div>
+      
+      <div style="color: #ddd; line-height: 1.6;">
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-door-open"></i> Gestion des salles
+        </h3>
+        <p>
+          <strong>Consulter les salles</strong> : Cliquez sur le bouton <strong>"Afficher les salles disponibles"</strong> en bas 
+          pour voir toutes les salles et leur statut.
+        </p>
+        <p>
+          <strong>Filtrer par salle</strong> : Cliquez sur une salle dans la liste pour voir uniquement les 
+          réunions de cette salle.
+        </p>
+        
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-calendar-plus"></i> Création de réunions
+        </h3>
+        <p>
+          <strong>Réserver une salle</strong> : Cliquez sur le bouton <strong>"Créer une réunion Teams"</strong> en haut 
+          du panneau des réunions, choisissez une salle, une date, une heure et ajoutez des participants.
+        </p>
+        
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-video"></i> Rejoindre une réunion
+        </h3>
+        <p>
+          <strong>Méthode 1</strong> : Cliquez sur le bouton <strong>"Rejoindre"</strong> à côté d'une réunion en cours ou à venir.
+        </p>
+        <p>
+          <strong>Méthode 2</strong> : Entrez l'ID de la réunion dans le champ en bas de la liste des réunions et cliquez sur <strong>"Rejoindre"</strong>.
+        </p>
+        
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-sync-alt"></i> Actualisation
+        </h3>
+        <p>
+          Les réunions se rafraîchissent automatiquement toutes les 10 secondes.
+          Pour forcer une actualisation, cliquez sur le bouton <strong>"Rafraîchir"</strong> en bas.
+        </p>
+      </div>
+    </div>
+  `;
+  
+  // Ajouter le modal au document
+  document.body.appendChild(helpModal);
+  
+  // Gérer la fermeture du modal
+  document.getElementById('closeHelpBtn').addEventListener('click', () => {
+    document.body.removeChild(helpModal);
+  });
+  
+  // Fermer en cliquant en dehors du contenu
+  helpModal.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+      document.body.removeChild(helpModal);
+    }
+  });
+}
+
+// Appeler la fonction d'initialisation de l'aide à la fin de l'initialisation principale
+document.addEventListener('DOMContentLoaded', function() {
+  // Fonction existantes...
+  
+  // Ajouter l'initialisation de l'aide
+  initializeHelpFunction();
+});
