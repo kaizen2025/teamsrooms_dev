@@ -29,9 +29,62 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 8. FIX BUTTON OVERLAP ISSUES
     fixButtonOverlap();
+
+    // 9. ENSURE CONSISTENT MEETING DATA LOADING
+    ensureMeetingsLoading();
     
     console.log('Comprehensive interface improvements initialized');
 });
+
+/**
+ * Ensure that meetings are loading properly
+ */
+function ensureMeetingsLoading() {
+    // Check if there's any meeting content
+    const meetingsContainer = document.querySelector('.meetings-list');
+    if (!meetingsContainer) return;
+
+    // If meetings list is empty or contains only placeholder content
+    const hasMeetings = meetingsContainer.querySelector('.meeting-item');
+    const emptyMessage = meetingsContainer.querySelector('.empty-meetings-message');
+    const loadingIndicator = meetingsContainer.querySelector('.loading-indicator');
+    
+    if (!hasMeetings && !emptyMessage && !loadingIndicator) {
+        console.log("No meetings found, triggering fetch...");
+        
+        // Create a temporary loading indicator
+        const tempLoader = document.createElement('div');
+        tempLoader.className = 'loading-indicator';
+        tempLoader.innerHTML = `
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <span>Chargement des réunions...</span>
+            <p class="loading-detail">Initialisation...</p>
+        `;
+        meetingsContainer.appendChild(tempLoader);
+        
+        // Trigger meetings fetch if window.fetchMeetings exists
+        if (typeof window.fetchMeetings === 'function') {
+            // Force a refresh with true parameter
+            window.fetchMeetings(true);
+            
+            // Also set up a timer to check again in 10 seconds if no meetings appear
+            setTimeout(() => {
+                const updatedHasMeetings = meetingsContainer.querySelector('.meeting-item');
+                if (!updatedHasMeetings) {
+                    console.log("Still no meetings after initial fetch, retrying...");
+                    window.fetchMeetings(true);
+                }
+            }, 10000);
+        } else {
+            console.error("fetchMeetings function not found");
+            tempLoader.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Impossible de charger les réunions</span>
+                <p>La fonction de chargement n'est pas disponible</p>
+            `;
+        }
+    }
+}
 
 /**
  * Fix join button functionality - CRITICAL issue
@@ -656,6 +709,63 @@ function enhanceMeetingsDisplay() {
             button.style.padding = '8px 15px';
             button.style.borderRadius = '0 8px 8px 0';
             button.style.background = 'linear-gradient(to right, var(--success-color), var(--success-color-light))';
+        }
+    }
+    
+    // Add refresh button to meetings header
+    const createMeetingButton = document.querySelector('.create-meeting-integrated');
+    if (createMeetingButton && meetingsContainer) {
+        const refreshButton = document.createElement('button');
+        refreshButton.className = 'refresh-meetings-btn';
+        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        refreshButton.title = "Rafraîchir les réunions";
+        refreshButton.style.cssText = `
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        `;
+        
+        refreshButton.addEventListener('mouseover', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.2)';
+            this.style.transform = 'rotate(30deg)';
+        });
+        
+        refreshButton.addEventListener('mouseout', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.1)';
+            this.style.transform = 'rotate(0)';
+        });
+        
+        refreshButton.addEventListener('click', function() {
+            this.style.transform = 'rotate(360deg)';
+            // Add a spinning animation
+            this.querySelector('i').classList.add('fa-spin');
+            
+            // Force refresh of meetings
+            if (typeof window.fetchMeetings === 'function') {
+                window.fetchMeetings(true);
+                
+                // Remove spinning after 2 seconds
+                setTimeout(() => {
+                    this.querySelector('i').classList.remove('fa-spin');
+                }, 2000);
+            }
+        });
+        
+        const titleBar = document.querySelector('.meetings-title-bar');
+        if (titleBar) {
+            titleBar.style.position = 'relative';
+            titleBar.appendChild(refreshButton);
         }
     }
 }
