@@ -172,14 +172,20 @@ const JoinSystem = {
       const data = await response.json();
       
       if (data && data.joinUrl) {
+        // CORRECTION BUG : Éviter la création d'onglets multiples
+        // Stocker l'URL dans une variable locale pour ne l'ouvrir qu'une fois
+        const joinUrl = data.joinUrl;
+        
         // Sauvegarder l'ID récent
         this.saveRecentMeetingId(meetingId);
         
         // Montrer un message de succès
         this.showSuccess("Connexion réussie! Redirection vers Teams...");
         
-        // Ouvrir la réunion dans une nouvelle fenêtre
-        window.open(data.joinUrl, "_blank");
+        // Ouvrir la réunion UNE SEULE FOIS dans une nouvelle fenêtre
+        setTimeout(() => {
+          window.open(joinUrl, "_blank");
+        }, 500);
       } else {
         // Réessayer avec une variation de l'ID si nécessaire
         if (retryCount < this.maxRetries) {
