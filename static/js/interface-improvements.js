@@ -780,6 +780,12 @@ function initializeRoomsDisplay() {
     const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
     const roomsSection = document.querySelector('.rooms-section');
     
+    // Supprimer le bouton bleu en haut qui fait doublon
+    const topFloatingButton = document.querySelector('.rooms-toggle-button-floating');
+    if (topFloatingButton) {
+      topFloatingButton.style.display = 'none';
+    }
+    
     // Improve room section styling for smoother animations
     if (roomsSection) {
         roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
