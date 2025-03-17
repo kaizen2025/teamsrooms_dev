@@ -13,6 +13,95 @@ let isFirstLoad = true;
 let lastRefreshTime = Date.now();
 let debugMode = true; // Activer pour plus de logs
 
+// Styles pour la popup des participants
+const participantsStyles = `
+  .meeting-participants {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+  }
+  
+  .show-more-participants {
+    background: none;
+    border: none;
+    color: #ddd;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+  
+  .show-more-participants:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .participants-popup {
+    position: fixed;
+    z-index: 1000;
+    background-color: #2c2c2c;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 300px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .participants-popup-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+  }
+  
+  .participants-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(60, 60, 60, 0.5);
+  }
+  
+  .participants-popup-header h4 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+  }
+  
+  .close-participants {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  
+  .participants-list {
+    padding: 10px 15px;
+    overflow-y: auto;
+    max-height: 300px;
+  }
+  
+  .participant-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ddd;
+  }
+  
+  .participant-item:last-child {
+    border-bottom: none;
+  }
+`;
+
+// Ajouter les styles au chargement du document
+document.addEventListener('DOMContentLoaded', function() {
+  const styleElem = document.createElement('style');
+  styleElem.textContent = participantsStyles;
+  document.head.appendChild(styleElem);
+});
+
 /**
  * Récupère les réunions depuis l'API
  * @param {boolean} forceVisibleUpdate - Force une mise à jour visible même si l'intervalle minimum n'est pas atteint
@@ -310,6 +399,9 @@ function updateMeetingsDisplay(meetings) {
 
   // Initialiser les barres de progression et les chronomètres
   initializeMeetingTimers();
+  
+  // Initialiser les popups de participants
+  initializeParticipantsPopups();
 }
 
 /**
@@ -364,22 +456,41 @@ function createMeetingHTML(meeting) {
   const isTeamsMeeting = meeting.isOnline || meeting.joinUrl;
   const meetingUrl = meeting.joinUrl || '';
   
-  // Ajout de l'affichage des participants
+  // Affichage des participants
   let participantsHTML = '';
   if (meeting.attendees && meeting.attendees.length > 0) {
     // Filtrer les emails des salles
     const salleMails = Object.values(window.SALLES || {}).map(mail => mail.toLowerCase());
     const participants = meeting.attendees.filter(mail => 
       !salleMails.includes(mail.toLowerCase())
-    ).slice(0, 3); // Limite aux 3 premiers pour économiser de l'espace
+    );
+    
+    // Afficher un aperçu des participants (3 premiers)
+    const previewParticipants = participants.slice(0, 3);
+    const hasMore = participants.length > 3;
     
     if (participants.length > 0) {
       participantsHTML = `
         <p class="meeting-participants">
           <i class="fas fa-users"></i> 
-          ${participants.join(', ')}
-          ${meeting.attendees.length > 3 ? ` et ${meeting.attendees.length - 3} autres...` : ''}
+          ${previewParticipants.join(', ')}
+          ${hasMore ? 
+            `<button class="show-more-participants" data-meeting-id="${meeting.id}" title="Voir tous les participants">
+              <i class="fas fa-ellipsis-h"></i>
+             </button>` : 
+            ''}
         </p>
+        <div class="participants-popup" id="participants-${meeting.id}" style="display:none;">
+          <div class="participants-popup-content">
+            <div class="participants-popup-header">
+              <h4>Participants</h4>
+              <button class="close-participants" data-meeting-id="${meeting.id}">&times;</button>
+            </div>
+            <div class="participants-list">
+              ${participants.map(p => `<div class="participant-item">${p}</div>`).join('')}
+            </div>
+          </div>
+        </div>
       `;
     }
   }
@@ -452,6 +563,48 @@ function initializeMeetingTimers() {
   
   // Mettre à jour immédiatement les timers
   updateMeetingTimers();
+}
+
+/**
+ * Initialise les boutons pour afficher tous les participants
+ */
+function initializeParticipantsPopups() {
+  // Gérer les clics sur "voir plus"
+  document.querySelectorAll('.show-more-participants').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const meetingId = this.getAttribute('data-meeting-id');
+      const popup = document.getElementById(`participants-${meetingId}`);
+      
+      if (popup) {
+        // Positionner la popup près du bouton
+        const rect = this.getBoundingClientRect();
+        popup.style.position = 'fixed';
+        popup.style.top = `${rect.bottom + 10}px`;
+        popup.style.left = `${rect.left}px`;
+        popup.style.display = 'block';
+        
+        // Ajouter un gestionnaire d'événements global pour fermer la popup lors d'un clic ailleurs
+        document.addEventListener('click', function closePopup(event) {
+          if (!popup.contains(event.target) && event.target !== button) {
+            popup.style.display = 'none';
+            document.removeEventListener('click', closePopup);
+          }
+        });
+      }
+    });
+  });
+  
+  // Gérer les boutons de fermeture dans les popups
+  document.querySelectorAll('.close-participants').forEach(button => {
+    button.addEventListener('click', function() {
+      const meetingId = this.getAttribute('data-meeting-id');
+      const popup = document.getElementById(`participants-${meetingId}`);
+      if (popup) popup.style.display = 'none';
+    });
+  });
 }
 
 /**
