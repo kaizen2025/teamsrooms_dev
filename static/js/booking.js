@@ -22,11 +22,14 @@ const BookingSystem = {
    * Initialise le système de réservation
    */
   init() {
-    // Initialiser les événements
-    this.initializeEvents();
+    // Initialiser les gestionnaires d'événements de la modal
+    this.initializeModalHandlers();
     
     // Associer les boutons de création
     this.attachCreateButtons();
+    
+    // Initialiser les autres événements
+    this.initializeEvents();
     
     if (this.debug) console.log("Système de réservation initialisé");
   },
@@ -115,22 +118,42 @@ const BookingSystem = {
   },
   
   /**
-   * Ferme le modal de réservation
+   * Ferme proprement la modal de réservation et réinitialise son état
    */
   closeModal() {
     const modal = document.getElementById('bookingModal');
     if (!modal) return;
     
-    // Animation de sortie
+    // Supprimer tous les écouteurs d'événements des boutons dans la modal
+    const buttons = modal.querySelectorAll('button');
+    buttons.forEach(button => {
+      const newButton = button.cloneNode(true);
+      if (button.parentNode) {
+        button.parentNode.replaceChild(newButton, button);
+      }
+    });
+    
+    // Animation de sortie avec gestion du display none
     const modalContent = modal.querySelector('.booking-modal-content');
     if (modalContent) {
       modalContent.style.opacity = '0';
       modalContent.style.transform = 'translateY(-20px)';
-      setTimeout(() => {
-        modal.style.display = 'none';
-        document.body.style.overflow = ''; // Restaurer le défilement
-      }, 300);
+      
+      // Utiliser requestAnimationFrame pour garantir la fermeture complète
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          modal.style.display = 'none';
+          document.body.style.overflow = ''; // Restaurer le défilement
+          
+          // Réinitialiser complètement l'état de la modal
+          if (modalContent) {
+            modalContent.style.opacity = '1';
+            modalContent.style.transform = 'translateY(0)';
+          }
+        }, 300);
+      });
     } else {
+      // Fallback si le contenu de la modal n'est pas trouvé
       modal.style.display = 'none';
       document.body.style.overflow = '';
     }
@@ -138,6 +161,78 @@ const BookingSystem = {
     // Réinitialiser les états
     this.isLoading = false;
     this.selectedRoom = '';
+    
+    // Réattacher les gestionnaires d'événements après la fermeture
+    setTimeout(() => {
+      this.initializeModalHandlers();
+    }, 500);
+  },
+  
+  /**
+   * Réinitialise tous les gestionnaires d'événements pour la modal
+   */
+  initializeModalHandlers() {
+    // Bouton de fermeture
+    const closeBtn = document.getElementById('closeBookingModalBtn');
+    if (closeBtn) {
+      const newCloseBtn = closeBtn.cloneNode(true);
+      if (closeBtn.parentNode) {
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+      }
+      newCloseBtn.addEventListener('click', () => {
+        if (!this.isLoading) {
+          this.closeModal();
+        }
+      });
+    }
+    
+    // Bouton Annuler
+    const cancelBtn = document.getElementById('cancelBookingBtn');
+    if (cancelBtn) {
+      const newCancelBtn = cancelBtn.cloneNode(true);
+      if (cancelBtn.parentNode) {
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+      }
+      newCancelBtn.addEventListener('click', () => {
+        if (!this.isLoading) {
+          this.closeModal();
+        }
+      });
+    }
+    
+    // Gestion du clic en dehors de la modal
+    const modal = document.getElementById('bookingModal');
+    if (modal) {
+      // Supprimer tous les écouteurs d'événements sur la modal
+      const newModal = modal.cloneNode(false);
+      Array.from(modal.children).forEach(child => {
+        newModal.appendChild(child);
+      });
+      if (modal.parentNode) {
+        modal.parentNode.replaceChild(newModal, modal);
+      }
+      
+      // Ajouter à nouveau l'écouteur d'événements
+      newModal.addEventListener('click', (e) => {
+        if (e.target === newModal && !this.isLoading) {
+          this.closeModal();
+        }
+      });
+    }
+    
+    // Bouton de création de réunion
+    const createBtn = document.getElementById('createTeamsMeetingBtn');
+    if (createBtn) {
+      const newCreateBtn = createBtn.cloneNode(true);
+      if (createBtn.parentNode) {
+        createBtn.parentNode.replaceChild(newCreateBtn, createBtn);
+      }
+      newCreateBtn.addEventListener('click', () => {
+        if (!this.isLoading) {
+          this.createTeamsMeeting();
+        }
+      });
+    }
   },
   
   /**
@@ -581,45 +676,6 @@ const BookingSystem = {
       endTimeInput.addEventListener('change', () => {
         this.endTime = endTimeInput.value;
         this.checkRoomAvailability();
-      });
-    }
-    
-    // Fermer le modal si on clique en dehors du contenu
-    const modal = document.getElementById('bookingModal');
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal && !this.isLoading) {
-          this.closeModal();
-        }
-      });
-    }
-    
-    // Bouton de fermeture du modal
-    const closeBtn = document.getElementById('closeBookingModalBtn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        if (!this.isLoading) {
-          this.closeModal();
-        }
-      });
-    }
-    
-    // Boutons du modal
-    const cancelBtn = document.getElementById('cancelBookingBtn');
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', () => {
-        if (!this.isLoading) {
-          this.closeModal();
-        }
-      });
-    }
-    
-    const createBtn = document.getElementById('createTeamsMeetingBtn');
-    if (createBtn) {
-      createBtn.addEventListener('click', () => {
-        if (!this.isLoading) {
-          this.createTeamsMeeting();
-        }
       });
     }
     
