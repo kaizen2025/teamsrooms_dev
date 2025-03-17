@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 9. ENSURE CONSISTENT MEETING DATA LOADING
     ensureMeetingsLoading();
     
+    // 10. INITIALIZE HELP FUNCTION
+    initializeHelpFunction();
+    
     console.log('Comprehensive interface improvements initialized');
 });
 
@@ -230,98 +233,84 @@ function setupMeetingsObserver() {
  * Create "Réservation" submenu and move "Prêt matériel" under it
  */
 function reorganizeMenu() {
-    // Get the menu items container
-    const menuItems = document.querySelector('.menu-items');
-    if (!menuItems) return;
+  // Get the menu items container
+  const menuItems = document.querySelector('.menu-items');
+  if (!menuItems) return;
+  
+  // Réorganiser le menu selon l'image fournie
+  menuItems.innerHTML = `
+    <div class="menu-group">
+      <div class="menu-group-title">TABLEAU DE BORD</div>
+      <a href="/" class="menu-item">
+        <i class="fas fa-home menu-item-icon"></i>
+        <span class="menu-item-text">Accueil</span>
+      </a>
+    </div>
     
-    // Find the existing Réservation item
-    const reservationItem = Array.from(menuItems.querySelectorAll('.menu-item')).find(
-        item => item.textContent.trim().includes('Réservation')
-    );
+    <div class="menu-group">
+      <div class="menu-group-title">RÉSERVATIONS</div>
+      <a href="#" class="menu-item" id="menu-reservation-salle">
+        <i class="fas fa-calendar-alt menu-item-icon"></i>
+        <span class="menu-item-text">Salle de réunion</span>
+      </a>
+      <a href="/reservation-voiture" class="menu-item">
+        <i class="fas fa-car menu-item-icon"></i>
+        <span class="menu-item-text">Réservation voiture</span>
+      </a>
+      <a href="/prets" class="menu-item">
+        <i class="fas fa-laptop menu-item-icon"></i>
+        <span class="menu-item-text">Prêt de matériel</span>
+      </a>
+    </div>
     
-    // Find the existing "Demande de prêt" item
-    const pretItem = Array.from(menuItems.querySelectorAll('.menu-item')).find(
-        item => item.textContent.trim().includes('Demande de prêt')
-    );
+    <div class="menu-group">
+      <div class="menu-group-title">APPLICATIONS</div>
+      <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
+        <i class="fas fa-users menu-item-icon"></i>
+        <span class="menu-item-text">Teams</span>
+      </a>
+      <a href="https://sage.anecoop-france.com" target="_blank" class="menu-item">
+        <i class="fas fa-calculator menu-item-icon"></i>
+        <span class="menu-item-text">SAGE</span>
+      </a>
+      <a href="tel:3cx" class="menu-item">
+        <i class="fas fa-phone menu-item-icon"></i>
+        <span class="menu-item-text">3CX</span>
+      </a>
+      <a href="/pulse" class="menu-item">
+        <i class="fas fa-chart-line menu-item-icon"></i>
+        <span class="menu-item-text">AnecoopPulse</span>
+      </a>
+    </div>
     
-    // If both items exist, we can proceed
-    if (reservationItem && pretItem) {
-        // Remove the old pret item
-        if (pretItem.parentNode) {
-            pretItem.parentNode.removeChild(pretItem);
-        }
-        
-        // Create a new submenu group for Reservation
-        let reservationGroup = reservationItem.parentNode.querySelector('.menu-submenu');
-        
-        // If the submenu doesn't exist yet, create it
-        if (!reservationGroup) {
-            // Create a container for the main item and its submenu
-            const reservationContainer = document.createElement('div');
-            reservationContainer.className = 'menu-item-with-submenu';
-            
-            // Move the reservation item into this container
-            reservationItem.parentNode.insertBefore(reservationContainer, reservationItem);
-            reservationContainer.appendChild(reservationItem);
-            
-            // Add a dropdown indicator to the reservation item
-            reservationItem.innerHTML += ' <i class="fas fa-chevron-down menu-dropdown-icon"></i>';
-            
-            // Create the submenu
-            reservationGroup = document.createElement('div');
-            reservationGroup.className = 'menu-submenu';
-            reservationContainer.appendChild(reservationGroup);
-            
-            // Add click handler to toggle submenu
-            reservationItem.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const submenu = this.parentNode.querySelector('.menu-submenu');
-                if (submenu) {
-                    submenu.classList.toggle('expanded');
-                    
-                    // Toggle the dropdown icon
-                    const icon = this.querySelector('.menu-dropdown-icon');
-                    if (icon) {
-                        icon.classList.toggle('fa-chevron-down');
-                        icon.classList.toggle('fa-chevron-up');
-                    }
-                }
-            });
-            
-            // Add the CSS for submenus
-            addSubmenuStyles();
-        }
-        
-        // Create a new "Prêt matériel" menu item
-        const newPretItem = document.createElement('a');
-        newPretItem.href = '/prets';
-        newPretItem.className = 'menu-subitem';
-        newPretItem.innerHTML = '<i class="fas fa-boxes menu-item-icon"></i><span class="menu-item-text">Prêt matériel</span>';
-        
-        // Add click handler
-        newPretItem.addEventListener('click', function(e) {
-            e.stopPropagation(); // Don't trigger parent click
-        });
-        
-        // Create a vehicles submenu item
-        const vehiclesItem = document.createElement('a');
-        vehiclesItem.href = '/vehicules';
-        vehiclesItem.className = 'menu-subitem';
-        vehiclesItem.innerHTML = '<i class="fas fa-car menu-item-icon"></i><span class="menu-item-text">Véhicules</span>';
-        
-        // Create a rooms submenu item
-        const roomsItem = document.createElement('a');
-        roomsItem.href = '/';
-        roomsItem.className = 'menu-subitem';
-        roomsItem.innerHTML = '<i class="fas fa-door-open menu-item-icon"></i><span class="menu-item-text">Salles</span>';
-        
-        // Add the new items to the submenu
-        reservationGroup.appendChild(roomsItem);
-        reservationGroup.appendChild(vehiclesItem);
-        reservationGroup.appendChild(newPretItem);
-    }
+    <div class="menu-group" data-role="administrator,manager">
+      <div class="menu-group-title">ADMINISTRATION</div>
+      <a href="/admin" class="menu-item">
+        <i class="fas fa-cog menu-item-icon"></i>
+        <span class="menu-item-text">Paramètres</span>
+      </a>
+      <a href="/admin/users" class="menu-item">
+        <i class="fas fa-user-cog menu-item-icon"></i>
+        <span class="menu-item-text">Utilisateurs</span>
+      </a>
+    </div>
+  `;
+  
+  // Associer la fonction de création de réunion à l'élément "Salle de réunion"
+  const salleMenuItem = document.getElementById('menu-reservation-salle');
+  if (salleMenuItem) {
+    salleMenuItem.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Utiliser le système de réservation s'il est disponible
+      if (window.BookingSystem) {
+        window.BookingSystem.openModal();
+      } else {
+        // Fallback vers le modal standard
+        const modal = document.getElementById('bookingModal');
+        if (modal) modal.style.display = 'flex';
+      }
+    });
+  }
 }
 
 /**
@@ -774,136 +763,102 @@ function enhanceMeetingsDisplay() {
  * Initialize and fix the rooms display
  */
 function initializeRoomsDisplay() {
-    // Make sure the rooms toggle buttons work properly
-    const roomsToggleBtn = document.querySelector('.rooms-toggle-button-floating');
-    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
-    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
-    const roomsSection = document.querySelector('.rooms-section');
-    
-    // Supprimer le bouton bleu en haut qui fait doublon
-    const topFloatingButton = document.querySelector('.rooms-toggle-button-floating');
-    if (topFloatingButton) {
-      topFloatingButton.style.display = 'none';
-    }
-    
-    // Improve room section styling for smoother animations
-    if (roomsSection) {
-        roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
-        roomsSection.style.backdropFilter = 'blur(10px)';
-        roomsSection.style.borderRadius = '15px';
-        roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
-        roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        roomsSection.style.padding = '15px';
-        
-        // Add styles for animation
-        document.head.insertAdjacentHTML('beforeend', `
-            <style>
-                .rooms-section {
-                    opacity: 0;
-                    transform: translateY(10px);
-                    display: none;
-                }
-                .rooms-section.visible {
-                    opacity: 1;
-                    transform: translateY(0);
-                    display: block;
-                }
-            </style>
-        `);
-    }
-    
-    // Define the toggle function
-    const toggleRooms = function() {
-        if (!roomsSection) return;
-        
-        const isVisible = roomsSection.classList.contains('visible');
-        
-        if (isVisible) {
-            roomsSection.classList.remove('visible');
-            setTimeout(() => {
-                roomsSection.style.display = 'none';
-            }, 300);
-            
-            // Update button text
-            updateRoomsButtonText(false);
-        } else {
-            roomsSection.style.display = 'block';
-            // Force reflow
-            roomsSection.offsetHeight;
-            roomsSection.classList.add('visible');
-            
-            // Update button text
-            updateRoomsButtonText(true);
-        }
-    };
-    
-    // Attach event listeners to all buttons
-    if (roomsToggleBtn) {
-        roomsToggleBtn.addEventListener('click', toggleRooms);
-    }
-    
-    if (toggleRoomsButton) {
-        toggleRoomsButton.addEventListener('click', toggleRooms);
-    }
-    
-    if (controlRoomsBtn) {
-        controlRoomsBtn.addEventListener('click', toggleRooms);
-    }
-    
-    // Fix room cards if they exist
-    const roomCards = document.querySelectorAll('.room-card');
-    roomCards.forEach(card => {
-        card.style.borderRadius = '10px';
-        card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-        card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-        
-        card.addEventListener('mouseover', function() {
-            this.style.transform = 'translateY(-3px)';
-            this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
-        });
-        
-        card.addEventListener('mouseout', function() {
-            this.style.transform = '';
-            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-        });
-        
-        // Make sure room cards are clickable
-        card.addEventListener('click', function() {
-            const roomName = this.getAttribute('data-room');
-            if (roomName) {
-                window.location.href = '/' + roomName.toLowerCase();
-            }
-        });
-    });
-}
-
-/**
- * Update button text for room toggle buttons
- */
-function updateRoomsButtonText(isVisible) {
-    const roomsToggleBtn = document.querySelector('.rooms-toggle-button-floating');
-    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
-    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
-    
-    const showText = '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
-    const hideText = '<i class="fas fa-times"></i> Masquer les salles disponibles';
-    
-    const buttonText = isVisible ? hideText : showText;
-    const menuButtonText = isVisible ? 
-        '<i class="fas fa-times"></i> <span class="button-text">Masquer les salles disponibles</span>' : 
-        '<i class="fas fa-door-open"></i> <span class="button-text">Afficher les salles disponibles</span>';
-    
-    if (roomsToggleBtn) {
-        roomsToggleBtn.innerHTML = buttonText;
-    }
-    
-    if (toggleRoomsButton) {
-        toggleRoomsButton.innerHTML = menuButtonText;
-    }
-    
-    if (controlRoomsBtn) {
-        controlRoomsBtn.innerHTML = buttonText;
-    }
+  // Supprimer le bouton flottant (en double)
+  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+  if (floatingButton) {
+    floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
+  }
+  
+  // Make sure the rooms toggle buttons work properly
+  const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
+  const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+  const roomsSection = document.querySelector('.rooms-section');
+  
+  // Improve room section styling for smoother animations
+  if (roomsSection) {
+      roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
+      roomsSection.style.backdropFilter = 'blur(10px)';
+      roomsSection.style.borderRadius = '15px';
+      roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
+      roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      roomsSection.style.padding = '15px';
+      
+      // Add styles for animation
+      document.head.insertAdjacentHTML('beforeend', `
+          <style>
+              .rooms-section {
+                  opacity: 0;
+                  transform: translateY(10px);
+                  display: none;
+              }
+              .rooms-section.visible {
+                  opacity: 1;
+                  transform: translateY(0);
+                  display: block;
+              }
+          </style>
+      `);
+  }
+  
+  // Define the toggle function
+  const toggleRooms = function() {
+      if (!roomsSection) return;
+      
+      const isVisible = roomsSection.classList.contains('visible');
+      
+      if (isVisible) {
+          roomsSection.classList.remove('visible');
+          setTimeout(() => {
+              roomsSection.style.display = 'none';
+          }, 300);
+          
+          // Update button text
+          updateRoomsButtonText(false);
+      } else {
+          roomsSection.style.display = 'block';
+          // Force reflow
+          roomsSection.offsetHeight;
+          roomsSection.classList.add('visible');
+          
+          // Update button text
+          updateRoomsButtonText(true);
+      }
+  };
+  
+  
+  if (toggleRoomsButton) {
+      toggleRoomsButton.addEventListener('click', toggleRooms);
+  }
+  
+  if (controlRoomsBtn) {
+      controlRoomsBtn.addEventListener('click', toggleRooms);
+  }
+  
+  // Fix room cards if they exist
+  const roomCards = document.querySelectorAll('.room-card');
+  roomCards.forEach(card => {
+      card.style.borderRadius = '10px';
+      card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+      
+      card.addEventListener('mouseover', function() {
+          this.style.transform = 'translateY(-3px)';
+          this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
+      });
+      
+      card.addEventListener('mouseout', function() {
+          this.style.transform = '';
+          this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      });
+      
+      // Make sure room cards are clickable
+      card.addEventListener('click', function() {
+          const roomName = this.getAttribute('data-room');
+          if (roomName) {
+              window.location.href = '/' + roomName.toLowerCase();
+          }
+      });
+  });
 }
