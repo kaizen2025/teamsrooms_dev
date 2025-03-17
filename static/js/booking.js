@@ -1,6 +1,10 @@
 /**
  * Gestion de la réservation de réunions
- * Version améliorée avec meilleure gestion des états et des erreurs
+ * Version améliorée avec:
+ * - Intégration plus étroite avec la liste des réunions
+ * - Meilleure gestion des états et des erreurs
+ * - Vérification plus robuste des disponibilités
+ * - Retour visuel amélioré
  */
 
 // Système de réservation de salles
@@ -12,6 +16,7 @@ const BookingSystem = {
   startTime: '',
   endTime: '',
   selectedDuration: 30, // minutes
+  debug: true, // Activer les logs de débogage
   
   /**
    * Initialise le système de réservation
@@ -23,7 +28,7 @@ const BookingSystem = {
     // Associer les boutons de création
     this.attachCreateButtons();
     
-    console.log("Système de réservation initialisé");
+    if (this.debug) console.log("Système de réservation initialisé");
   },
   
   /**
@@ -41,7 +46,7 @@ const BookingSystem = {
       });
     });
     
-    console.log(`${createButtons.length} boutons de création attachés`);
+    if (this.debug) console.log(`${createButtons.length} boutons de création attachés`);
   },
   
   /**
@@ -273,7 +278,9 @@ const BookingSystem = {
         ? window.API_URLS.GET_MEETINGS 
         : '/meetings.json';
       
-      const response = await fetch(`${apiUrl}?t=${Date.now()}`);
+      // Ajouter un timestamp pour éviter le cache
+      const cacheBust = `?t=${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      const response = await fetch(`${apiUrl}${cacheBust}`);
       
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
@@ -285,10 +292,18 @@ const BookingSystem = {
       let isAvailable = true;
       let conflictingMeeting = null;
       
+      // Normaliser le nom de la salle pour la comparaison
+      const normalizedRoomName = selectedRoom.toLowerCase().trim();
+      
       // Filtrer les réunions de la même salle
-      const roomMeetings = meetings.filter(m => 
-        (m.salle && m.salle.toLowerCase() === selectedRoom.toLowerCase())
-      );
+      const roomMeetings = meetings.filter(m => {
+        const meetingSalle = (m.salle || '').toLowerCase().trim();
+        return meetingSalle === normalizedRoomName || 
+               meetingSalle.includes(normalizedRoomName) || 
+               normalizedRoomName.includes(meetingSalle);
+      });
+      
+      if (this.debug) console.log(`Vérification de disponibilité pour ${selectedRoom}: ${roomMeetings.length} réunions trouvées`);
       
       // Vérifier chaque réunion pour un conflit
       for (const meeting of roomMeetings) {
@@ -344,6 +359,7 @@ const BookingSystem = {
     const startTime = document.getElementById('booking-start').value;
     const endTime = document.getElementById('booking-end').value;
     const participantsInput = document.getElementById('booking-participants').value;
+    const isOnlineMeeting = document.getElementById('booking-online-meeting')?.checked ?? true;
     
     // Validation de base
     if (!title) {
@@ -403,8 +419,10 @@ const BookingSystem = {
       start: startDateTime.toISOString(),
       end: endDateTime.toISOString(),
       participants,
-      isOnlineMeeting: true
+      isOnlineMeeting
     };
+    
+    if (this.debug) console.log("Données de réunion à créer:", meetingData);
     
     // Afficher un indicateur de chargement
     this.showLoading(true);
@@ -440,7 +458,14 @@ const BookingSystem = {
         
         // Rafraîchir la liste des réunions
         if (typeof window.fetchMeetings === 'function') {
-          window.fetchMeetings();
+          console.log("Rafraîchissement des réunions après création...");
+          window.fetchMeetings(true);
+        } else {
+          console.error("La fonction fetchMeetings n'est pas disponible");
+          // Tenter de rafraîchir la page si la fonction n'est pas disponible
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         }
       }, 1500);
       
