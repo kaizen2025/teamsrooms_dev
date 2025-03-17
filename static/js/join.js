@@ -12,6 +12,7 @@ const JoinSystem = {
   debug: true,
   maxRetries: 2,
   retryDelay: 1000,
+  isJoining: false,
   
   /**
    * Initialise le système de jointure
@@ -125,10 +126,17 @@ const JoinSystem = {
    * @param {number} [retryCount=0] - Nombre de tentatives
    */
   async joinMeetingWithId(providedId = null, retryCount = 0) {
-    // Récupérer le champ d'ID
+    // Empêcher les déclenchements multiples qui causent l'ouverture de multiples onglets
+    if (this.isJoining) {
+      console.log("Jointure déjà en cours, ignorer ce clic");
+      return;
+    }
+    this.isJoining = true;
+    
     const meetingIdField = document.getElementById('meeting-id') || document.getElementById('meetingIdInput');
     if (!meetingIdField && !providedId) {
       this.showError("Erreur: Champ d'ID de réunion introuvable");
+      this.isJoining = false;
       return;
     }
     
@@ -137,17 +145,12 @@ const JoinSystem = {
     
     if (!meetingId) {
       this.showError("Veuillez entrer l'ID de la réunion");
+      this.isJoining = false;
       return;
     }
     
     // Nettoyer l'ID pour qu'il soit utilisable
     const cleanedId = this.cleanMeetingId(meetingId);
-    
-    // Journalisation pour débogage
-    if (this.debug) {
-      console.log(`Tentative de connexion à la réunion: ${meetingId}`);
-      console.log(`ID nettoyé: ${cleanedId}`);
-    }
     
     // Préparation de l'interface
     const joinButton = document.getElementById('joinMeetingBtn');
@@ -161,7 +164,7 @@ const JoinSystem = {
         joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
       }
       
-      // Tentative d'utilisation de l'API pour récupérer l'URL de la réunion
+      // Tentative d'utilisation de l'API
       const apiUrl = '/lookupMeeting';
       const response = await fetch(`${apiUrl}?meetingId=${encodeURIComponent(cleanedId)}`);
       
@@ -172,8 +175,7 @@ const JoinSystem = {
       const data = await response.json();
       
       if (data && data.joinUrl) {
-        // CORRECTION BUG : Éviter la création d'onglets multiples
-        // Stocker l'URL dans une variable locale pour ne l'ouvrir qu'une fois
+        // IMPORTANT: Créer une variable locale pour l'URL
         const joinUrl = data.joinUrl;
         
         // Sauvegarder l'ID récent
@@ -182,51 +184,43 @@ const JoinSystem = {
         // Montrer un message de succès
         this.showSuccess("Connexion réussie! Redirection vers Teams...");
         
-        // Ouvrir la réunion UNE SEULE FOIS dans une nouvelle fenêtre
+        // Utiliser setTimeout pour éviter les problèmes de timing
         setTimeout(() => {
+          // Ouvrir une SEULE FOIS la réunion dans une nouvelle fenêtre
           window.open(joinUrl, "_blank");
         }, 500);
+        
+        // Réinitialiser l'état après un court délai
+        setTimeout(() => {
+          this.isJoining = false;
+        }, 2000);
+        
+        return;
       } else {
-        // Réessayer avec une variation de l'ID si nécessaire
-        if (retryCount < this.maxRetries) {
-          if (this.debug) console.log(`Tentative alternative ${retryCount + 1}/${this.maxRetries}...`);
-          
-          // Attendre un peu avant de réessayer
-          setTimeout(() => {
-            // Essayer avec une variante de l'ID
-            const altId = this.getAlternativeId(cleanedId);
-            this.joinMeetingWithId(altId, retryCount + 1);
-          }, this.retryDelay);
-          return;
-        }
-        
-        // En dernier recours, essayer une URL Teams générique
+        // Construction d'une URL de secours
         const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${cleanedId}%40thread.v2/0`;
-        if (this.debug) console.log("Utilisation de l'URL générique:", teamsUrl);
         
-        // Sauvegarder l'ID récent quand même
+        // Sauvegarder l'ID récent
         this.saveRecentMeetingId(meetingId);
         
         // Montrer un avertissement
         this.showWarning("Utilisation de l'URL générique Teams...");
         
-        // Ouvrir dans une nouvelle fenêtre
-        window.open(teamsUrl, "_blank");
+        // Ouvrir une SEULE FOIS dans une nouvelle fenêtre
+        setTimeout(() => {
+          window.open(teamsUrl, "_blank");
+        }, 500);
+        
+        // Réinitialiser l'état après un court délai
+        setTimeout(() => {
+          this.isJoining = false;
+        }, 2000);
       }
     } catch (err) {
       console.error("Erreur lors de la connexion:", err);
-      
-      // Si on a déjà fait plusieurs tentatives, montrer l'erreur
-      if (retryCount >= this.maxRetries) {
-        this.showError(`Erreur lors de la connexion: ${err.message}`);
-      } else {
-        // Sinon réessayer avec une autre méthode
-        setTimeout(() => {
-          if (this.debug) console.log("Réessai après erreur...");
-          const altId = this.getAlternativeId(cleanedId);
-          this.joinMeetingWithId(altId, retryCount + 1);
-        }, this.retryDelay);
-      }
+      this.showError(`Erreur lors de la connexion: ${err.message}`);
+      // Réinitialiser l'état en cas d'erreur
+      this.isJoining = false;
     } finally {
       // Restaurer l'interface après un délai
       setTimeout(() => {
@@ -532,7 +526,7 @@ function showHelpModal() {
         </h3>
         <p>
           <strong>Réserver une salle</strong> : Cliquez sur le bouton <strong>"Créer une réunion Teams"</strong> en haut 
-          du panneau des réunions, choisissez une salle, une date, une heure et ajoutez des participants.
+          du panneau des réunions, ou utilisez le menu <strong>"Salle de réunion"</strong> dans la section Réservations.
         </p>
         
         <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
@@ -543,6 +537,13 @@ function showHelpModal() {
         </p>
         <p>
           <strong>Méthode 2</strong> : Entrez l'ID de la réunion dans le champ en bas de la liste des réunions et cliquez sur <strong>"Rejoindre"</strong>.
+        </p>
+        
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-users"></i> Gestion des participants
+        </h3>
+        <p>
+          Pour voir tous les participants d'une réunion, cliquez sur les <strong>trois points</strong> (...) à côté de la liste des participants.
         </p>
         
         <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
