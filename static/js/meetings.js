@@ -1,15 +1,17 @@
 /**
  * Gestion des réunions
- * Version améliorée avec chargement silencieux en arrière-plan
+ * Version améliorée avec synchronisation en temps réel et filtrage précis par salle
  */
 
 // Variables globales pour le système de réunions
 let previousMeetings = JSON.stringify([]);
 let isLoadingMeetings = false;
 let lastVisibleUpdate = 0;
-const MIN_VISIBLE_UPDATE_INTERVAL = 60000; // 60 secondes minimum entre les mises à jour visibles
+const MIN_VISIBLE_UPDATE_INTERVAL = 30000; // 30 secondes minimum entre les mises à jour visibles
 let meetingsContainer = null;
 let isFirstLoad = true;
+let lastRefreshTime = Date.now();
+let debugMode = true; // Activer pour plus de logs
 
 /**
  * Récupère les réunions depuis l'API
@@ -23,9 +25,9 @@ async function fetchMeetings(forceVisibleUpdate = false) {
   try {
     // Récupérer le conteneur une fois pour éviter les sélections multiples
     if (!meetingsContainer) {
-      meetingsContainer = document.getElementById('meetingsContainer');
+      meetingsContainer = document.getElementById('meetingsContainer') || document.querySelector('.meetings-list');
       if (!meetingsContainer) {
-        console.error("Conteneur de réunions introuvable (meetingsContainer)");
+        console.error("Conteneur de réunions introuvable (meetingsContainer ou .meetings-list)");
         isLoadingMeetings = false;
         return;
       }
@@ -41,24 +43,24 @@ async function fetchMeetings(forceVisibleUpdate = false) {
     
     // Afficher l'indicateur de chargement uniquement si nécessaire
     let loadingIndicator = null;
+    let originalContent = '';
     if (shouldShowLoading) {
+      originalContent = meetingsContainer.innerHTML;
       loadingIndicator = document.createElement('div');
       loadingIndicator.className = 'loading-indicator';
       loadingIndicator.innerHTML = `
         <i class="fas fa-circle-notch fa-spin"></i>
         <span>Chargement des réunions...</span>
+        <p class="loading-detail">Dernière mise à jour: ${new Date().toLocaleTimeString()}</p>
       `;
-      
-      // Sauvegarder le contenu actuel
-      const originalContent = meetingsContainer.innerHTML;
       
       // Vider et afficher l'indicateur
       meetingsContainer.innerHTML = '';
       meetingsContainer.appendChild(loadingIndicator);
       
-      console.log("Affichage de l'indicateur de chargement");
+      if (debugMode) console.log("Affichage de l'indicateur de chargement");
     } else {
-      console.log("Mise à jour silencieuse des réunions en arrière-plan");
+      if (debugMode) console.log("Mise à jour silencieuse des réunions en arrière-plan");
     }
 
     // URL de l'API avec un timestamp pour éviter la mise en cache
@@ -66,8 +68,13 @@ async function fetchMeetings(forceVisibleUpdate = false) {
       ? window.API_URLS.GET_MEETINGS 
       : '/meetings.json';
     
+    // Cache-busting amélioré avec timestamp unique et nombre aléatoire
+    const cacheBust = `?t=${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    
+    if (debugMode) console.log(`Requête API: ${apiUrl}${cacheBust}`);
+    
     // Effectuer la requête avec un timestamp pour éviter le cache
-    const response = await fetch(`${apiUrl}?t=${Date.now()}`);
+    const response = await fetch(`${apiUrl}${cacheBust}`);
     
     if (!response.ok) {
       throw new Error(`Erreur HTTP: ${response.status}`);
@@ -75,23 +82,72 @@ async function fetchMeetings(forceVisibleUpdate = false) {
 
     // Traiter la réponse
     let meetings = await response.json();
+    
+    if (debugMode) console.log(`Réunions récupérées: ${meetings.length}`);
 
-    // Filtrer selon le contexte actuel
+    // Filtrage amélioré selon le contexte actuel
     const salleName = window.resourceName || window.salleName;
-    const isAllRooms = !salleName || salleName === 'toutes les salles';
+    const isAllRooms = !salleName || salleName.toLowerCase() === 'toutes les salles';
 
+    if (debugMode) console.log(`Filtrage des réunions pour: "${salleName}", isAllRooms: ${isAllRooms}`);
+    
     if (!isAllRooms && salleName) {
+      // Normaliser le nom de la salle pour le filtrage
+      const normalizedSalleName = salleName.toLowerCase().trim();
+      
+      // Version originale des meetings pour log
+      const originalCount = meetings.length;
+      
       meetings = meetings.filter(m => {
-        const meetingSalle = (m.salle || '').toLowerCase();
-        return meetingSalle === salleName.toLowerCase();
+        // Vérifier si la salle est définie
+        if (!m.salle) return false;
+        
+        const meetingSalle = m.salle.toLowerCase().trim();
+        
+        // Vérifier correspondance exacte ou partielle
+        const isMatch = meetingSalle === normalizedSalleName || 
+                       meetingSalle.includes(normalizedSalleName) ||
+                       normalizedSalleName.includes(meetingSalle);
+        
+        if (isMatch && debugMode) {
+          console.log(`Réunion correspondante: "${m.subject}" (${m.salle})`);
+        }
+        
+        return isMatch;
       });
+      
+      if (debugMode) console.log(`Réunions après filtrage: ${meetings.length}/${originalCount} pour "${normalizedSalleName}"`);
     }
     
-    // Filtrer pour ne garder que celles du jour
-    const today = new Date().toDateString();
+    // Vérifier si toutes les réunions ont des données valides
+    meetings = meetings.filter(meeting => {
+      if (!meeting.start || !meeting.end) {
+        console.warn(`Réunion ignorée - données manquantes: ${meeting.subject}`);
+        return false;
+      }
+      return true;
+    });
+    
+    // Filtrer pour ne garder que celles d'aujourd'hui et de demain 
+    // (pour éviter les problèmes de fuseaux horaires, utilisons une approche plus large)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const dayAfterTomorrow = new Date(tomorrow);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+    
     meetings = meetings.filter(m => {
-      const meetingDate = new Date(m.start).toDateString();
-      return meetingDate === today;
+      try {
+        const meetingDate = new Date(m.start);
+        // Garder les réunions d'aujourd'hui et de demain
+        return meetingDate >= today && meetingDate < dayAfterTomorrow;
+      } catch (e) {
+        console.error(`Erreur de date pour la réunion ${m.subject}: ${e.message}`);
+        return false;
+      }
     });
 
     // Trier les réunions
@@ -109,15 +165,16 @@ async function fetchMeetings(forceVisibleUpdate = false) {
       // Mettre à jour l'interface complètement
       updateMeetingsDisplay(meetings);
       lastVisibleUpdate = now;
-      console.log(`Mise à jour complète de l'affichage (${meetings.length} réunions)`);
+      if (debugMode) console.log(`Mise à jour complète de l'affichage (${meetings.length} réunions)`);
     } else {
       // Mise à jour silencieuse - uniquement mettre à jour les timers et états
       updateMeetingTimers();
-      console.log("Mise à jour des timers uniquement");
+      if (debugMode) console.log("Mise à jour des timers uniquement");
     }
     
     // Marquer la fin du premier chargement
     isFirstLoad = false;
+    lastRefreshTime = Date.now();
     
   } catch (error) {
     console.error("Erreur lors du chargement des réunions:", error);
@@ -152,7 +209,7 @@ async function fetchMeetings(forceVisibleUpdate = false) {
  */
 function updateMeetingsDisplay(meetings) {
   if (!meetingsContainer) {
-    meetingsContainer = document.getElementById('meetingsContainer');
+    meetingsContainer = document.getElementById('meetingsContainer') || document.querySelector('.meetings-list');
     if (!meetingsContainer) {
       console.error("Conteneur de réunions introuvable pour l'affichage");
       return;
@@ -175,23 +232,34 @@ function updateMeetingsDisplay(meetings) {
 
   // Date actuelle pour comparer et déterminer les statuts
   const now = new Date();
+  if (debugMode) console.log(`Heure actuelle pour classification: ${now.toISOString()}`);
 
   // Séparer les réunions en cours, futures et passées
   const currentMeetings = [];
   const upcomingMeetings = [];
   const pastMeetings = [];
 
-  // Classer les réunions selon leur statut
+  // Classer les réunions selon leur statut avec une marge de tolérance de 2 minutes
   meetings.forEach(meeting => {
+    // Analyser correctement les dates avec prise en compte des fuseaux horaires
     const startTime = new Date(meeting.start);
     const endTime = new Date(meeting.end);
-
-    if (startTime <= now && endTime > now) {
+    
+    if (debugMode) console.log(`Réunion: "${meeting.subject}", Début: ${startTime.toISOString()}, Fin: ${endTime.toISOString()}`);
+    
+    // Ajouter une marge de 2 minutes pour les réunions "en cours"
+    const adjustedNow = new Date(now.getTime());
+    const adjustedStartTime = new Date(startTime.getTime() - (2 * 60 * 1000)); // 2 minutes avant
+    
+    if (adjustedStartTime <= adjustedNow && endTime > adjustedNow) {
       currentMeetings.push({ ...meeting, status: 'current' });
-    } else if (startTime > now) {
+      if (debugMode) console.log(`Classée comme en cours: ${meeting.subject}`);
+    } else if (startTime > adjustedNow) {
       upcomingMeetings.push({ ...meeting, status: 'upcoming' });
+      if (debugMode) console.log(`Classée comme à venir: ${meeting.subject}`);
     } else {
       pastMeetings.push({ ...meeting, status: 'past' });
+      if (debugMode) console.log(`Classée comme terminée: ${meeting.subject}`);
     }
   });
 
@@ -292,14 +360,23 @@ function createMeetingHTML(meeting) {
     statusClass = 'upcoming';
   }
   
+  // Déterminer si c'est une réunion Teams
+  const isTeamsMeeting = meeting.isOnline || meeting.joinUrl;
+  const meetingUrl = meeting.joinUrl || '';
+  
   // HTML de la réunion
   return `
-    <div class="meeting-item ${statusClass}" data-id="${meeting.id}" data-start="${meeting.start}" data-end="${meeting.end}">
+    <div class="meeting-item ${statusClass}" 
+         data-id="${meeting.id}" 
+         data-start="${meeting.start}" 
+         data-end="${meeting.end}" 
+         data-is-teams="${isTeamsMeeting}"
+         data-url="${meetingUrl}">
       <h3>${meeting.subject}</h3>
       ${progressHTML}
-      <p class="meeting-time">${startTimeStr} - ${endTimeStr}</p>
+      <p class="meeting-time"><i class="far fa-clock"></i> ${startTimeStr} - ${endTimeStr}</p>
       ${meeting.salle ? `<p class="meeting-salle"><i class="fas fa-door-open"></i> ${meeting.salle}</p>` : ''}
-      ${meeting.joinUrl ? `<button class="join-meeting-btn" data-url="${meeting.joinUrl}"><i class="fas fa-video"></i> Rejoindre</button>` : ''}
+      ${isTeamsMeeting ? `<button class="meeting-join-btn" data-url="${meetingUrl}"><i class="fas fa-video"></i> Rejoindre</button>` : ''}
     </div>
   `;
 }
@@ -309,12 +386,45 @@ function createMeetingHTML(meeting) {
  */
 function initializeMeetingTimers() {
   // Attacher les événements aux boutons de réunion
-  document.querySelectorAll('.join-meeting-btn').forEach(button => {
+  document.querySelectorAll('.meeting-join-btn').forEach(button => {
     button.addEventListener('click', event => {
       event.preventDefault();
-      const url = button.dataset.url;
-      if (url) {
+      event.stopPropagation();
+      
+      // Récupérer l'URL depuis le bouton ou le parent
+      const url = button.getAttribute('data-url') || button.parentElement.getAttribute('data-url');
+      const meetingId = button.getAttribute('data-meeting-id') || button.parentElement.getAttribute('data-id');
+      
+      if (url && url.trim() !== '') {
+        // Ouvrir directement l'URL Teams
         window.open(url, '_blank');
+        if (debugMode) console.log(`Ouverture de la réunion Teams avec URL: ${url}`);
+      } else if (meetingId) {
+        // Utiliser le système de jointure avec l'ID
+        if (window.JoinSystem) {
+          if (debugMode) console.log(`Utilisation de JoinSystem avec ID: ${meetingId}`);
+          
+          // Remplir le champ d'ID
+          const meetingIdInput = document.getElementById('meeting-id') || 
+                                document.getElementById('meetingIdInput');
+          if (meetingIdInput) {
+            meetingIdInput.value = meetingId;
+            
+            // Déclencher la fonction de jointure
+            window.JoinSystem.joinMeetingWithId();
+          } else {
+            console.error("Champ d'ID de réunion introuvable");
+            alert("Erreur: Champ d'ID de réunion introuvable");
+          }
+        } else {
+          // Fallback si JoinSystem n'est pas disponible
+          console.warn("Join system non disponible, utilisation du fallback");
+          const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingId}%40thread.v2/0`;
+          window.open(teamsUrl, '_blank');
+        }
+      } else {
+        console.error("Aucune URL ou ID de réunion trouvé");
+        alert("Impossible de rejoindre cette réunion: URL ou ID manquant");
       }
     });
   });
@@ -417,13 +527,13 @@ function updateMeetingTimers() {
 
 // Attacher le gestionnaire d'événements au chargement du document
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("Initialisation du système de réunions");
+  if (debugMode) console.log("Initialisation du système de réunions amélioré");
   
   // Bouton de rafraîchissement manuel
   const refreshBtn = document.getElementById('refreshBtn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
-      console.log("Rafraîchissement manuel des réunions");
+      if (debugMode) console.log("Rafraîchissement manuel des réunions");
       fetchMeetings(true);
     });
   }
@@ -431,17 +541,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // Premier chargement des réunions
   fetchMeetings(true);
   
-  // Rafraîchissement périodique en arrière-plan
-  const refreshInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETINGS) || 20000;
-  console.log(`Configuration du rafraîchissement automatique toutes les ${refreshInterval/1000} secondes`);
+  // Rafraîchissement périodique plus fréquent
+  const refreshInterval = 10000; // 10 secondes
+  if (debugMode) console.log(`Configuration du rafraîchissement automatique toutes les ${refreshInterval/1000} secondes`);
   
   setInterval(() => {
     fetchMeetings(false);
   }, refreshInterval);
   
   // Mise à jour des timers plus fréquente
-  const timerInterval = (window.REFRESH_INTERVALS && window.REFRESH_INTERVALS.MEETING_TIMERS) || 60000;
+  const timerInterval = 30000; // 30 secondes
   setInterval(updateMeetingTimers, timerInterval);
+  
+  // Détection de focus sur la fenêtre pour rafraîchir après une inactivité
+  window.addEventListener('focus', () => {
+    const now = Date.now();
+    // Si la dernière mise à jour date de plus de 30 secondes, force un rafraîchissement
+    if (now - lastRefreshTime > 30000) {
+      if (debugMode) console.log("Rafraîchissement après retour sur la fenêtre");
+      fetchMeetings(true);
+    }
+  });
 });
 
 // Fonction globale pour rafraîchir les réunions (utilisée par d'autres modules)
