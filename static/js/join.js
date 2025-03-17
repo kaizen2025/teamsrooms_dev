@@ -465,7 +465,7 @@ function initializeHelpFunction() {
     // Marquer le bouton comme ayant un gestionnaire
     helpBtn._hasHelpHandler = true;
   }
-  // Ne PAS créer de nouveau bouton d'aide
+  // Ne PAS créer de nouveau bouton d'aide flottant
 }
 
 /**
