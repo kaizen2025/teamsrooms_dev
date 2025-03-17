@@ -94,108 +94,146 @@ function ensureMeetingsLoading() {
  * Only show join button for Teams meetings
  */
 function fixJoinButtonsFunctionality() {
-    console.log("Fixing join button functionality");
+  console.log("Fixing join button functionality");
+  
+  // Traiter tous les éléments de réunion pour afficher/masquer correctement les boutons
+  const meetingItems = document.querySelectorAll('.meeting-item');
+  meetingItems.forEach(meetingItem => {
+    const isTeamsMeeting = meetingItem.hasAttribute('data-is-teams') ? 
+                          meetingItem.getAttribute('data-is-teams') === 'true' : 
+                          meetingItem.querySelector('.meeting-join-btn') !== null;
     
-    // Process all meeting items to properly display/hide join buttons
-    const meetingItems = document.querySelectorAll('.meeting-item');
-    meetingItems.forEach(meetingItem => {
-        const isTeamsMeeting = meetingItem.hasAttribute('data-is-teams') ? 
-                              meetingItem.getAttribute('data-is-teams') === 'true' : 
-                              meetingItem.querySelector('.meeting-join-btn') !== null;
-        
-        // Get or create join button
-        let joinButton = meetingItem.querySelector('.meeting-join-btn');
-        
-        // If it's not a Teams meeting, remove the join button
-        if (!isTeamsMeeting) {
-            if (joinButton) {
-                joinButton.remove();
-            }
-            return;
-        }
-        
-        // If the button doesn't exist but should, create it
-        if (!joinButton && isTeamsMeeting) {
-            joinButton = document.createElement('button');
-            joinButton.className = 'meeting-join-btn';
-            joinButton.innerHTML = '<i class="fas fa-video"></i> Rejoindre';
-            meetingItem.appendChild(joinButton);
-        }
-        
-        // Get the join URL
-        const joinUrl = meetingItem.getAttribute('data-url');
-        const meetingId = meetingItem.getAttribute('data-id');
-        
-        // Ensure the button has the proper data
-        if (joinUrl) {
-            joinButton.setAttribute('data-url', joinUrl);
-        } else if (meetingId) {
-            joinButton.setAttribute('data-meeting-id', meetingId);
-        }
-        
-        // Add click event listener
-        joinButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const buttonUrl = this.getAttribute('data-url');
-            const buttonMeetingId = this.getAttribute('data-meeting-id') || 
-                                    meetingItem.getAttribute('data-id');
-            
-            if (buttonUrl) {
-                // Direct URL available, open it
-                window.open(buttonUrl, '_blank');
-                console.log("Opening Teams meeting URL:", buttonUrl);
-            } else if (buttonMeetingId) {
-                // Use the join system with meeting ID
-                if (window.JoinSystem) {
-                    console.log("Using JoinSystem with ID:", buttonMeetingId);
-                    // Set the meeting ID in the input field
-                    const meetingIdInput = document.getElementById('meeting-id') || 
-                                          document.getElementById('meetingIdInput');
-                    if (meetingIdInput) {
-                        meetingIdInput.value = buttonMeetingId;
-                        // Trigger join function
-                        window.JoinSystem.joinMeetingWithId();
-                    } else {
-                        console.error("Meeting ID input field not found");
-                        alert("Erreur: Champ d'ID de réunion introuvable.");
-                    }
-                } else {
-                    // Fallback if JoinSystem not available
-                    console.error("Join system not available, using fallback");
-                    const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${buttonMeetingId}%40thread.v2/0`;
-                    window.open(teamsUrl, '_blank');
-                }
-            } else {
-                console.error("No join URL or meeting ID found");
-                alert("Impossible de rejoindre cette réunion: URL ou ID manquant.");
-            }
-        });
-    });
+    // Obtenir ou créer un bouton de jointure
+    let joinButton = meetingItem.querySelector('.meeting-join-btn');
     
-    // Also ensure the main join button works
-    const mainJoinButton = document.getElementById('joinMeetingBtn');
-    if (mainJoinButton) {
-        mainJoinButton.addEventListener('click', function() {
-            const meetingIdInput = document.getElementById('meeting-id') || 
-                                  document.getElementById('meetingIdInput');
-            if (meetingIdInput && meetingIdInput.value) {
-                if (window.JoinSystem) {
-                    window.JoinSystem.joinMeetingWithId();
-                } else {
-                    // Basic fallback
-                    const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingIdInput.value}%40thread.v2/0`;
-                    window.open(teamsUrl, '_blank');
-                }
-            } else {
-                alert("Veuillez entrer l'ID de la réunion.");
-            }
-        });
+    // Si ce n'est pas une réunion Teams, supprimer le bouton
+    if (!isTeamsMeeting) {
+      if (joinButton) {
+        joinButton.remove();
+      }
+      return;
     }
     
-    // Set up a mutation observer to watch for new meeting items
-    setupMeetingsObserver();
+    // Si le bouton n'existe pas mais devrait exister, le créer
+    if (!joinButton && isTeamsMeeting) {
+      joinButton = document.createElement('button');
+      joinButton.className = 'meeting-join-btn';
+      joinButton.innerHTML = '<i class="fas fa-video"></i> Rejoindre';
+      meetingItem.appendChild(joinButton);
+    }
+    
+    // Obtenir l'URL de jointure
+    const joinUrl = meetingItem.getAttribute('data-url');
+    const meetingId = meetingItem.getAttribute('data-id');
+    
+    // S'assurer que le bouton a les données appropriées
+    if (joinUrl) {
+      joinButton.setAttribute('data-url', joinUrl);
+    } else if (meetingId) {
+      joinButton.setAttribute('data-meeting-id', meetingId);
+    }
+    
+    // IMPORTANT: Supprimer tous les gestionnaires d'événements existants
+    // en clonant et remplaçant l'élément
+    const newJoinButton = joinButton.cloneNode(true);
+    joinButton.parentNode.replaceChild(newJoinButton, joinButton);
+    joinButton = newJoinButton;
+    
+    // Ajouter un gestionnaire d'événements une seule fois
+    joinButton.addEventListener('click', joinMeetingHandler);
+  });
+  
+  // S'assurer également que le bouton principal fonctionne
+  const mainJoinButton = document.getElementById('joinMeetingBtn');
+  if (mainJoinButton) {
+    // Supprimer les écouteurs existants
+    const newMainJoinButton = mainJoinButton.cloneNode(true);
+    mainJoinButton.parentNode.replaceChild(newMainJoinButton, mainJoinButton);
+    
+    newMainJoinButton.addEventListener('click', function() {
+      const meetingIdInput = document.getElementById('meeting-id') || 
+                          document.getElementById('meetingIdInput');
+      if (meetingIdInput && meetingIdInput.value) {
+        if (window.JoinSystem) {
+          window.JoinSystem.joinMeetingWithId();
+        } else {
+          // Fallback basique
+          const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingIdInput.value}%40thread.v2/0`;
+          window.open(teamsUrl, '_blank');
+        }
+      } else {
+        alert("Veuillez entrer l'ID de la réunion.");
+      }
+    });
+  }
+  
+  // Set up a mutation observer to watch for new meeting items
+  setupMeetingsObserver();
+}
+
+// Fonction de gestionnaire d'événements séparée pour éviter les duplications
+function joinMeetingHandler(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // Vérifier si le processus de jointure est déjà en cours
+  if (window.JoinSystem && window.JoinSystem.isJoining) {
+    console.log("Jointure déjà en cours, ignorer ce clic");
+    return;
+  }
+  
+  // Désactiver temporairement le bouton pour éviter les clics multiples
+  this.disabled = true;
+  
+  // Récupérer l'URL depuis le bouton ou le parent
+  const buttonUrl = this.getAttribute('data-url');
+  const buttonMeetingId = this.getAttribute('data-meeting-id') || 
+                         this.parentElement.getAttribute('data-id');
+  
+  if (buttonUrl) {
+    // URL directe disponible, l'ouvrir
+    console.log("Opening Teams meeting URL:", buttonUrl);
+    window.open(buttonUrl, '_blank');
+    
+    // Réactiver le bouton après un délai
+    setTimeout(() => {
+      this.disabled = false;
+    }, 2000);
+  } else if (buttonMeetingId) {
+    // Utiliser le système de jointure avec l'ID
+    if (window.JoinSystem) {
+      console.log("Using JoinSystem with ID:", buttonMeetingId);
+      // Définir l'ID dans le champ d'entrée
+      const meetingIdInput = document.getElementById('meeting-id') || 
+                          document.getElementById('meetingIdInput');
+      if (meetingIdInput) {
+        meetingIdInput.value = buttonMeetingId;
+        
+        // Déclencher la fonction de jointure
+        window.JoinSystem.joinMeetingWithId();
+        
+        // Le JoinSystem gère sa propre réactivation
+      } else {
+        console.error("Meeting ID input field not found");
+        alert("Erreur: Champ d'ID de réunion introuvable.");
+        this.disabled = false;
+      }
+    } else {
+      // Fallback si JoinSystem n'est pas disponible
+      console.error("Join system not available, using fallback");
+      const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${buttonMeetingId}%40thread.v2/0`;
+      window.open(teamsUrl, '_blank');
+      
+      // Réactiver le bouton après un délai
+      setTimeout(() => {
+        this.disabled = false;
+      }, 2000);
+    }
+  } else {
+    console.error("No join URL or meeting ID found");
+    alert("Impossible de rejoindre cette réunion: URL ou ID manquant.");
+    this.disabled = false;
+  }
 }
 
 /**
@@ -226,6 +264,39 @@ function setupMeetingsObserver() {
     
     // Start observing
     observer.observe(meetingsContainer, { childList: true, subtree: true });
+}
+
+/**
+ * Function to update the text on the rooms buttons
+ */
+function updateRoomsButtonText(isVisible) {
+    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
+    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    
+    const newText = isVisible ? 
+        '<i class="fas fa-door-closed"></i> Masquer les salles disponibles' : 
+        '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
+    
+    const newTextShort = isVisible ? 
+        '<i class="fas fa-door-closed"></i>' : 
+        '<i class="fas fa-door-open"></i>';
+    
+    if (toggleRoomsButton) {
+        if (window.innerWidth <= 768) {
+            toggleRoomsButton.innerHTML = newTextShort;
+        } else {
+            toggleRoomsButton.innerHTML = newText;
+        }
+    }
+    
+    if (controlRoomsBtn) {
+        controlRoomsBtn.innerHTML = newText;
+    }
+    
+    if (floatingButton) {
+        floatingButton.innerHTML = newText;
+    }
 }
 
 /**
@@ -861,4 +932,167 @@ function initializeRoomsDisplay() {
           }
       });
   });
+}
+
+/**
+ * Initialize the help function
+ */
+function initializeHelpFunction() {
+    // Create help button if it doesn't exist
+    let helpButton = document.querySelector('.help-button');
+    if (!helpButton) {
+        helpButton = document.createElement('button');
+        helpButton.className = 'help-button';
+        helpButton.innerHTML = '<i class="fas fa-question-circle"></i>';
+        helpButton.title = "Aide";
+        helpButton.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        `;
+        
+        document.body.appendChild(helpButton);
+        
+        // Add hover effect
+        helpButton.addEventListener('mouseover', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        helpButton.addEventListener('mouseout', function() {
+            this.style.transform = 'scale(1)';
+        });
+        
+        // Add click handler
+        helpButton.addEventListener('click', function() {
+            showHelpModal();
+        });
+    }
+    
+    // Create the help modal if it doesn't exist
+    let helpModal = document.getElementById('helpModal');
+    if (!helpModal) {
+        helpModal = document.createElement('div');
+        helpModal.id = 'helpModal';
+        helpModal.className = 'modal';
+        helpModal.style.cssText = `
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.cssText = `
+            background: #222;
+            border-radius: 15px;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        `;
+        
+        modalContent.innerHTML = `
+            <h2 style="margin-top: 0;">Aide - TeamsRooms</h2>
+            <p>Bienvenue dans l'interface TeamsRooms. Voici quelques informations pour vous aider à utiliser cette application.</p>
+            
+            <h3>Fonctionnalités principales</h3>
+            <ul>
+                <li><strong>Menu latéral</strong> - Accédez à toutes les fonctionnalités de l'application.</li>
+                <li><strong>Réunions</strong> - Consultez vos réunions du jour et rejoignez-les facilement.</li>
+                <li><strong>Salles disponibles</strong> - Vérifiez quelles salles sont actuellement disponibles.</li>
+                <li><strong>Réservation</strong> - Réservez une salle de réunion, une voiture ou du matériel.</li>
+            </ul>
+            
+            <h3>Rejoindre une réunion</h3>
+            <p>Pour rejoindre une réunion Teams, vous pouvez:</p>
+            <ol>
+                <li>Cliquer sur le bouton "Rejoindre" à côté d'une réunion dans la liste.</li>
+                <li>OU entrer l'ID de la réunion manuellement dans le champ en bas de la section réunions et cliquer sur "Rejoindre".</li>
+            </ol>
+            
+            <h3>Problèmes courants</h3>
+            <p><strong>Les réunions ne s'affichent pas</strong> - Cliquez sur le bouton de rafraîchissement à droite du titre "Réunions".</p>
+            <p><strong>Impossible de rejoindre une réunion</strong> - Vérifiez que vous êtes connecté à Teams dans votre navigateur.</p>
+            
+            <button id="closeHelpBtn" style="
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                cursor: pointer;
+                margin-top: 15px;
+            ">Fermer</button>
+        `;
+        
+        helpModal.appendChild(modalContent);
+        document.body.appendChild(helpModal);
+        
+        // Add close button handler
+        document.getElementById('closeHelpBtn').addEventListener('click', function() {
+            hideHelpModal();
+        });
+        
+        // Close modal when clicking outside
+        helpModal.addEventListener('click', function(e) {
+            if (e.target === helpModal) {
+                hideHelpModal();
+            }
+        });
+    }
+    
+    // Show help modal function
+    function showHelpModal() {
+        const modal = document.getElementById('helpModal');
+        const modalContent = modal.querySelector('.modal-content');
+        
+        modal.style.display = 'flex';
+        
+        // Force reflow
+        modal.offsetHeight;
+        
+        modal.style.opacity = '1';
+        modalContent.style.transform = 'translateY(0)';
+    }
+    
+    // Hide help modal function
+    function hideHelpModal() {
+        const modal = document.getElementById('helpModal');
+        const modalContent = modal.querySelector('.modal-content');
+        
+        modal.style.opacity = '0';
+        modalContent.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
 }
