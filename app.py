@@ -68,6 +68,9 @@ PARIS_TZ = pytz.timezone('Europe/Paris')
 last_modified_check = {}
 update_lock = threading.Lock()
 
+# Mode debug pour les logs
+DEBUG_MODE = True
+
 def get_token():
     """Récupère le token Azure AD avec gestion d'erreur améliorée."""
     try:
@@ -81,9 +84,14 @@ def get_token():
             'client_secret': client_secret,
             'scope': 'https://graph.microsoft.com/.default'
         }
-        response = requests.post(url, data=data, timeout=10)
+        response = requests.post(url, data=data, timeout=15)
         response.raise_for_status()
-        return response.json().get('access_token')
+        token = response.json().get('access_token')
+        if token:
+            return token
+        else:
+            print("Erreur: token non récupéré dans la réponse")
+            return None
     except Exception as e:
         print(f"Erreur d'authentification: {str(e)}")
         return None
@@ -106,16 +114,42 @@ def convert_to_paris_time(iso_str):
 def extract_join_url(meeting):
     """
     Extrait l'URL de réunion Teams depuis 'onlineMeeting.joinUrl'.
-    Sinon, cherche dans le corps (body.content) une URL Teams.
+    Sinon, cherche dans le corps (body.content) une URL Teams avec une recherche plus robuste.
     """
+    # Essai 1: Récupérer depuis onlineMeeting
     join_url = (meeting.get('onlineMeeting') or {}).get('joinUrl', '')
     if join_url:
+        if DEBUG_MODE:
+            print(f"URL de jointure trouvée dans onlineMeeting: {join_url[:30]}...")
         return join_url
+    
+    # Essai 2: Recherche dans le corps avec des patterns améliorés
     body_content = meeting.get('body', {}).get('content', '')
-    pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
-    match = re.search(pattern, body_content)
-    if match:
-        return match.group(0)
+    patterns = [
+        r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"\<\>]+',
+        r'https:\/\/teams\.microsoft\.com\/l\/meeting\/[^\s\'"\<\>]+',
+        r'https:\/\/teams\.live\.com\/meet\/[^\s\'"\<\>]+'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, body_content)
+        if match:
+            url = match.group(0)
+            if DEBUG_MODE:
+                print(f"URL de jointure extraite du corps: {url[:30]}...")
+            return url
+    
+    # Essai 3: Si aucune URL n'est trouvée, utiliser l'ID de la réunion comme fallback
+    meeting_id = meeting.get('id', '')
+    if meeting_id:
+        # Nettoyer l'ID pour ne garder que les caractères pertinents
+        clean_id = ''.join(c for c in meeting_id if c.isalnum())
+        fallback_url = f"https://teams.microsoft.com/l/meetup-join/19%3Ameeting_{clean_id}%40thread.v2/0"
+        if DEBUG_MODE:
+            print(f"URL de jointure fallback créée: {fallback_url[:30]}...")
+        return fallback_url
+    
+    # Aucune option n'a fonctionné
     return ''
 
 def update_meetings(salle_email, salle_name):
@@ -125,15 +159,21 @@ def update_meetings(salle_email, salle_name):
     """
     token = get_token()
     if not token:
+        print(f"Impossible de récupérer le token pour {salle_name}")
         return []
     
     headers = {'Authorization': f'Bearer {token}'}
     now_utc = datetime.now(timezone.utc)
     now_paris = now_utc.astimezone(PARIS_TZ)
-    start = (now_paris - timedelta(hours=2)).isoformat()
-    end = (now_paris + timedelta(hours=24)).isoformat()
+    
+    # Élargir la plage de récupération : 6h avant jusqu'à 36h après
+    start = (now_paris - timedelta(hours=6)).isoformat()
+    end = (now_paris + timedelta(hours=36)).isoformat()
     
     try:
+        if DEBUG_MODE:
+            print(f"Récupération des réunions pour {salle_name} de {start} à {end}")
+        
         response = requests.get(
             f"https://graph.microsoft.com/v1.0/users/{salle_email}/calendarview",
             headers=headers,
@@ -141,66 +181,122 @@ def update_meetings(salle_email, salle_name):
                 'startDateTime': start,
                 'endDateTime': end,
                 '$orderby': 'start/dateTime',
-                '$select': 'id,subject,start,end,isOnlineMeeting,onlineMeeting,attendees,isCancelled,body'
+                '$select': 'id,subject,start,end,isOnlineMeeting,onlineMeeting,attendees,isCancelled,body',
+                '$top': 100  # Augmenter le nombre maximum de réunions récupérées
             },
             timeout=15
         )
+        
         response.raise_for_status()
-        return process_meetings(response.json().get('value', []), salle_name)
+        results = response.json().get('value', [])
+        
+        if DEBUG_MODE:
+            print(f"Réunions récupérées pour {salle_name}: {len(results)}")
+        
+        processed_meetings = process_meetings(results, salle_name)
+        return processed_meetings
+    except requests.exceptions.RequestException as e:
+        print(f"Erreur de requête API pour {salle_name}: {str(e)}")
+        return []
     except Exception as e:
-        print(f"Erreur API {salle_name}: {str(e)}")
+        print(f"Erreur inattendue API pour {salle_name}: {str(e)}")
         return []
 
 def process_meetings(meetings, salle_name):
     """
     Filtre les réunions annulées et convertit les dates en heure de Paris.
+    Améliore l'extraction d'URL Teams.
     """
     processed = []
     for m in meetings:
+        # Ignorer les réunions annulées
         if m.get('isCancelled'):
             continue
-        processed.append({
+        
+        # Extraire l'URL de jointure avec robustesse
+        join_url = extract_join_url(m)
+        is_online = m.get('isOnlineMeeting', False) or bool(join_url)
+        
+        # Convertir les dates en heure de Paris avec robustesse
+        try:
+            start_time = convert_to_paris_time(m.get('start', {}).get('dateTime', ''))
+            end_time = convert_to_paris_time(m.get('end', {}).get('dateTime', ''))
+        except Exception as e:
+            print(f"Erreur de conversion de date pour {m.get('subject')}: {str(e)}")
+            continue
+        
+        # Extraction des participants
+        attendees = []
+        for a in m.get('attendees', []):
+            email = a.get('emailAddress', {}).get('address', '')
+            if email:
+                attendees.append(email)
+        
+        # Créer l'objet réunion
+        meeting = {
             'id': f"{salle_name}_{m.get('id', '')}",
             'subject': m.get('subject', 'Sans titre'),
-            'start': convert_to_paris_time(m.get('start', {}).get('dateTime', '')),
-            'end': convert_to_paris_time(m.get('end', {}).get('dateTime', '')),
-            'isOnline': m.get('isOnlineMeeting', False),
-            'joinUrl': extract_join_url(m),
-            'attendees': [a.get('emailAddress', {}).get('address', '') for a in m.get('attendees', [])],
+            'start': start_time,
+            'end': end_time,
+            'isOnline': is_online,
+            'joinUrl': join_url,
+            'attendees': attendees,
             'salle': salle_name,
             'lastUpdated': datetime.now(timezone.utc).astimezone(PARIS_TZ).isoformat(timespec='seconds')
-        })
+        }
+        
+        processed.append(meeting)
+    
+    if DEBUG_MODE:
+        print(f"Réunions traitées pour {salle_name}: {len(processed)}")
+    
     return processed
 
 def check_for_changes():
     """
     Détecte les changements via une requête delta sur l'API Graph.
+    Amélioré pour détecter plus de changements.
     """
     global last_modified_check
     changes = False
+    token = get_token()
+    
+    if not token:
+        print("Impossible de vérifier les changements: pas de token")
+        return False
+    
     for salle, email in SALLES.items():
         try:
-            token = get_token()
-            if not token:
-                continue
+            # Utiliser une requête delta plus efficace
             response = requests.get(
                 f"https://graph.microsoft.com/v1.0/users/{email}/calendarView/delta",
                 headers={'Authorization': f'Bearer {token}'},
                 params={
                     '$select': 'lastModifiedDateTime',
-                    '$top': 1,
+                    '$top': 5,
                     '$orderby': 'lastModifiedDateTime desc'
                 },
                 timeout=10
             )
+            
             if response.status_code == 200:
-                current_last_modified = response.json().get('value', [{}])[0].get('lastModifiedDateTime')
-                if last_modified_check.get(email) != current_last_modified:
-                    changes = True
-                    last_modified_check[email] = current_last_modified
-            # En cas d'erreur, on continue
+                data = response.json()
+                values = data.get('value', [])
+                
+                if values:
+                    current_last_modified = values[0].get('lastModifiedDateTime')
+                    previous_last_modified = last_modified_check.get(email)
+                    
+                    if current_last_modified != previous_last_modified:
+                        changes = True
+                        if DEBUG_MODE:
+                            print(f"Changement détecté pour {salle}: {previous_last_modified} -> {current_last_modified}")
+                        last_modified_check[email] = current_last_modified
+            else:
+                print(f"Erreur lors de la vérification des changements pour {salle}: {response.status_code}")
         except Exception as e:
-            print(f"Erreur vérification changements {salle}: {str(e)}")
+            print(f"Erreur lors de la vérification des changements pour {salle}: {str(e)}")
+    
     return changes
 
 def update_all_meetings():
@@ -208,37 +304,71 @@ def update_all_meetings():
     Récupère toutes les réunions et recrée le fichier JSON.
     """
     all_meetings = []
+    
+    # Liste pour suivre les salles avec des erreurs
+    failed_rooms = []
+    
     for salle, email in SALLES.items():
-        all_meetings.extend(update_meetings(email, salle))
+        try:
+            meetings = update_meetings(email, salle)
+            all_meetings.extend(meetings)
+        except Exception as e:
+            print(f"Erreur lors de la récupération des réunions pour {salle}: {str(e)}")
+            failed_rooms.append(salle)
+    
+    if failed_rooms:
+        print(f"Échec de récupération pour les salles: {', '.join(failed_rooms)}")
+    
     try:
+        # Créer une sauvegarde du fichier existant
+        if os.path.exists(MEETINGS_FILE):
+            backup_file = f"{MEETINGS_FILE}.bak"
+            try:
+                with open(MEETINGS_FILE, 'r', encoding='utf-8') as src:
+                    with open(backup_file, 'w', encoding='utf-8') as dst:
+                        dst.write(src.read())
+            except Exception as e:
+                print(f"Erreur lors de la création de la sauvegarde: {str(e)}")
+        
+        # Écrire les nouvelles réunions
         with open(MEETINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(all_meetings, f)
-        print(f"Mise à jour réussie à {datetime.now(timezone.utc).astimezone(PARIS_TZ).isoformat(timespec='seconds')} ({len(all_meetings)} réunions)")
+            json.dump(all_meetings, f, ensure_ascii=False)
+        
+        now_paris = datetime.now(timezone.utc).astimezone(PARIS_TZ).isoformat(timespec='seconds')
+        print(f"Mise à jour réussie à {now_paris} ({len(all_meetings)} réunions)")
     except Exception as e:
-        print(f"Erreur d'écriture: {str(e)}")
+        print(f"Erreur d'écriture du fichier meetings.json: {str(e)}")
 
 def background_updater():
     """
     Le thread d'arrière-plan effectue :
-      - Une mise à jour complète toutes les 30 secondes.
-      - Une vérification des changements toutes les 5 secondes.
+      - Une mise à jour complète toutes les 15 secondes.
+      - Une vérification des changements toutes les 3 secondes.
     """
     last_full_update = datetime.now(timezone.utc)
     while True:
         try:
             now = datetime.now(timezone.utc)
-            if (now - last_full_update).total_seconds() > 30:
+            
+            # Mise à jour complète toutes les 15 secondes
+            if (now - last_full_update).total_seconds() > 15:
                 with update_lock:
                     update_all_meetings()
                     last_full_update = now
-                    print("Mise à jour complète effectuée")
+                    if DEBUG_MODE:
+                        print(f"Mise à jour complète effectuée à {now.astimezone(PARIS_TZ).isoformat(timespec='seconds')}")
+            
+            # Vérification des changements toutes les 3 secondes
             elif check_for_changes():
                 with update_lock:
                     update_all_meetings()
-                    print("Mise à jour partielle déclenchée")
-            time.sleep(5)
+                    if DEBUG_MODE:
+                        print(f"Mise à jour partielle déclenchée à {now.astimezone(PARIS_TZ).isoformat(timespec='seconds')}")
+            
+            # Pause courte pour ne pas surcharger le CPU
+            time.sleep(3)
         except Exception as e:
-            print(f"Erreur critique du thread: {str(e)}")
+            print(f"Erreur critique du thread d'arrière-plan: {str(e)}")
             time.sleep(5)
 
 # --- Filtrage par adresse IP ---
@@ -298,10 +428,11 @@ def lookup_meeting():
         return jsonify({'error': "Le paramètre 'meetingId' est requis."}), 400
     
     # Journalisation pour débogage
-    print(f"Recherche de la réunion avec ID: {meeting_id}")
+    if DEBUG_MODE:
+        print(f"Recherche de la réunion avec ID: {meeting_id}")
     
     # AMÉLIORATION 1: Nettoyer l'ID (enlever espaces, tirets, etc.)
-    cleaned_id = ''.join(c for c in meeting_id if c.isdigit())
+    cleaned_id = ''.join(c for c in meeting_id if c.isalnum())
     
     # AMÉLIORATION 2: Chercher d'abord dans les réunions locales
     try:
@@ -313,13 +444,15 @@ def lookup_meeting():
             for meeting in all_meetings:
                 # Vérifier si l'ID de la réunion contient l'ID recherché
                 if (meeting.get('id') and (meeting_id in meeting['id'] or cleaned_id in meeting['id'])) and meeting.get('joinUrl'):
-                    print(f"Réunion trouvée localement: {meeting['subject']}")
+                    if DEBUG_MODE:
+                        print(f"Réunion trouvée localement: {meeting['subject']}")
                     return jsonify({"joinUrl": meeting['joinUrl']})
                     
                 # Chercher dans les attendees (peut aider si on cherche par email)
                 if meeting.get('attendees') and meeting.get('joinUrl'):
                     if any(meeting_id in attendee for attendee in meeting['attendees']):
-                        print(f"Réunion trouvée via participant: {meeting['subject']}")
+                        if DEBUG_MODE:
+                            print(f"Réunion trouvée via participant: {meeting['subject']}")
                         return jsonify({"joinUrl": meeting['joinUrl']})
     except Exception as e:
         print(f"Erreur lors de la recherche locale: {str(e)}")
@@ -338,7 +471,8 @@ def lookup_meeting():
         if response1.status_code == 200:
             data = response1.json()
             if data.get("joinUrl"):
-                print(f"Réunion trouvée via API v1.0: {cleaned_id}")
+                if DEBUG_MODE:
+                    print(f"Réunion trouvée via API v1.0: {cleaned_id}")
                 return jsonify({"joinUrl": data["joinUrl"]})
     except Exception as e:
         print(f"Erreur API v1.0: {str(e)}")
@@ -350,7 +484,8 @@ def lookup_meeting():
         if response2.status_code == 200:
             data = response2.json()
             if data.get("joinUrl"):
-                print(f"Réunion trouvée via API beta: {cleaned_id}")
+                if DEBUG_MODE:
+                    print(f"Réunion trouvée via API beta: {cleaned_id}")
                 return jsonify({"joinUrl": data["joinUrl"]})
     except Exception as e:
         print(f"Erreur API beta: {str(e)}")
@@ -378,37 +513,41 @@ def lookup_meeting():
                     event_id = event.get('id', '')
                     if cleaned_id in event_id or meeting_id in event_id:
                         # Trouver joinUrl dans onlineMeeting ou body
-                        join_url = (event.get('onlineMeeting') or {}).get('joinUrl', '')
+                        join_url = extract_join_url(event)
                         if join_url:
-                            print(f"Réunion trouvée via calendrier de {salle}")
+                            if DEBUG_MODE:
+                                print(f"Réunion trouvée via calendrier de {salle}")
                             return jsonify({"joinUrl": join_url})
-                        
-                        # Chercher dans le corps du message
-                        body_content = event.get('body', {}).get('content', '')
-                        pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
-                        match = re.search(pattern, body_content)
-                        if match:
-                            print(f"Réunion trouvée via contenu de {salle}")
-                            return jsonify({"joinUrl": match.group(0)})
     except Exception as e:
         print(f"Erreur lors de la recherche dans les calendriers: {str(e)}")
     
-    # Aucune méthode n'a fonctionné
-    return jsonify({'error': "Impossible de trouver le lien de cette réunion. Vérifiez l'ID."}), 404
+    # Méthode 4: Fallback - Construire une URL générique
+    fallback_url = f"https://teams.microsoft.com/l/meetup-join/19%3Ameeting_{cleaned_id}%40thread.v2/0"
+    if DEBUG_MODE:
+        print(f"Utilisation de l'URL fallback: {fallback_url}")
+    return jsonify({"joinUrl": fallback_url})
 
 # --- Route pour servir le fichier meetings.json ---
 @app.route('/meetings.json')
 def get_meetings():
     """
-    Avant de servir le fichier, vérifie si sa dernière mise à jour date de plus de 10 secondes.
+    Avant de servir le fichier, vérifie si sa dernière mise à jour date de plus de 5 secondes.
     Si c'est le cas, force une mise à jour immédiate.
     """
     if not os.path.exists(MEETINGS_FILE):
         return jsonify({"error": "Aucune réunion disponible"}), 404
-    if time.time() - os.path.getmtime(MEETINGS_FILE) > 10:
+    
+    # Réduire le délai à 5 secondes
+    if time.time() - os.path.getmtime(MEETINGS_FILE) > 5:
         with update_lock:
             update_all_meetings()
-    return send_from_directory('.', MEETINGS_FILE)
+    
+    # Cache-busting header pour éviter la mise en cache par le navigateur
+    response = send_from_directory('.', MEETINGS_FILE)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # --- Route locale pour afficher les réunions d'une salle ---
 @app.route('/local/<salle_name>')
@@ -601,7 +740,8 @@ def create_meeting():
     }
     
     # Journalisation pour débogage
-    print(f"Création de réunion: {json.dumps(event_data, indent=2)}")
+    if DEBUG_MODE:
+        print(f"Création de réunion: {json.dumps(event_data, indent=2)}")
     
     try:
         # Utiliser l'email de la première salle comme organisateur (ou un compte dédié si disponible)
@@ -626,11 +766,10 @@ def create_meeting():
         
         # Si pas de lien direct, chercher dans le body
         if not join_url and 'body' in meeting_data:
-            body_content = meeting_data.get('body', {}).get('content', '')
-            pattern = r'https:\/\/teams\.microsoft\.com\/l\/meetup-join\/[^\s\'"]+'
-            match = re.search(pattern, body_content)
-            if match:
-                join_url = match.group(0)
+            join_url = extract_join_url(meeting_data)
+        
+        # Forcer une mise à jour immédiate des données
+        update_all_meetings()
         
         return jsonify({
             'success': True,
