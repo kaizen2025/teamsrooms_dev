@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 10. INITIALIZE HELP FUNCTION
     initializeHelpFunction();
     
+    // 11. ENHANCE UI PERFORMANCE
+    enhanceUIPerformance();
+    
     console.log('Comprehensive interface improvements initialized');
 });
 
@@ -938,161 +941,146 @@ function initializeRoomsDisplay() {
  * Initialize the help function
  */
 function initializeHelpFunction() {
-    // Create help button if it doesn't exist
-    let helpButton = document.querySelector('.help-button');
-    if (!helpButton) {
-        helpButton = document.createElement('button');
-        helpButton.className = 'help-button';
-        helpButton.innerHTML = '<i class="fas fa-question-circle"></i>';
-        helpButton.title = "Aide";
-        helpButton.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 1000;
-            font-size: 1.2rem;
-            transition: all 0.2s ease;
-        `;
+  const helpBtn = document.getElementById('helpBtn');
+  
+  // Vérifier si le bouton existe ET s'il n'a pas déjà un gestionnaire d'événements
+  if (helpBtn && !helpBtn._hasHelpHandler) {
+    helpBtn.addEventListener('click', showHelpModal);
+    // Marquer le bouton comme ayant un gestionnaire
+    helpBtn._hasHelpHandler = true;
+  }
+  // Ne PAS créer de nouveau bouton d'aide flottant
+}
+
+/**
+ * Affiche un modal d'aide synthétique
+ */
+function showHelpModal() {
+  // Création du modal d'aide
+  const helpModal = document.createElement('div');
+  helpModal.className = 'help-modal';
+  helpModal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+  `;
+  
+  // Contenu du modal
+  helpModal.innerHTML = `
+    <div class="help-modal-content" style="
+      width: 80%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      background-color: #2c2c2c;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    ">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <h2 style="color: white; margin: 0;"><i class="fas fa-question-circle"></i> Guide d'utilisation</h2>
+        <button id="closeHelpBtn" style="
+          background: none;
+          border: none;
+          color: white;
+          font-size: 24px;
+          cursor: pointer;
+        ">&times;</button>
+      </div>
+      
+      <div style="color: #ddd; line-height: 1.6;">
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-door-open"></i> Gestion des salles
+        </h3>
+        <p>
+          <strong>Consulter les salles</strong> : Cliquez sur le bouton <strong>"Afficher les salles disponibles"</strong> en bas 
+          pour voir toutes les salles et leur statut.
+        </p>
+        <p>
+          <strong>Filtrer par salle</strong> : Cliquez sur une salle dans la liste pour voir uniquement les 
+          réunions de cette salle.
+        </p>
         
-        document.body.appendChild(helpButton);
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-calendar-plus"></i> Création de réunions
+        </h3>
+        <p>
+          <strong>Réserver une salle</strong> : Cliquez sur le bouton <strong>"Créer une réunion Teams"</strong> en haut 
+          du panneau des réunions, ou utilisez le menu <strong>"Salle de réunion"</strong> dans la section Réservations.
+        </p>
         
-        // Add hover effect
-        helpButton.addEventListener('mouseover', function() {
-            this.style.transform = 'scale(1.1)';
-        });
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-video"></i> Rejoindre une réunion
+        </h3>
+        <p>
+          <strong>Méthode 1</strong> : Cliquez sur le bouton <strong>"Rejoindre"</strong> à côté d'une réunion en cours ou à venir.
+        </p>
+        <p>
+          <strong>Méthode 2</strong> : Entrez l'ID de la réunion dans le champ en bas de la liste des réunions et cliquez sur <strong>"Rejoindre"</strong>.
+        </p>
         
-        helpButton.addEventListener('mouseout', function() {
-            this.style.transform = 'scale(1)';
-        });
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-users"></i> Gestion des participants
+        </h3>
+        <p>
+          Pour voir tous les participants d'une réunion, cliquez sur les <strong>trois points</strong> (...) à côté de la liste des participants.
+        </p>
         
-        // Add click handler
-        helpButton.addEventListener('click', function() {
-            showHelpModal();
-        });
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-sync-alt"></i> Actualisation
+        </h3>
+        <p>
+          Les réunions se rafraîchissent automatiquement toutes les 10 secondes.
+          Pour forcer une actualisation, cliquez sur le bouton <strong>"Rafraîchir"</strong> en bas.
+        </p>
+      </div>
+    </div>
+  `;
+  
+  // Ajouter le modal au document
+  document.body.appendChild(helpModal);
+  
+  // Gérer la fermeture du modal
+  document.getElementById('closeHelpBtn').addEventListener('click', () => {
+    document.body.removeChild(helpModal);
+  });
+  
+  // Fermer en cliquant en dehors du contenu
+  helpModal.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+      document.body.removeChild(helpModal);
     }
-    
-    // Create the help modal if it doesn't exist
-    let helpModal = document.getElementById('helpModal');
-    if (!helpModal) {
-        helpModal = document.createElement('div');
-        helpModal.id = 'helpModal';
-        helpModal.className = 'modal';
-        helpModal.style.cssText = `
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            align-items: center;
-            justify-content: center;
-            z-index: 1100;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        `;
-        
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        modalContent.style.cssText = `
-            background: #222;
-            border-radius: 15px;
-            padding: 20px;
-            width: 80%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        `;
-        
-        modalContent.innerHTML = `
-            <h2 style="margin-top: 0;">Aide - TeamsRooms</h2>
-            <p>Bienvenue dans l'interface TeamsRooms. Voici quelques informations pour vous aider à utiliser cette application.</p>
-            
-            <h3>Fonctionnalités principales</h3>
-            <ul>
-                <li><strong>Menu latéral</strong> - Accédez à toutes les fonctionnalités de l'application.</li>
-                <li><strong>Réunions</strong> - Consultez vos réunions du jour et rejoignez-les facilement.</li>
-                <li><strong>Salles disponibles</strong> - Vérifiez quelles salles sont actuellement disponibles.</li>
-                <li><strong>Réservation</strong> - Réservez une salle de réunion, une voiture ou du matériel.</li>
-            </ul>
-            
-            <h3>Rejoindre une réunion</h3>
-            <p>Pour rejoindre une réunion Teams, vous pouvez:</p>
-            <ol>
-                <li>Cliquer sur le bouton "Rejoindre" à côté d'une réunion dans la liste.</li>
-                <li>OU entrer l'ID de la réunion manuellement dans le champ en bas de la section réunions et cliquer sur "Rejoindre".</li>
-            </ol>
-            
-            <h3>Problèmes courants</h3>
-            <p><strong>Les réunions ne s'affichent pas</strong> - Cliquez sur le bouton de rafraîchissement à droite du titre "Réunions".</p>
-            <p><strong>Impossible de rejoindre une réunion</strong> - Vérifiez que vous êtes connecté à Teams dans votre navigateur.</p>
-            
-            <button id="closeHelpBtn" style="
-                background: var(--primary-color);
-                color: white;
-                border: none;
-                padding: 10px 15px;
-                border-radius: 8px;
-                cursor: pointer;
-                margin-top: 15px;
-            ">Fermer</button>
-        `;
-        
-        helpModal.appendChild(modalContent);
-        document.body.appendChild(helpModal);
-        
-        // Add close button handler
-        document.getElementById('closeHelpBtn').addEventListener('click', function() {
-            hideHelpModal();
-        });
-        
-        // Close modal when clicking outside
-        helpModal.addEventListener('click', function(e) {
-            if (e.target === helpModal) {
-                hideHelpModal();
-            }
-        });
+  });
+}
+
+/**
+ * Amélioration globale des performances et de la fluidité
+ */
+function enhanceUIPerformance() {
+  // Optimiser toutes les animations
+  document.querySelectorAll('.meeting-item, button, .popup, .modal').forEach(element => {
+    element.style.willChange = 'transform, opacity';
+    element.style.transition = 'all 0.2s ease-out';
+  });
+
+  // Améliorer la précision des zones de clic
+  document.querySelectorAll('button, .clickable, [data-action]').forEach(element => {
+    if (element.classList.contains('show-more-participants')) {
+      element.style.width = '26px';
+      element.style.height = '26px';
+      element.style.padding = '0';
+      element.style.display = 'flex';
+      element.style.alignItems = 'center';
+      element.style.justifyContent = 'center';
+      element.style.zIndex = '5';
     }
-    
-    // Show help modal function
-    function showHelpModal() {
-        const modal = document.getElementById('helpModal');
-        const modalContent = modal.querySelector('.modal-content');
-        
-        modal.style.display = 'flex';
-        
-        // Force reflow
-        modal.offsetHeight;
-        
-        modal.style.opacity = '1';
-        modalContent.style.transform = 'translateY(0)';
-    }
-    
-    // Hide help modal function
-    function hideHelpModal() {
-        const modal = document.getElementById('helpModal');
-        const modalContent = modal.querySelector('.modal-content');
-        
-        modal.style.opacity = '0';
-        modalContent.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
+  });
 }
