@@ -111,8 +111,8 @@
             
             <!-- Date & Time -->
             <div class="datetime">
-                <p>Mercredi 12 mars 2025</p>
-                <p>02:33:52</p>
+                <p>Lundi 17 mars 2025</p>
+                <p>10:30:52</p>
             </div>
             
             <!-- Title -->
@@ -174,83 +174,18 @@
             </div>
             
             <div class="meetings">
-                <div class="meetings-list">
-                    <!-- Current Meetings Section -->
-                    <div class="status-section">
-                        <h4><i class="fas fa-clock"></i> En cours</h4>
+                <div id="meetingsContainer" class="meetings-list">
+                    <!-- Dynamic content will be inserted here by meetings.js -->
+                    <div class="loading-indicator">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                        <span>Chargement des réunions...</span>
+                        <p class="loading-detail">Initialisation...</p>
                     </div>
-                    
-                    <!-- Example of a current meeting item -->
-                    <div class="meeting-item current" data-start="14:00" data-end="16:00">
-                        <div class="meeting-status-badge">
-                            <i class="fas fa-clock"></i> En cours
-                        </div>
-                        <h3>Réunion point d'avancement dossiers IFS Broker</h3>
-                        <p class="meeting-time"><i class="far fa-clock"></i> 14:00 - 16:00</p>
-                        <p class="meeting-salle"><i class="fas fa-door-open"></i> Salle: Castillet</p>
-                        
-                        <!-- Progress Bar -->
-                        <div class="meeting-progress-container">
-                            <div class="meeting-progress-bar" style="width: 58%;"></div>
-                        </div>
-                        
-                        <div class="time-info">
-                            <span>14:00</span>
-                            <span class="time-remaining"><i class="far fa-hourglass"></i> 20 min restantes</span>
-                            <span>16:00</span>
-                        </div>
-                        
-                        <button class="meeting-join-btn">
-                            <i class="fas fa-sign-in-alt"></i> Rejoindre
-                        </button>
-                    </div>
-                    
-                    <!-- Upcoming Meetings Section -->
-                    <div class="status-section">
-                        <h4><i class="fas fa-hourglass-start"></i> À venir</h4>
-                    </div>
-                    
-                    <!-- Example of an upcoming meeting item -->
-                    <div class="meeting-item upcoming" data-start="17:00" data-end="18:00">
-                        <div class="meeting-status-badge" style="background: linear-gradient(to right, var(--primary-color), var(--primary-color-light));">
-                            <i class="fas fa-hourglass-start"></i> À venir
-                        </div>
-                        <h3>Point RH</h3>
-                        <p class="meeting-time"><i class="far fa-clock"></i> 17:00 - 18:00</p>
-                        <p class="meeting-salle"><i class="fas fa-door-open"></i> Salle: Tramontane</p>
-                        
-                        <button class="meeting-join-btn">
-                            <i class="fas fa-sign-in-alt"></i> Rejoindre
-                        </button>
-                    </div>
-                    
-                    <!-- Past Meetings Section -->
-                    <div class="status-section">
-                        <h4><i class="fas fa-check"></i> Terminées</h4>
-                    </div>
-                    
-                    <!-- Example of a past meeting item -->
-                    <div class="meeting-item past" data-start="09:00" data-end="10:00" style="opacity: 0.7;">
-                        <div class="meeting-status-badge" style="background: linear-gradient(to right, #777, #999); opacity: 0.8;">
-                            <i class="fas fa-check"></i> Terminée
-                        </div>
-                        <h3>RDV CARSAT FINALISATION DOSSIER</h3>
-                        <p class="meeting-time"><i class="far fa-clock"></i> 09:00 - 10:00</p>
-                        <p class="meeting-salle"><i class="fas fa-door-open"></i> Salle: Tramontane</p>
-                    </div>
-                    
-                    <!-- Empty state when no meetings are available -->
-                    <div class="empty-meetings-message" style="display: none;">
-                        <i class="fas fa-calendar-day"></i>
-                        <p>Aucune réunion prévue aujourd'hui</p>
-                    </div>
-                    
-                            </div>
                 </div>
-                
+            
                 <!-- Join Meeting (ID Entry) -->
                 <div class="meeting-id-entry">
-                    <input type="text" id="meetingIdInput" placeholder="Entrez l'ID de la réunion">
+                    <input type="text" id="meeting-id" placeholder="Entrez l'ID de la réunion">
                     <button id="joinMeetingBtn">
                         <i class="fas fa-sign-in-alt"></i> Rejoindre
                     </button>
@@ -418,6 +353,13 @@
                         <input type="text" id="booking-participants" placeholder="participant1@anecoop-france.com, participant2@anecoop-france.com">
                     </div>
                     
+                    <div class="form-group">
+                        <label for="booking-online-meeting">
+                            <input type="checkbox" id="booking-online-meeting" checked>
+                            Créer une réunion Teams en ligne
+                        </label>
+                    </div>
+                    
                     <div id="room-availability"></div>
                 </form>
             </div>
@@ -485,20 +427,35 @@
         </div>
     </div>
     
+    <!-- Global Config -->
+    <script>
+        // Global configuration object for debugging and features
+        window.APP_CONFIG = {
+            DEBUG: true,
+            REFRESH_INTERVAL: 10000, // 10 seconds for meetings refresh
+            AUTO_REFRESH: true,      // Auto-refresh meetings
+            VERSION: '1.0.5'         // Version tracking
+        };
+    </script>
+
     <!-- Base Scripts -->
     <script src="/static/js/config.js"></script>
     <script src="/static/js/datetime.js"></script>
     <script src="/static/js/background.js"></script>
-    <script src="/static/js/auth.js"></script>
+
+    <!-- Core Functionality -->
     <script src="/static/js/meetings.js"></script>
-    <script src="/static/js/rooms.js"></script>
     <script src="/static/js/join.js"></script>
     <script src="/static/js/booking.js"></script>
+    <script src="/static/js/rooms.js"></script>
+
+    <!-- Secondary Features -->
+    <script src="/static/js/auth.js"></script>
     <script src="/static/js/ui.js"></script>
-    
-    <!-- Interface Improvements Script -->
+
+    <!-- Enhanced Interface -->
     <script src="/static/js/interface-improvements.js"></script>
-    
+
     <script>
         // Initialize room name from URL or config
         document.addEventListener('DOMContentLoaded', function() {
@@ -515,8 +472,13 @@
                 salleTitle.textContent = roomName;
             }
             
+            // Set as global variable for other scripts
+            window.salleName = roomName.toLowerCase();
+            
             // Update document title
-            document.title = `Salle ${roomName} | Anecoop France`;
+            document.title = roomName.toLowerCase() === 'toutes les salles' ? 
+                'Salles de Réunion | Anecoop France' : 
+                `Salle ${roomName} | Anecoop France`;
             
             // Highlight the current room in rooms section if applicable
             if (roomName.toLowerCase() !== 'toutes les salles') {
@@ -527,6 +489,14 @@
                         card.style.transform = 'scale(1.05)';
                     }
                 });
+            }
+            
+            // Force meetings refresh on page load
+            if (typeof window.fetchMeetings === 'function') {
+                setTimeout(() => {
+                    console.log('Initial meetings fetch');
+                    window.fetchMeetings(true);
+                }, 500);
             }
         });
     </script>
