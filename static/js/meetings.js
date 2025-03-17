@@ -233,23 +233,16 @@ function updateLastSyncTimeDisplay() {
       font-size: 0.8rem;
       color: rgba(255, 255, 255, 0.7);
       text-align: center;
-      margin-top: 5px;
       padding: 2px 5px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.05);
+      margin-right: 10px;
     `;
     
-    // Trouver le bouton de rafraîchissement
+    // Ajouter à côté du bouton Rafraîchir
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn && refreshBtn.parentNode) {
-      // Insérer après le bouton de rafraîchissement
       refreshBtn.parentNode.insertBefore(lastSyncDisplay, refreshBtn.nextSibling);
-    } else {
-      // Fallback: ajouter au conteneur de contrôles
-      const controlsContainer = document.querySelector('.control-buttons');
-      if (controlsContainer) {
-        controlsContainer.appendChild(lastSyncDisplay);
-      }
     }
   }
   
@@ -610,7 +603,6 @@ function initializeMeetingTimers() {
 
 /**
  * Initialise les popups pour afficher tous les participants
- * Version améliorée selon paste.txt
  */
 function initializeParticipantsPopups() {
   // Ajouter des styles améliorés pour les popups de participants
@@ -630,14 +622,15 @@ function initializeParticipantsPopups() {
         border: none;
         color: #ddd;
         cursor: pointer;
-        width: 22px;
-        height: 22px;
+        width: 26px;
+        height: 26px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
         margin-left: 4px;
+        z-index: 5;
       }
       
       .show-more-participants:hover {
@@ -729,102 +722,56 @@ function initializeParticipantsPopups() {
     document.head.appendChild(styles);
   }
 
-  // Supprimer les popups existants pour éviter les doublons
-  document.querySelectorAll('.participants-popup').forEach(popup => {
-    popup.remove();
-  });
-
-  // Recréer les popups avec le bon positionnement et les bons styles
-  document.querySelectorAll('.meeting-item').forEach(meetingItem => {
-    const meetingId = meetingItem.getAttribute('data-id');
-    if (!meetingId) return;
-
-    // Trouver le bouton "voir plus"
-    const moreButton = meetingItem.querySelector('.show-more-participants');
-    if (!moreButton) return;
-
-    // Créer une nouvelle popup pour cet élément
-    const popup = document.createElement('div');
-    popup.id = `participants-${meetingId}`;
-    popup.className = 'participants-popup';
-    
-    // Obtenir les participants depuis l'attribut de données ou l'élément
-    let participants = [];
-    
-    // Trouver les participants à partir du HTML existant
-    const participantsElement = meetingItem.querySelector('.meeting-participants');
-    if (participantsElement) {
-      const text = participantsElement.textContent.trim();
-      // Extraire seulement la partie participants, en excluant l'icône et le texte "voir plus"
-      const parts = text.split(',');
-      if (parts.length > 0) {
-        // Nettoyer les participants
-        participants = parts.map(p => p.trim())
-          .filter(p => p && !p.includes('...') && !p.includes('voir plus'));
-      }
-    }
-    
-    // Préparer le contenu de la popup
-    popup.innerHTML = `
-      <div class="participants-popup-content">
-        <div class="participants-popup-header">
-          <h4><i class="fas fa-users"></i> Participants (${participants.length})</h4>
-          <button class="close-participants" data-meeting-id="${meetingId}">&times;</button>
-        </div>
-        <div class="participants-list">
-          ${participants.map(p => `<div class="participant-item"><i class="fas fa-user"></i> ${p}</div>`).join('')}
-          ${participants.length === 0 ? '<div class="participant-item">Aucun participant trouvé</div>' : ''}
-        </div>
-      </div>
-    `;
-    
-    // Ajouter la popup au document
-    document.body.appendChild(popup);
-    
-    // Gérer le clic sur le bouton "voir plus"
-    moreButton.addEventListener('click', function(e) {
+  // Gérer les clics sur "voir plus"
+  document.querySelectorAll('.show-more-participants').forEach(button => {
+    button.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       
-      // Fermer toutes les autres popups
-      document.querySelectorAll('.participants-popup').forEach(p => {
-        if (p.id !== `participants-${meetingId}`) {
-          p.style.display = 'none';
-          p.classList.remove('visible');
-        }
-      });
+      const meetingId = this.getAttribute('data-meeting-id');
+      const popup = document.getElementById(`participants-${meetingId}`);
       
-      // Positionner et afficher cette popup
-      const rect = this.getBoundingClientRect();
-      popup.style.position = 'fixed';
-      popup.style.top = `${rect.bottom + 10}px`;
-      
-      // Ajuster horizontalement pour éviter de sortir de l'écran
-      const leftPos = Math.min(rect.left, window.innerWidth - 320);
-      popup.style.left = `${leftPos}px`;
-      
-      // Afficher avec animation
-      popup.style.display = 'block';
-      
-      // Forcer un reflow pour que l'animation fonctionne
-      popup.offsetHeight;
-      
-      // Ajouter la classe visible pour l'animation
-      popup.classList.add('visible');
-      
-      // Ajouter un gestionnaire d'événements global pour fermer la popup lors d'un clic ailleurs
-      document.addEventListener('click', function closePopup(event) {
-        if (!popup.contains(event.target) && event.target !== moreButton) {
-          popup.classList.remove('visible');
-          
-          // Cacher complètement après la fin de l'animation
-          setTimeout(() => {
-            popup.style.display = 'none';
-          }, 300);
-          
-          document.removeEventListener('click', closePopup);
-        }
-      });
+      if (popup) {
+        // Fermer toutes les autres popups
+        document.querySelectorAll('.participants-popup').forEach(p => {
+          if (p.id !== `participants-${meetingId}`) {
+            p.style.display = 'none';
+            p.classList.remove('visible');
+          }
+        });
+        
+        // Positionner la popup près du bouton
+        const rect = this.getBoundingClientRect();
+        popup.style.position = 'fixed';
+        popup.style.top = `${rect.bottom + 10}px`;
+        
+        // Ajuster horizontalement pour éviter de sortir de l'écran
+        const leftPos = Math.min(rect.left, window.innerWidth - 320);
+        popup.style.left = `${leftPos}px`;
+        
+        // Afficher avec animation
+        popup.style.display = 'block';
+        
+        // Forcer un reflow pour que l'animation fonctionne
+        popup.offsetHeight;
+        
+        // Ajouter la classe visible pour l'animation
+        popup.classList.add('visible');
+        
+        // Ajouter un gestionnaire d'événements global pour fermer la popup lors d'un clic ailleurs
+        document.addEventListener('click', function closePopup(event) {
+          if (!popup.contains(event.target) && event.target !== button) {
+            popup.classList.remove('visible');
+            
+            // Cacher complètement après la fin de l'animation
+            setTimeout(() => {
+              popup.style.display = 'none';
+            }, 300);
+            
+            document.removeEventListener('click', closePopup);
+          }
+        });
+      }
     });
   });
   
