@@ -469,53 +469,141 @@ function createMeetingHTML(meeting) {
 }
 
 /**
+ * Met à jour les chronomètres et barres de progression
+ */
+function updateMeetingTimers() {
+  const now = new Date();
+  
+  document.querySelectorAll('.meeting-item').forEach(item => {
+    if (!item.dataset.start || !item.dataset.end) return;
+    
+    const startTime = new Date(item.dataset.start);
+    const endTime = new Date(item.dataset.end);
+    
+    // Si l'élément n'a pas de données de temps valides, ignorer
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return;
+    
+    // Réunion en cours
+    if (startTime <= now && endTime > now) {
+      // Calculer la progression
+      const totalDuration = endTime - startTime;
+      const elapsed = now - startTime;
+      const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+      
+      // Calculer le temps restant en minutes
+      const remainingMs = endTime - now;
+      const remainingMinutes = Math.ceil(remainingMs / 60000);
+      const remainingText = remainingMinutes < 60 
+        ? `${remainingMinutes} min` 
+        : `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}min`;
+      
+      // Mettre à jour la classe de statut si nécessaire
+      if (!item.classList.contains('current')) {
+        item.classList.remove('upcoming', 'past');
+        item.classList.add('current');
+        
+        // Ajouter les éléments de progression s'ils n'existent pas
+        if (!item.querySelector('.meeting-status-badge')) {
+          const badge = document.createElement('div');
+          badge.className = 'meeting-status-badge';
+          badge.textContent = 'En cours';
+          
+          // Insérer après le titre
+          const title = item.querySelector('h3');
+          if (title) {
+            title.insertAdjacentElement('afterend', badge);
+          } else {
+            item.prepend(badge);
+          }
+        }
+        
+        if (!item.querySelector('.meeting-progress-container')) {
+          const progressContainer = document.createElement('div');
+          progressContainer.className = 'meeting-progress-container';
+          progressContainer.innerHTML = '<div class="meeting-progress-bar"></div>';
+          
+          // Insérer après le badge
+          const badge = item.querySelector('.meeting-status-badge');
+          if (badge) {
+            badge.insertAdjacentElement('afterend', progressContainer);
+          } else {
+            const title = item.querySelector('h3');
+            if (title) {
+              title.insertAdjacentElement('afterend', progressContainer);
+            } else {
+              item.prepend(progressContainer);
+            }
+          }
+        }
+        
+        if (!item.querySelector('.time-info')) {
+          const timeInfo = document.createElement('div');
+          timeInfo.className = 'time-info';
+          
+          const startTimeStr = startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+          const endTimeStr = endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+          
+          timeInfo.innerHTML = `
+            <span>${startTimeStr} - ${endTimeStr}</span>
+            <span class="time-remaining"><i class="fas fa-hourglass-half"></i> ${remainingText}</span>
+          `;
+          
+          // Insérer après la barre de progression
+          const progressContainer = item.querySelector('.meeting-progress-container');
+          if (progressContainer) {
+            progressContainer.insertAdjacentElement('afterend', timeInfo);
+          } else {
+            const badge = item.querySelector('.meeting-status-badge');
+            if (badge) {
+              badge.insertAdjacentElement('afterend', timeInfo);
+            }
+          }
+        }
+      }
+      
+      // Mettre à jour la barre de progression
+      const progressBar = item.querySelector('.meeting-progress-bar');
+      if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+      }
+      
+      // Mettre à jour le temps restant
+      const timeRemaining = item.querySelector('.time-remaining');
+      if (timeRemaining) {
+        timeRemaining.innerHTML = `<i class="fas fa-hourglass-half"></i> ${remainingText}`;
+      }
+    } 
+    // Réunion terminée
+    else if (endTime <= now) {
+      if (!item.classList.contains('past')) {
+        item.classList.remove('current', 'upcoming');
+        item.classList.add('past');
+        
+        // Supprimer les éléments de progression
+        item.querySelectorAll('.meeting-status-badge, .meeting-progress-container, .time-info').forEach(el => {
+          el.remove();
+        });
+      }
+    } 
+    // Réunion à venir
+    else {
+      if (!item.classList.contains('upcoming')) {
+        item.classList.remove('current', 'past');
+        item.classList.add('upcoming');
+        
+        // Supprimer les éléments de progression
+        item.querySelectorAll('.meeting-status-badge, .meeting-progress-container, .time-info').forEach(el => {
+          el.remove();
+        });
+      }
+    }
+  });
+}
+
+/**
  * Initialise les minuteurs pour les réunions
  */
 function initializeMeetingTimers() {
-  // Attacher les événements aux boutons de réunion
-  document.querySelectorAll('.meeting-join-btn').forEach(button => {
-    button.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      // Récupérer l'URL depuis le bouton ou le parent
-      const url = button.getAttribute('data-url') || button.parentElement.getAttribute('data-url');
-      const meetingId = button.getAttribute('data-meeting-id') || button.parentElement.getAttribute('data-id');
-      
-      if (url && url.trim() !== '') {
-        // Ouvrir directement l'URL Teams
-        window.open(url, '_blank');
-        if (debugMode) console.log(`Ouverture de la réunion Teams avec URL: ${url}`);
-      } else if (meetingId) {
-        // Utiliser le système de jointure avec l'ID
-        if (window.JoinSystem) {
-          if (debugMode) console.log(`Utilisation de JoinSystem avec ID: ${meetingId}`);
-          
-          // Remplir le champ d'ID
-          const meetingIdInput = document.getElementById('meeting-id') || 
-                                document.getElementById('meetingIdInput');
-          if (meetingIdInput) {
-            meetingIdInput.value = meetingId;
-            
-            // Déclencher la fonction de jointure
-            window.JoinSystem.joinMeetingWithId();
-          } else {
-            console.error("Champ d'ID de réunion introuvable");
-            alert("Erreur: Champ d'ID de réunion introuvable");
-          }
-        } else {
-          // Fallback si JoinSystem n'est pas disponible
-          console.warn("Join system non disponible, utilisation du fallback");
-          const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingId}%40thread.v2/0`;
-          window.open(teamsUrl, '_blank');
-        }
-      } else {
-        console.error("Aucune URL ou ID de réunion trouvé");
-        alert("Impossible de rejoindre cette réunion: URL ou ID manquant");
-      }
-    });
-  });
-  
   // Mettre à jour immédiatement les timers
   updateMeetingTimers();
 }
