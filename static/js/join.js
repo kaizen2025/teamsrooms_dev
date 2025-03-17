@@ -459,9 +459,13 @@ window.JoinSystem = JoinSystem;
 function initializeHelpFunction() {
   const helpBtn = document.getElementById('helpBtn');
   
-  if (helpBtn) {
+  // Vérifier si le bouton existe ET s'il n'a pas déjà un gestionnaire d'événements
+  if (helpBtn && !helpBtn._hasHelpHandler) {
     helpBtn.addEventListener('click', showHelpModal);
+    // Marquer le bouton comme ayant un gestionnaire
+    helpBtn._hasHelpHandler = true;
   }
+  // Ne PAS créer de nouveau bouton d'aide
 }
 
 /**
