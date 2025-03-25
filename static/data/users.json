@@ -1,0 +1,74 @@
+{
+  "users": [
+    {
+      "id": "admin001",
+      "username": "admin",
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "role": "administrator",
+      "displayName": "Administrateur Système",
+      "email": "admin@anecoop-france.com",
+      "created": "2025-03-01T10:00:00Z",
+      "lastLogin": "2025-03-09T21:45:00Z",
+      "permissions": ["all"]
+    },
+    {
+      "id": "mgr001",
+      "username": "manager1",
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "role": "manager",
+      "displayName": "Jean Dupont",
+      "email": "j.dupont@anecoop-france.com",
+      "created": "2025-03-02T14:30:00Z",
+      "lastLogin": "2025-03-08T16:20:00Z",
+      "permissions": ["view_meetings", "create_meetings", "view_rooms", "book_rooms"]
+    },
+    {
+      "id": "usr001",
+      "username": "user1",
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "role": "user",
+      "displayName": "Marie Martin",
+      "email": "m.martin@anecoop-france.com",
+      "created": "2025-03-03T09:15:00Z",
+      "lastLogin": "2025-03-09T10:30:00Z",
+      "permissions": ["view_meetings", "join_meetings"]
+    },
+    {
+      "id": "room001",
+      "username": "salle_tramontane",
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "role": "teams_room",
+      "displayName": "Salle Tramontane",
+      "email": "Salletramontane@anecoop-france.com",
+      "created": "2025-03-01T08:00:00Z",
+      "lastLogin": "2025-03-09T08:00:00Z",
+      "permissions": ["view_meetings", "display_room_status"]
+    }
+  ],
+  "roles": {
+    "administrator": {
+      "displayName": "Administrateur",
+      "description": "Accès complet à toutes les fonctionnalités",
+      "defaultPermissions": ["all"],
+      "menuItems": ["home", "admin", "rooms", "vehicles", "equipment", "teams", "sage", "3cx", "pulse"]
+    },
+    "manager": {
+      "displayName": "Manager",
+      "description": "Peut gérer les réservations et créer des réunions",
+      "defaultPermissions": ["view_meetings", "create_meetings", "view_rooms", "book_rooms"],
+      "menuItems": ["home", "rooms", "vehicles", "equipment", "teams"]
+    },
+    "user": {
+      "displayName": "Utilisateur",
+      "description": "Peut consulter et rejoindre des réunions",
+      "defaultPermissions": ["view_meetings", "join_meetings"],
+      "menuItems": ["home", "rooms", "teams"]
+    },
+    "teams_room": {
+      "displayName": "Salle Teams",
+      "description": "Affichage optimisé pour les écrans de salle",
+      "defaultPermissions": ["view_meetings", "display_room_status"],
+      "menuItems": ["home"]
+    }
+  }
+}

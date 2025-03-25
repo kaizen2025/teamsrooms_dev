@@ -1,0 +1,172 @@
+# Guide d'implémentation et de maintenance
+## Tableau de bord des salles de réunion Anecoop
+
+Ce document décrit comment déployer, maintenir et étendre le tableau de bord des salles de réunion.
+
+## 1. Structure du projet
+
+Le projet a été réorganisé selon une architecture modulaire pour faciliter la maintenance :
+
+```
+anecoop-meeting-rooms/
+│
+├── index.html                 # Structure principale HTML
+├── css/
+│   ├── main.css               # Styles généraux et variables
+│   ├── layout.css             # Structure de grille et disposition
+│   ├── menu.css               # Styles du menu latéral
+│   ├── rooms.css              # Styles des cartes et section de salles
+│   ├── meetings.css           # Styles du panneau des réunions
+│   ├── modal.css              # Styles des modals et popups
+│   └── responsive.css         # Media queries pour l'adaptabilité
+│
+├── js/
+│   ├── config.js              # Configuration des salles et constantes
+│   ├── datetime.js            # Gestion de la date et de l'heure
+│   ├── meetings.js            # Gestion des réunions et affichage
+│   ├── rooms.js               # Gestion du statut des salles
+│   ├── join.js                # Fonctionnalité de connexion avec ID
+│   ├── booking.js             # Fonctionnalité de réservation
+│   └── ui.js                  # Interactions UI (menu, toggles, etc.)
+│
+└── img/
+    └── backgrounds/           # Images d'arrière-plan
+```
+
+## 2. Déploiement
+
+Pour déployer l'application :
+
+1. Copiez tous les fichiers sur votre serveur web
+2. Assurez-vous que les chemins dans `index.html` correspondent à la structure de votre serveur
+3. Vérifiez que le dossier `img/backgrounds/` contient les images d'arrière-plan référencées dans `config.js`
+
+## 3. Configuration
+
+### Configuration des salles
+
+La configuration des salles se trouve dans `js/config.js`. Pour ajouter ou modifier des salles :
+
+```javascript
+window.SALLES = {
+  'NomDeLaSalle': 'email-de-la-salle@domain.com',
+  // Ajoutez d'autres salles ici
+};
+```
+
+### Intervalle de rafraîchissement
+
+Les intervalles de rafraîchissement pour les différents éléments peuvent être ajustés dans `js/config.js` :
+
+```javascript
+window.REFRESH_INTERVALS = {
+  CLOCK: 1000,          // Horloge (1 seconde)
+  MEETINGS: 20000,      // Réunions (20 secondes)
+  ROOM_STATUS: 60000,   // Statut des salles (1 minute)
+  MEETING_TIMERS: 60000,// Chronomètres (1 minute)
+  BACKGROUND: 3600000   // Rotation des arrière-plans (1 heure)
+};
+```
+
+### URLs de l'API
+
+Les URLs des points d'accès API sont également définis dans `js/config.js` :
+
+```javascript
+window.API_URLS = {
+  GET_MEETINGS: '/meetings.json',
+  CREATE_MEETING: '/api/create-meeting'
+};
+```
+
+## 4. Modification des styles
+
+Le système de styles a été divisé en modules thématiques pour faciliter les modifications :
+
+- `main.css` : Variables CSS et styles généraux (couleurs, ombres, espacements)
+- `layout.css` : Structure de grille et positionnement
+- `menu.css` : Menu latéral et navigation
+- `rooms.css` : Cartes de statut des salles
+- `meetings.css` : Liste et affichage des réunions
+- `modal.css` : Fenêtres modales (réservation)
+- `responsive.css` : Adaptabilité mobile
+
+Pour modifier un élément spécifique, localisez le fichier CSS approprié et effectuez vos changements.
+
+## 5. Extension des fonctionnalités
+
+### Ajout d'un nouveau module
+
+Pour ajouter un nouveau module :
+
+1. Créez un nouveau fichier JavaScript dans le dossier `js/`
+2. Ajoutez une référence à ce fichier dans `index.html`
+3. Organisez votre code avec des fonctions bien nommées
+4. Initialisez votre module à l'aide de l'événement `DOMContentLoaded`
+
+### Modification du comportement existant
+
+Chaque fonctionnalité est isolée dans son propre fichier JavaScript :
+
+- `datetime.js` : Horloge et formatage des dates
+- `meetings.js` : Affichage et gestion des réunions
+- `rooms.js` : Affichage et statut des salles
+- `join.js` : Rejoindre une réunion avec ID
+- `booking.js` : Réservation de salles
+- `ui.js` : Interactions générales de l'interface
+
+Pour modifier un comportement, localisez le fichier JavaScript approprié et effectuez vos changements.
+
+## 6. Dépannage
+
+### Problèmes courants
+
+1. **Les réunions ne s'affichent pas**
+   - Vérifiez que l'URL de l'API dans `config.js` est correcte
+   - Consultez la console du navigateur pour les erreurs
+
+2. **Les salles ne sont pas à jour**
+   - Vérifiez que la liste des salles dans `config.js` est à jour
+   - Assurez-vous que l'API renvoie les données correctes
+
+3. **Problèmes d'affichage mobile**
+   - Vérifiez les media queries dans `responsive.css`
+   - Testez sur différents appareils et navigateurs
+
+### Journalisation
+
+Pour activer une journalisation détaillée, ajoutez ceci à `config.js` :
+
+```javascript
+window.DEBUG = true;
+```
+
+Puis utilisez `console.log()` avec vérification dans vos fichiers JavaScript :
+
+```javascript
+if (window.DEBUG) {
+  console.log('Informations de débogage');
+}
+```
+
+## 7. Maintenance
+
+### Mises à jour régulières
+
+Effectuez régulièrement ces opérations :
+
+1. Vérifiez que la liste des salles est à jour dans `config.js`
+2. Mettez à jour les images d'arrière-plan si nécessaire
+3. Testez l'application sur différents navigateurs et appareils
+
+### Tests
+
+Avant de déployer des modifications :
+
+1. Testez l'application en local
+2. Vérifiez que toutes les fonctionnalités fonctionnent correctement
+3. Assurez-vous que l'interface est responsive sur différentes tailles d'écran
+
+## 8. Contact et support
+
+Pour toute question ou problème concernant cette application, contactez l'équipe technique à support@anecoop-france.com.
