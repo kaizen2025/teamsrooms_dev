@@ -1,0 +1,133 @@
+{% extends 'index.html' %}
+
+{% block title %}Historique des Prêts | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Historique des Prêts</h1>
+    <p>Consultez l'historique complet des prêts de matériel avec options de filtrage et d'export.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.admin_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour au tableau de bord
+    </a>
+    <a href="{{ url_for('equipment_loan.export_csv') }}{% if user_filter %}?user={{ user_filter }}{% endif %}{% if material_filter %}&material={{ material_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-primary">
+        <i class="fas fa-file-csv"></i> Exporter en CSV
+    </a>
+</div>
+
+<div class="filters-container">
+    <div class="filters-title">Filtres</div>
+    <form class="filters-form" method="GET" action="{{ url_for('equipment_loan.admin_history') }}">
+        <div class="filter-group form-group">
+            <label for="user">Utilisateur</label>
+            <input type="text" id="user" name="user" value="{{ user_filter }}" placeholder="Nom ou email">
+        </div>
+        
+        <div class="filter-group form-group">
+            <label for="material">Matériel</label>
+            <input type="text" id="material" name="material" value="{{ material_filter }}" placeholder="Nom du matériel">
+        </div>
+        
+        <div class="filter-group form-group">
+            <label for="status">Statut</label>
+            <select id="status" name="status">
+                <option value="">Tous</option>
+                <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>En attente</option>
+                <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approuvé</option>
+                <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Refusé</option>
+                <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>En cours</option>
+                <option value="RETURNED" {% if status_filter == 'RETURNED' %}selected{% endif %}>Retourné</option>
+                <option value="LATE" {% if status_filter == 'LATE' %}selected{% endif %}>En retard</option>
+                <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Annulé</option>
+            </select>
+        </div>
+        
+        <div class="filter-group form-group">
+            <label for="date_from">Date de début</label>
+            <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+        </div>
+        
+        <div class="filter-group form-group">
+            <label for="date_to">Date de fin</label>
+            <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+        </div>
+        
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter"></i> Filtrer
+            </button>
+            <a href="{{ url_for('equipment_loan.admin_history') }}" class="btn btn-secondary">
+                <i class="fas fa-undo"></i> Réinitialiser
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if loan_requests %}
+<div class="requests-table-container">
+    <table class="requests-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Utilisateur</th>
+                <th>Matériel</th>
+                <th>Quantité</th>
+                <th>Période</th>
+                <th>Statut</th>
+                <th>Date de demande</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in loan_requests %}
+            <tr>
+                <td>{{ request.id }}</td>
+                <td>{{ request.user_name }}<br><small>{{ request.user_email }}</small></td>
+                <td>{{ request.material.name }}</td>
+                <td>{{ request.quantity }}</td>
+                <td>{{ request.start_date.strftime('%d/%m/%Y') }} - {{ request.end_date.strftime('%d/%m/%Y') }}</td>
+                <td>
+                    <span class="request-status status-{{ request.status.name|lower }}">
+                        {{ request.status.value }}
+                    </span>
+                </td>
+                <td>{{ request.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('equipment_loan.admin_request_detail', request_id=request.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> Détails
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-history"></i>
+    </div>
+    <div class="empty-state-text">
+        <h3>Aucun résultat</h3>
+        <p>Aucune demande ne correspond aux critères de recherche.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

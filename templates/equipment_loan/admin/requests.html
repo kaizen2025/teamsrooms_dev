@@ -1,0 +1,106 @@
+{% extends 'index.html' %}
+
+{% block title %}Gestion des Demandes | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Gestion des Demandes de Prêt</h1>
+    <p>Consultez et gérez les demandes de prêt de matériel.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.admin_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour au tableau de bord
+    </a>
+</div>
+
+<div class="filters-container">
+    <div class="filters-title">Filtrer par statut</div>
+    <div class="filter-buttons">
+        <a href="{{ url_for('equipment_loan.admin_requests') }}" class="btn {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+            Tous
+        </a>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='pending') }}" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">
+            En attente
+        </a>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='approved') }}" class="btn {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}">
+            Approuvés
+        </a>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='active') }}" class="btn {% if status_filter == 'active' %}btn-primary{% else %}btn-secondary{% endif %}">
+            En cours
+        </a>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='late') }}" class="btn {% if status_filter == 'late' %}btn-primary{% else %}btn-secondary{% endif %}">
+            En retard
+        </a>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='returned') }}" class="btn {% if status_filter == 'returned' %}btn-primary{% else %}btn-secondary{% endif %}">
+            Retournés
+        </a>
+    </div>
+</div>
+
+{% if loan_requests %}
+<div class="requests-table-container">
+    <table class="requests-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Utilisateur</th>
+                <th>Matériel</th>
+                <th>Quantité</th>
+                <th>Période</th>
+                <th>Statut</th>
+                <th>Date de demande</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in loan_requests %}
+            <tr>
+                <td>{{ request.id }}</td>
+                <td>{{ request.user_name }}<br><small>{{ request.user_email }}</small></td>
+                <td>{{ request.material.name }}</td>
+                <td>{{ request.quantity }}</td>
+                <td>{{ request.start_date.strftime('%d/%m/%Y') }} - {{ request.end_date.strftime('%d/%m/%Y') }}</td>
+                <td>
+                    <span class="request-status status-{{ request.status.name|lower }}">
+                        {{ request.status.value }}
+                    </span>
+                </td>
+                <td>{{ request.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('equipment_loan.admin_request_detail', request_id=request.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> Détails
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-clipboard-list"></i>
+    </div>
+    <div class="empty-state-text">
+        <h3>Aucune demande</h3>
+        <p>Aucune demande ne correspond aux critères sélectionnés.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

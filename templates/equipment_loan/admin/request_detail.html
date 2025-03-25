@@ -1,0 +1,182 @@
+{% extends 'index.html' %}
+
+{% block title %}Détail de la Demande | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Détail de la Demande #{{ loan_request.id }}</h1>
+    <p>Consultez et gérez les détails de cette demande de prêt.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.admin_requests') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+<div class="request-detail">
+    <div class="request-detail-header">
+        <div class="request-detail-title">
+            Demande de {{ loan_request.material.name }}
+        </div>
+        <span class="request-status status-{{ loan_request.status.name|lower }}">
+            {{ loan_request.status.value }}
+        </span>
+    </div>
+    
+    <div class="request-sections">
+        <div class="request-section">
+            <div class="request-section-title">Informations sur le demandeur</div>
+            
+            <div class="detail-item">
+                <div class="detail-label">Nom</div>
+                <div class="detail-value">{{ loan_request.user_name }}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">Email</div>
+                <div class="detail-value">{{ loan_request.user_email }}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">Date de la demande</div>
+                <div class="detail-value">{{ loan_request.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+        </div>
+        
+        <div class="request-section">
+            <div class="request-section-title">Informations sur le matériel</div>
+            
+            <div class="detail-item">
+                <div class="detail-label">Matériel</div>
+                <div class="detail-value">{{ loan_request.material.name }}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">Quantité demandée</div>
+                <div class="detail-value">{{ loan_request.quantity }}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">Disponibilité actuelle</div>
+                <div class="detail-value">{{ loan_request.material.quantity_available }}/{{ loan_request.material.quantity_total }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="request-section">
+        <div class="request-section-title">Période de prêt</div>
+        
+        <div class="detail-item">
+            <div class="detail-label">Date de début</div>
+            <div class="detail-value">{{ loan_request.start_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">Date de fin</div>
+            <div class="detail-value">{{ loan_request.end_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">Durée</div>
+            <div class="detail-value">{{ (loan_request.end_date - loan_request.start_date).days + 1 }} jours</div>
+        </div>
+    </div>
+    
+    {% if loan_request.comment %}
+    <div class="request-section">
+        <div class="request-section-title">Commentaire de l'utilisateur</div>
+        <div class="detail-value">{{ loan_request.comment }}</div>
+    </div>
+    {% endif %}
+    
+    {% if loan_request.admin_comment %}
+    <div class="request-section">
+        <div class="request-section-title">Commentaire administratif</div>
+        <div class="detail-value">{{ loan_request.admin_comment }}</div>
+    </div>
+    {% endif %}
+    
+    {% if loan_request.loan %}
+    <div class="request-section">
+        <div class="request-section-title">Informations sur le prêt</div>
+        
+        <div class="detail-item">
+            <div class="detail-label">Date de remise</div>
+            <div class="detail-value">{{ loan_request.loan.checkout_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">Date de retour prévue</div>
+            <div class="detail-value">{{ loan_request.loan.expected_return_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+        
+        {% if loan_request.loan.actual_return_date %}
+        <div class="detail-item">
+            <div class="detail-label">Date de retour effective</div>
+            <div class="detail-value">{{ loan_request.loan.actual_return_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+        {% endif %}
+        
+        {% if loan_request.loan.return_condition %}
+        <div class="detail-item">
+            <div class="detail-label">État au retour</div>
+            <div class="detail-value">{{ loan_request.loan.return_condition }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="admin-actions">
+        <form method="POST" action="{{ url_for('equipment_loan.admin_request_detail', request_id=loan_request.id) }}">
+            {% if loan_request.status.name == 'PENDING' %}
+            <div class="admin-comment form-group">
+                <label for="admin_comment">Commentaire administratif (optionnel)</label>
+                <textarea id="admin_comment" name="admin_comment" rows="3"></textarea>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="submit" name="action" value="approve" class="btn btn-success">
+                    <i class="fas fa-check"></i> Approuver
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Refuser
+                </button>
+            </div>
+            {% elif loan_request.status.name == 'APPROVED' %}
+            <div class="action-buttons">
+                <button type="submit" name="action" value="checkout" class="btn btn-primary">
+                    <i class="fas fa-box-open"></i> Remettre le matériel
+                </button>
+            </div>
+            {% elif loan_request.status.name == 'ACTIVE' or loan_request.status.name == 'LATE' %}
+            <div class="admin-comment form-group">
+                <label for="return_condition">État du matériel au retour (optionnel)</label>
+                <textarea id="return_condition" name="return_condition" rows="3"></textarea>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="submit" name="action" value="return" class="btn btn-info">
+                    <i class="fas fa-undo"></i> Enregistrer le retour
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

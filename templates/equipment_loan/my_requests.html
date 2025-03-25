@@ -1,0 +1,147 @@
+{% extends 'index.html' %}
+
+{% block title %}Mes Demandes de Prêt | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Mes Demandes de Prêt</h1>
+    <p>Consultez et gérez vos demandes de prêt de matériel.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.equipment_loan_home') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour
+    </a>
+    <a href="{{ url_for('equipment_loan.equipment_catalog') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouvelle demande
+    </a>
+</div>
+
+{% if loan_requests %}
+<div class="requests-table-container">
+    <table class="requests-table">
+        <thead>
+            <tr>
+                <th>Matériel</th>
+                <th>Quantité</th>
+                <th>Période</th>
+                <th>Statut</th>
+                <th>Date de demande</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in loan_requests %}
+            <tr>
+                <td>{{ request.material.name }}</td>
+                <td>{{ request.quantity }}</td>
+                <td>{{ request.start_date.strftime('%d/%m/%Y') }} - {{ request.end_date.strftime('%d/%m/%Y') }}</td>
+                <td>
+                    <span class="request-status status-{{ request.status.name|lower }}">
+                        {{ request.status.value }}
+                    </span>
+                </td>
+                <td>{{ request.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    {% if request.status.name == 'PENDING' %}
+                    <form method="POST" action="{{ url_for('equipment_loan.cancel_request', request_id=request.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir annuler cette demande ?')">
+                            <i class="fas fa-times"></i> Annuler
+                        </button>
+                    </form>
+                    {% elif request.status.name == 'APPROVED' %}
+                    <span class="badge bg-success">En attente de remise</span>
+                    {% elif request.status.name == 'ACTIVE' %}
+                    <span class="badge bg-info">À retourner avant le {{ request.end_date.strftime('%d/%m/%Y') }}</span>
+                    {% elif request.status.name == 'LATE' %}
+                    <span class="badge bg-warning">Retard depuis le {{ request.end_date.strftime('%d/%m/%Y') }}</span>
+                    {% endif %}
+                    
+                    {% if request.admin_comment %}
+                    <button type="button" class="btn btn-sm btn-secondary view-comment" data-comment="{{ request.admin_comment }}">
+                        <i class="fas fa-comment"></i> Commentaire
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-clipboard-list"></i>
+    </div>
+    <div class="empty-state-text">
+        <h3>Aucune demande</h3>
+        <p>Vous n'avez pas encore effectué de demande de prêt de matériel.</p>
+        <a href="{{ url_for('equipment_loan.equipment_catalog') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Faire une demande
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal pour afficher les commentaires -->
+<div class="modal" id="commentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Commentaire de l'administrateur</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="commentText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+        
+        // Gestion des boutons de commentaire
+        const commentButtons = document.querySelectorAll('.view-comment');
+        const commentModal = document.getElementById('commentModal');
+        const commentText = document.getElementById('commentText');
+        const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
+        
+        commentButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const comment = this.getAttribute('data-comment');
+                commentText.textContent = comment;
+                commentModal.style.display = 'block';
+            });
+        });
+        
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                commentModal.style.display = 'none';
+            });
+        });
+        
+        // Fermer la modal en cliquant en dehors
+        window.addEventListener('click', function(event) {
+            if (event.target === commentModal) {
+                commentModal.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
