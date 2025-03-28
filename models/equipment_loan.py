@@ -6,10 +6,8 @@ Ce module définit les modèles SQLAlchemy nécessaires pour la gestion des prê
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 import enum
-
-Base = declarative_base()
+from models.common.database import db
 
 class LoanStatus(enum.Enum):
     """Statuts possibles pour une demande de prêt."""
@@ -21,7 +19,7 @@ class LoanStatus(enum.Enum):
     LATE = "En retard"
     CANCELLED = "Annulé"
 
-class Material(Base):
+class Material(db.Model):
     """
     Modèle représentant un matériel disponible pour le prêt.
     """
@@ -43,7 +41,7 @@ class Material(Base):
     def __repr__(self):
         return f"<Material(id={self.id}, name='{self.name}', quantity_available={self.quantity_available})>"
 
-class LoanRequest(Base):
+class LoanRequest(db.Model):
     """
     Modèle représentant une demande de prêt de matériel.
     """
@@ -70,7 +68,7 @@ class LoanRequest(Base):
     def __repr__(self):
         return f"<LoanRequest(id={self.id}, user='{self.user_name}', material_id={self.material_id}, status={self.status})>"
 
-class Loan(Base):
+class Loan(db.Model):
     """
     Modèle représentant un prêt actif de matériel.
     """
@@ -92,7 +90,7 @@ class Loan(Base):
     def __repr__(self):
         return f"<Loan(id={self.id}, loan_request_id={self.loan_request_id}, is_returned={self.is_returned})>"
 
-class Notification(Base):
+class Notification(db.Model):
     """
     Modèle représentant une notification liée à un prêt de matériel.
     """

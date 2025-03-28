@@ -8,9 +8,7 @@ from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from sqlalchemy import or_, and_
 from models.equipment_loan import Material, LoanRequest, Loan, Notification, LoanStatus
-import sys
-sys.path.append('/home/ubuntu/teamsrooms_dev')
-from app import db
+from models.common.database import db
 
 # Création du Blueprint pour le module de prêt de matériel
 equipment_loan = Blueprint('equipment_loan', __name__)

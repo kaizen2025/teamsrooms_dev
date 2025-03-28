@@ -59,7 +59,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['ADMIN_GROUP_IDS'] = ['admin-group-id']  # ID du groupe admin dans Azure AD
 
 # Initialisation de la base de données
-db = SQLAlchemy(app)
+from models.common.database import db
+db.init_app(app)
 
 # Initialisation du gestionnaire de login
 login_manager = LoginManager(app)
