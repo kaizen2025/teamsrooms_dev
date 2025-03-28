@@ -1,0 +1,80 @@
+{% extends 'index.html' %}
+
+{% block title %}Catalogue de Matériel | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Catalogue de Matériel</h1>
+    <p>Consultez notre catalogue de matériel disponible pour le prêt.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.equipment_loan_home') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour
+    </a>
+</div>
+
+<div class="material-catalog">
+    {% if materials %}
+        {% for material in materials %}
+        <div class="material-card">
+            <div class="material-image">
+                {% if material.image_url %}
+                <img src="{{ material.image_url }}" alt="{{ material.name }}">
+                {% else %}
+                <div class="placeholder">
+                    <i class="fas fa-box"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="material-details">
+                <div class="material-name">{{ material.name }}</div>
+                <div class="material-description">{{ material.description }}</div>
+                <div class="material-availability">
+                    <div class="material-quantity">Disponible: {{ material.quantity_available }}/{{ material.quantity_total }}</div>
+                    {% if material.quantity_available == 0 %}
+                    <div class="material-status status-unavailable">Indisponible</div>
+                    {% elif material.quantity_available < material.quantity_total / 2 %}
+                    <div class="material-status status-limited">Limité</div>
+                    {% else %}
+                    <div class="material-status status-available">Disponible</div>
+                    {% endif %}
+                </div>
+                <div class="material-actions">
+                    {% if material.quantity_available > 0 %}
+                    <a href="{{ url_for('equipment_loan.request_loan', material_id=material.id) }}" class="btn btn-primary">Demander</a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>Indisponible</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <div class="empty-state-text">
+                <h3>Aucun matériel disponible</h3>
+                <p>Le catalogue de matériel est actuellement vide.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

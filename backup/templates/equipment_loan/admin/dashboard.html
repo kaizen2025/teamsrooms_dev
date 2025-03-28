@@ -1,0 +1,162 @@
+{% extends 'index.html' %}
+
+{% block title %}Administration des Prêts | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Administration des Prêts de Matériel</h1>
+    <p>Gérez les demandes de prêt, le matériel disponible et suivez les prêts en cours.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.equipment_loan_home') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour
+    </a>
+</div>
+
+<div class="admin-dashboard">
+    <div class="dashboard-card">
+        <div class="dashboard-icon pending-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="dashboard-number">{{ pending_requests }}</div>
+        <div class="dashboard-label">Demandes en attente</div>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='pending') }}" class="btn btn-sm btn-primary mt-3">
+            <i class="fas fa-eye"></i> Voir
+        </a>
+    </div>
+    
+    <div class="dashboard-card">
+        <div class="dashboard-icon active-icon">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="dashboard-number">{{ active_loans }}</div>
+        <div class="dashboard-label">Prêts en cours</div>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='active') }}" class="btn btn-sm btn-primary mt-3">
+            <i class="fas fa-eye"></i> Voir
+        </a>
+    </div>
+    
+    <div class="dashboard-card">
+        <div class="dashboard-icon late-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="dashboard-number">{{ late_returns }}</div>
+        <div class="dashboard-label">Retours en retard</div>
+        <a href="{{ url_for('equipment_loan.admin_requests', status='late') }}" class="btn btn-sm btn-primary mt-3">
+            <i class="fas fa-eye"></i> Voir
+        </a>
+    </div>
+</div>
+
+<div class="content-section mt-4">
+    <h2>Gestion du module</h2>
+    
+    <div class="admin-menu-cards">
+        <div class="admin-menu-card">
+            <div class="admin-menu-card-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="admin-menu-card-content">
+                <h3>Gestion du matériel</h3>
+                <p>Ajoutez, modifiez ou désactivez le matériel disponible pour le prêt.</p>
+                <a href="{{ url_for('equipment_loan.admin_materials') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Gérer
+                </a>
+            </div>
+        </div>
+        
+        <div class="admin-menu-card">
+            <div class="admin-menu-card-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="admin-menu-card-content">
+                <h3>Demandes de prêt</h3>
+                <p>Consultez et gérez toutes les demandes de prêt (validation, refus, retours).</p>
+                <a href="{{ url_for('equipment_loan.admin_requests') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Gérer
+                </a>
+            </div>
+        </div>
+        
+        <div class="admin-menu-card">
+            <div class="admin-menu-card-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <div class="admin-menu-card-content">
+                <h3>Historique des prêts</h3>
+                <p>Consultez l'historique complet des prêts avec options de filtrage et d'export.</p>
+                <a href="{{ url_for('equipment_loan.admin_history') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Consulter
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-section mt-4">
+    <h2>Dernières demandes</h2>
+    
+    {% if recent_requests %}
+    <div class="requests-table-container">
+        <table class="requests-table">
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Matériel</th>
+                    <th>Période</th>
+                    <th>Statut</th>
+                    <th>Date de demande</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in recent_requests %}
+                <tr>
+                    <td>{{ request.user_name }}</td>
+                    <td>{{ request.material.name }}</td>
+                    <td>{{ request.start_date.strftime('%d/%m/%Y') }} - {{ request.end_date.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <span class="request-status status-{{ request.status.name|lower }}">
+                            {{ request.status.value }}
+                        </span>
+                    </td>
+                    <td>{{ request.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('equipment_loan.admin_request_detail', request_id=request.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> Détails
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div class="empty-state-text">
+            <h3>Aucune demande récente</h3>
+            <p>Il n'y a pas de demandes récentes à afficher.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

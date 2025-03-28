@@ -1,0 +1,96 @@
+{% extends 'index.html' %}
+
+{% block title %}Gestion du Matériel | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Gestion du Matériel</h1>
+    <p>Ajoutez, modifiez ou désactivez le matériel disponible pour le prêt.</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.admin_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour au tableau de bord
+    </a>
+    <a href="{{ url_for('equipment_loan.add_material') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Ajouter un matériel
+    </a>
+</div>
+
+{% if materials %}
+<div class="requests-table-container">
+    <table class="requests-table">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Quantité</th>
+                <th>Disponible</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for material in materials %}
+            <tr>
+                <td>
+                    {% if material.image_url %}
+                    <img src="{{ material.image_url }}" alt="{{ material.name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                    {% else %}
+                    <div style="width: 50px; height: 50px; background-color: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    {% endif %}
+                </td>
+                <td>{{ material.name }}</td>
+                <td>{{ material.description|truncate(50) }}</td>
+                <td>{{ material.quantity_total }}</td>
+                <td>{{ material.quantity_available }}</td>
+                <td>
+                    {% if material.is_active %}
+                    <span class="request-status status-available">Actif</span>
+                    {% else %}
+                    <span class="request-status status-unavailable">Inactif</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('equipment_loan.edit_material', material_id=material.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-boxes"></i>
+    </div>
+    <div class="empty-state-text">
+        <h3>Aucun matériel</h3>
+        <p>Aucun matériel n'a été ajouté au catalogue.</p>
+        <a href="{{ url_for('equipment_loan.add_material') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter un matériel
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

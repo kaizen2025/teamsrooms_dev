@@ -1,0 +1,73 @@
+{% extends 'index.html' %}
+
+{% block title %}Formulaire de Matériel | Anecoop France{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>{% if material %}Modifier un Matériel{% else %}Ajouter un Matériel{% endif %}</h1>
+    <p>{% if material %}Modifiez les informations du matériel existant.{% else %}Ajoutez un nouveau matériel au catalogue.{% endif %}</p>
+</div>
+
+<div class="content-actions">
+    <a href="{{ url_for('equipment_loan.admin_materials') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+<div class="loan-form">
+    <form method="POST" action="{% if material %}{{ url_for('equipment_loan.edit_material', material_id=material.id) }}{% else %}{{ url_for('equipment_loan.add_material') }}{% endif %}">
+        <div class="form-group">
+            <label for="name">Nom du matériel *</label>
+            <input type="text" id="name" name="name" required value="{% if material %}{{ material.name }}{% endif %}">
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4">{% if material %}{{ material.description }}{% endif %}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="image_url">URL de l'image</label>
+            <input type="url" id="image_url" name="image_url" value="{% if material %}{{ material.image_url }}{% endif %}">
+            <small>Laissez vide pour utiliser une icône par défaut.</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="quantity_total">Quantité totale *</label>
+            <input type="number" id="quantity_total" name="quantity_total" min="1" required value="{% if material %}{{ material.quantity_total }}{% else %}1{% endif %}">
+        </div>
+        
+        {% if material %}
+        <div class="form-group">
+            <label for="is_active">Statut</label>
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="is_active" name="is_active" {% if material.is_active %}checked{% endif %}>
+                <label for="is_active" class="checkbox-label">Actif</label>
+            </div>
+            <small>Décochez pour désactiver temporairement ce matériel dans le catalogue.</small>
+        </div>
+        {% endif %}
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {% if material %}Enregistrer les modifications{% else %}Ajouter le matériel{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour le menu pour activer l'élément "Prêt de matériel"
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '/pret-materiel') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}
