@@ -1,114 +1,188 @@
 /**
- * SOLUTION DÉFINITIVE pour l'application de réservation de salles
- * Version 6.0 - Résolution complète des problèmes:
- * 1. Redirection Teams parfaite (méthode entièrement nouvelle)
- * 2. Correction des superpositions des blocs
- * 3. Transparence maximale des bannières
- * 4. Ouverture du menu au premier clic
+ * SOLUTION COMPLÈTE FINALE - Correction de tous les problèmes
+ * Version 7.0 - Combinaison de toutes les améliorations:
+ * 1. Connexion Teams directe (méthode éprouvée avec votre URL)
+ * 2. Correction de l'espacement entre les blocs (plus de superposition)
+ * 3. Disposition des salles en grille multi-colonnes au centre
+ * 4. Transparence optimale
+ * 5. Correction du premier clic du menu
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Initialisation de la solution définitive v6.0");
+    console.log("Initialisation de la solution complète finale v7.0");
     
-    // Appliquer immédiatement les corrections
-    fixTeamsLauncherURL();
-    fixBlockOverlaps();
-    increaseTransparency();
-    fixMenuFirstClick();
-    fixRoomsDisplay();
+    // Appliquer toutes les corrections
+    setTimeout(() => {
+        // 1. Connexion Teams directe
+        implementDirectTeamsJoin();
+        
+        // 2. Correction des espaces et superpositions
+        fixSpacingAndOverlaps();
+        
+        // 3. Disposition des salles en grille
+        implementRoomsGrid();
+        
+        // 4. Transparence optimale
+        applyOptimalTransparency();
+        
+        // 5. Correction du premier clic du menu
+        fixMenuFirstClick();
+    }, 100);
 });
 
 /**
- * CORRECTION DÉFINITIVE pour la redirection Teams
- * Utilise l'approche launcher.html comme dans l'URL d'exemple
+ * Implémente la solution éprouvée de connexion Teams directe
+ * basée sur l'URL qui fonctionne
  */
-function fixTeamsLauncherURL() {
-    // Désactiver les solutions précédentes
-    window._originalJoinMeetingWithId = window.joinMeetingWithId;
-    
-    // ID du tenant de l'organisation (extrait de l'URL d'exemple)
+function implementDirectTeamsJoin() {
+    // Paramètres de l'organisation
     const TENANT_ID = "3991cba7-1148-49eb-9aa9-0c46dba8f57e";
+    const ORGANIZER_ID = "03e7afff-48b3-4742-96ed-ddae7b010407";
     
-    // Nouvelle fonction de redirection qui utilise exactement le format de l'URL fournie
-    function definitiveMeetingJoin(providedId = null) {
-        // Bloquer les multiples appels
-        if (window._joiningInProgress) {
+    // Etat
+    window._joiningTeams = false;
+    
+    /**
+     * Fonction principale pour rejoindre directement une réunion Teams
+     */
+    function directTeamsConnection(providedId = null) {
+        // Empêcher les appels multiples
+        if (window._joiningTeams) {
             console.log("Jointure déjà en cours");
             return;
         }
-        window._joiningInProgress = true;
+        window._joiningTeams = true;
         
         // Récupérer l'ID
         const meetingIdField = document.getElementById('meeting-id');
         let meetingId = providedId || (meetingIdField ? meetingIdField.value.trim() : '');
         
         if (!meetingId) {
-            alert("Veuillez entrer l'ID de la réunion");
-            window._joiningInProgress = false;
+            showStatusMessage("Veuillez entrer l'ID de la réunion", "error");
+            window._joiningTeams = false;
             return;
         }
         
         // Mise à jour de l'interface
         const joinButton = document.getElementById('joinMeetingBtn');
+        let originalText = "";
         if (joinButton) {
+            originalText = joinButton.innerHTML;
             joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             joinButton.disabled = true;
         }
         
+        // Sauvegarder l'ID dans l'historique
+        saveRecentId(meetingId);
+        
+        // Construire l'URL Teams avec les deux approches possibles
         try {
-            // SOLUTION FINALE: Utiliser le format exact de l'URL launcher avec l'ID tel quel
-            // IMPORTANT - PRÉSERVER les espaces dans l'ID (comme montré dans les logs)
-            
-            // Étape 1: Préserver l'ID exactement comme entré (avec espaces)
-            const preservedId = meetingId;
-            
-            // Étape 2: Encoder les caractères spéciaux pour l'URL (mais avec une méthode qui préserve mieux les espaces)
-            // Dans l'URL d'exemple, les espaces sont encodés comme %2520 (double encodage)
-            const encodedId = encodeURIComponent(preservedId).replace(/%20/g, '%2520');
-            
-            // Étape 3: Construire l'URL exactement comme dans l'exemple fourni
-            const contextParam = `%257b%2522Tid%2522%253a%2522${TENANT_ID}%2522%257d`;
-            
-            // URL interne de la réunion (partie encodée dans le paramètre url)
-            const innerUrl = `%2F_%23%2Fl%2Fmeetup-join%2F19%3Ameeting_${encodedId}%40thread.v2%2F0%3Fcontext%3D${contextParam}%26directDl%3Dtrue%26msLaunch%3Dtrue%26enableMobilePage%3Dtrue%26suppressPrompt%3Dtrue%26anon%3Dtrue`;
-            
-            // URL complète avec les paramètres externes
-            const finalUrl = `https://teams.microsoft.com/dl/launcher/launcher.html?url=${innerUrl}&type=meetup-join&deeplinkId=${generateUUID()}&directDl=true&msLaunch=true&enableMobilePage=true&suppressPrompt=true`;
-            
-            // Sauvegarder l'ID dans l'historique
-            saveRecentId(meetingId);
-            
-            // Redirection
-            console.log("Redirection via launcher URL:", finalUrl);
-            window.open(finalUrl, "_blank");
-            
-            // Afficher un message de succès
-            showStatusMessage("Redirection vers Teams...", "success");
+            // Approche 1: Essayer d'abord avec l'API
+            fetch(`/lookupMeeting?meetingId=${encodeURIComponent(meetingId)}&_=${Date.now()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.joinUrl) {
+                        // Améliorer l'URL renvoyée par l'API avec le format qui fonctionne
+                        const enhancedUrl = enhanceTeamsUrl(data.joinUrl);
+                        console.log("URL améliorée via API:", enhancedUrl);
+                        window.open(enhancedUrl, "_blank");
+                        showStatusMessage("Redirection vers Teams...", "success");
+                    } else {
+                        // Construire directement
+                        const directUrl = buildDirectTeamsUrl(meetingId);
+                        console.log("URL construite directement:", directUrl);
+                        window.open(directUrl, "_blank");
+                        showStatusMessage("Redirection vers Teams...", "success");
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur API:", error);
+                    // Approche directe en cas d'erreur
+                    const directUrl = buildDirectTeamsUrl(meetingId);
+                    console.log("URL construite après erreur:", directUrl);
+                    window.open(directUrl, "_blank");
+                    showStatusMessage("Redirection vers Teams...", "success");
+                })
+                .finally(() => {
+                    // Restaurer l'interface
+                    setTimeout(() => {
+                        if (joinButton) {
+                            joinButton.innerHTML = originalText;
+                            joinButton.disabled = false;
+                        }
+                        window._joiningTeams = false;
+                    }, 2000);
+                });
         } catch (error) {
-            console.error("Erreur lors de la redirection:", error);
-            showStatusMessage("Erreur de redirection", "error");
-        } finally {
-            // Rétablir l'interface
-            setTimeout(() => {
-                if (joinButton) {
-                    joinButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Rejoindre';
-                    joinButton.disabled = false;
-                }
-                window._joiningInProgress = false;
-            }, 2000);
+            console.error("Erreur générale:", error);
+            // Restaurer l'interface en cas d'erreur
+            if (joinButton) {
+                joinButton.innerHTML = originalText;
+                joinButton.disabled = false;
+            }
+            window._joiningTeams = false;
+            showStatusMessage("Erreur de connexion", "error");
         }
     }
     
-    // Générer un UUID pour le deeplinkId (comme dans l'URL d'exemple)
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+    /**
+     * Construit une URL Teams directe au format éprouvé
+     */
+    function buildDirectTeamsUrl(meetingId) {
+        // Déterminer le type d'ID
+        if (/^[\d\s]+$/.test(meetingId)) {
+            // ID numérique (ex: 379 204 162 196)
+            console.log("ID numérique détecté");
+            const cleanId = meetingId.replace(/\s+/g, "");
+            // Format URL éprouvé avec les deux paramètres de contexte
+            const context = `%7b%22Tid%22%3a%22${TENANT_ID}%22%2c%22Oid%22%3a%22${ORGANIZER_ID}%22%7d`;
+            return `https://teams.microsoft.com/l/meetup-join/19%3ameeting_${cleanId}%40thread.v2/0?context=${context}`;
+        } 
+        else if (/^[A-Za-z0-9+/=_-]+$/.test(meetingId)) {
+            // ID encodé (comme dans l'URL d'exemple)
+            console.log("ID encodé détecté");
+            // Format URL éprouvé avec les deux paramètres de contexte
+            const context = `%7b%22Tid%22%3a%22${TENANT_ID}%22%2c%22Oid%22%3a%22${ORGANIZER_ID}%22%7d`;
+            return `https://teams.microsoft.com/l/meetup-join/19%3ameeting_${meetingId}%40thread.v2/0?context=${context}`;
+        }
+        else if (meetingId.includes('teams.microsoft.com')) {
+            // URL complète
+            console.log("URL complète détectée");
+            return meetingId;
+        }
+        else {
+            // Autre format (essai avec ID tel quel)
+            console.log("Format d'ID non reconnu, tentative directe");
+            const context = `%7b%22Tid%22%3a%22${TENANT_ID}%22%2c%22Oid%22%3a%22${ORGANIZER_ID}%22%7d`;
+            return `https://teams.microsoft.com/l/meetup-join/19%3ameeting_${meetingId}%40thread.v2/0?context=${context}`;
+        }
     }
     
-    // Sauvegarder l'ID dans l'historique
+    /**
+     * Améliore une URL Teams en ajoutant les paramètres de contexte
+     */
+    function enhanceTeamsUrl(baseUrl) {
+        try {
+            // Si l'URL contient déjà un contexte complet, ne pas modifier
+            if (baseUrl.includes('%22Oid%22%3a') && baseUrl.includes('%22Tid%22%3a')) {
+                return baseUrl;
+            }
+            
+            // Ajouter le contexte complet
+            const url = new URL(baseUrl);
+            const context = `%7b%22Tid%22%3a%22${TENANT_ID}%22%2c%22Oid%22%3a%22${ORGANIZER_ID}%22%7d`;
+            url.searchParams.set('context', context);
+            
+            return url.toString();
+        } catch (error) {
+            console.error("Erreur d'amélioration d'URL:", error);
+            return baseUrl;
+        }
+    }
+    
+    /**
+     * Sauvegarde l'ID dans l'historique récent
+     */
     function saveRecentId(id) {
         let recentIds = JSON.parse(localStorage.getItem('recentMeetingIds') || '[]');
         
@@ -125,7 +199,9 @@ function fixTeamsLauncherURL() {
         localStorage.setItem('recentMeetingIds', JSON.stringify(recentIds));
     }
     
-    // Afficher un message d'état
+    /**
+     * Affiche un message de statut
+     */
     function showStatusMessage(message, type) {
         let statusDiv = document.getElementById('status-message');
         if (!statusDiv) {
@@ -172,113 +248,165 @@ function fixTeamsLauncherURL() {
         }, 10);
     }
     
-    // Remplacer les fonctions
-    window.joinMeetingWithId = definitiveMeetingJoin;
+    // Créer l'historique des ID récents
+    setupRecentIds();
+    
+    // Remplacer la fonction de jointure
+    window.joinMeetingWithId = directTeamsConnection;
     
     if (window.JoinSystem) {
-        window.JoinSystem.joinMeetingWithId = definitiveMeetingJoin;
+        window.JoinSystem.joinMeetingWithId = directTeamsConnection;
     } else {
-        window.JoinSystem = { joinMeetingWithId: definitiveMeetingJoin };
+        window.JoinSystem = { joinMeetingWithId: directTeamsConnection };
     }
     
-    // Attacher au bouton
-    const joinButton = document.getElementById('joinMeetingBtn');
-    if (joinButton) {
-        const newJoinButton = joinButton.cloneNode(true);
-        if (joinButton.parentNode) {
-            joinButton.parentNode.replaceChild(newJoinButton, joinButton);
+    // Attacher aux éléments
+    attachToElements();
+    
+    /**
+     * Configure l'affichage des ID récents
+     */
+    function setupRecentIds() {
+        // Créer le conteneur s'il n'existe pas
+        let recentIdsContainer = document.getElementById('recent-ids');
+        if (!recentIdsContainer) {
+            recentIdsContainer = document.createElement('div');
+            recentIdsContainer.id = 'recent-ids';
+            recentIdsContainer.style.position = 'absolute';
+            recentIdsContainer.style.background = 'rgba(50, 50, 50, 0.95)';
+            recentIdsContainer.style.backdropFilter = 'blur(8px)';
+            recentIdsContainer.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+            recentIdsContainer.style.borderRadius = '8px';
+            recentIdsContainer.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
+            recentIdsContainer.style.zIndex = '9999';
+            recentIdsContainer.style.minWidth = '250px';
+            recentIdsContainer.style.maxWidth = '100%';
+            recentIdsContainer.style.overflow = 'hidden';
+            recentIdsContainer.style.display = 'none';
+            document.body.appendChild(recentIdsContainer);
         }
         
-        newJoinButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            definitiveMeetingJoin();
-        });
-    }
-    
-    // Attacher à l'événement Enter dans le champ ID
-    const meetingIdField = document.getElementById('meeting-id');
-    if (meetingIdField) {
-        meetingIdField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                definitiveMeetingJoin();
+        // Styles pour l'historique
+        addStylesheet(`
+            .recent-ids-header {
+                background: rgba(76, 89, 175, 0.3);
+                padding: 10px 15px;
+                font-size: 14px;
+                color: white;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .recent-id-item {
+                padding: 10px 15px;
+                cursor: pointer;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                align-items: center;
+                transition: background 0.2s ease;
+            }
+            
+            .recent-id-item:hover {
+                background: rgba(76, 89, 175, 0.2);
+            }
+            
+            .recent-id-item i {
+                margin-right: 10px;
+                color: rgba(255, 255, 255, 0.7);
+            }
+            
+            .recent-id-item span {
+                font-family: monospace;
+                font-weight: bold;
+                color: white;
+            }
+        `, 'recent-ids-styles');
+        
+        // Fermer au clic en dehors
+        document.addEventListener('click', function(e) {
+            const idField = document.getElementById('meeting-id');
+            if (recentIdsContainer.style.display === 'block' && 
+                e.target !== idField && 
+                !recentIdsContainer.contains(e.target)) {
+                recentIdsContainer.style.display = 'none';
             }
         });
     }
     
-    // Optimiser l'historique des ID récents
-    enhanceRecentIds();
-}
-
-/**
- * Amélioration de l'affichage des ID récents
- */
-function enhanceRecentIds() {
-    // Trouver ou créer le conteneur
-    let recentIdsContainer = document.getElementById('recent-ids');
-    if (!recentIdsContainer) {
-        recentIdsContainer = document.createElement('div');
-        recentIdsContainer.id = 'recent-ids';
-        recentIdsContainer.style.position = 'absolute';
-        recentIdsContainer.style.background = 'rgba(50, 50, 50, 0.95)';
-        recentIdsContainer.style.backdropFilter = 'blur(8px)';
-        recentIdsContainer.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        recentIdsContainer.style.borderRadius = '8px';
-        recentIdsContainer.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
-        recentIdsContainer.style.zIndex = '9999';
-        recentIdsContainer.style.minWidth = '250px';
-        recentIdsContainer.style.maxWidth = '100%';
-        recentIdsContainer.style.overflow = 'hidden';
-        recentIdsContainer.style.display = 'none';
-        document.body.appendChild(recentIdsContainer);
-    }
-    
-    // Gérer le champ ID
-    const meetingIdField = document.getElementById('meeting-id');
-    if (meetingIdField) {
-        // Nettoyer les écouteurs existants
-        const newIdField = meetingIdField.cloneNode(true);
-        if (meetingIdField.parentNode) {
-            meetingIdField.parentNode.replaceChild(newIdField, meetingIdField);
+    /**
+     * Attache les événements aux éléments
+     */
+    function attachToElements() {
+        // Bouton rejoindre
+        const joinButton = document.getElementById('joinMeetingBtn');
+        if (joinButton) {
+            // Cloner pour supprimer les écouteurs existants
+            const newJoinButton = joinButton.cloneNode(true);
+            if (joinButton.parentNode) {
+                joinButton.parentNode.replaceChild(newJoinButton, joinButton);
+            }
+            
+            // Ajouter le nouvel écouteur
+            newJoinButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                directTeamsConnection();
+            });
         }
         
-        // Ajouter les nouveaux écouteurs
-        newIdField.addEventListener('focus', function() {
-            showRecentIds(this);
-        });
-        
-        newIdField.addEventListener('click', function() {
-            showRecentIds(this);
-        });
+        // Champ ID
+        const meetingIdField = document.getElementById('meeting-id');
+        if (meetingIdField) {
+            // Cloner pour supprimer les écouteurs existants
+            const newIdField = meetingIdField.cloneNode(true);
+            newIdField.value = meetingIdField.value;
+            if (meetingIdField.parentNode) {
+                meetingIdField.parentNode.replaceChild(newIdField, meetingIdField);
+            }
+            
+            // S'assurer que le champ est actif
+            newIdField.disabled = false;
+            newIdField.style.backgroundColor = 'rgba(30, 30, 30, 0.6)';
+            newIdField.style.color = 'white';
+            newIdField.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+            newIdField.style.borderRadius = '6px 0 0 6px';
+            newIdField.style.padding = '8px 12px';
+            
+            // Écouteur pour Enter
+            newIdField.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    directTeamsConnection();
+                }
+            });
+            
+            // Écouteurs pour les ID récents
+            newIdField.addEventListener('focus', function() {
+                showRecentIds(this);
+            });
+            
+            newIdField.addEventListener('click', function() {
+                showRecentIds(this);
+            });
+        }
     }
     
-    // Fermer au clic en dehors
-    document.addEventListener('click', function(e) {
-        if (recentIdsContainer.style.display === 'block' && 
-            e.target !== meetingIdField && 
-            !recentIdsContainer.contains(e.target)) {
-            recentIdsContainer.style.display = 'none';
-        }
-    });
-    
-    // Fonction pour afficher les ID récents
+    /**
+     * Affiche la liste des ID récents
+     */
     function showRecentIds(inputField) {
         const recentIds = JSON.parse(localStorage.getItem('recentMeetingIds') || '[]');
+        const recentIdsContainer = document.getElementById('recent-ids');
         
-        if (recentIds.length === 0) {
-            recentIdsContainer.style.display = 'none';
-            return;
-        }
+        if (!recentIdsContainer || recentIds.length === 0) return;
         
-        // Positionner correctement
+        // Positionner la liste
         const rect = inputField.getBoundingClientRect();
         recentIdsContainer.style.top = `${rect.bottom + window.scrollY + 5}px`;
         recentIdsContainer.style.left = `${rect.left + window.scrollX}px`;
         recentIdsContainer.style.width = `${rect.width}px`;
         
-        // Construire le contenu
+        // Contenu
         recentIdsContainer.innerHTML = `
-            <div style="background: rgba(76, 89, 175, 0.3); padding: 10px 15px; font-size: 14px; color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="recent-ids-header">
                 <i class="fas fa-history"></i> Récemment utilisés
             </div>
             <div id="recent-ids-list"></div>
@@ -287,34 +415,18 @@ function enhanceRecentIds() {
         const listElement = document.getElementById('recent-ids-list');
         recentIds.forEach(id => {
             const item = document.createElement('div');
-            item.style.padding = '10px 15px';
-            item.style.cursor = 'pointer';
-            item.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.transition = 'background 0.2s ease';
-            
+            item.className = 'recent-id-item';
             item.innerHTML = `
-                <i class="fas fa-key" style="margin-right: 10px; color: rgba(255, 255, 255, 0.7);"></i>
-                <span style="font-family: monospace; font-weight: bold; color: white;">${id}</span>
+                <i class="fas fa-key"></i>
+                <span>${id}</span>
             `;
-            
-            item.addEventListener('mouseover', function() {
-                this.style.background = 'rgba(76, 89, 175, 0.2)';
-            });
-            
-            item.addEventListener('mouseout', function() {
-                this.style.background = 'transparent';
-            });
             
             item.addEventListener('click', function() {
                 inputField.value = id;
                 recentIdsContainer.style.display = 'none';
                 
-                // Lancer la jointure
-                if (window.joinMeetingWithId) {
-                    window.joinMeetingWithId(id);
-                }
+                // Lancer la connexion
+                directTeamsConnection(id);
             });
             
             listElement.appendChild(item);
@@ -325,18 +437,19 @@ function enhanceRecentIds() {
 }
 
 /**
- * Correction des superpositions de blocs
+ * Corrige les espacements et superpositions
  */
-function fixBlockOverlaps() {
-    // Ajouter les styles pour corriger les superpositions
+function fixSpacingAndOverlaps() {
+    // Styles pour corriger les espacements
     addStylesheet(`
-        /* Correction des espaces entre les blocs */
+        /* Correction de l'espacement du conteneur de réunions */
         .meetings-container {
-            margin-bottom: 20px !important;
-            padding-bottom: 15px !important;
+            margin-bottom: 80px !important;
+            margin-top: 20px !important;
+            overflow: visible !important;
         }
         
-        /* S'assurer que les contrôles ont un espace suffisant */
+        /* Position fixe de la barre du bas */
         .controls-container {
             position: fixed !important;
             bottom: 0 !important;
@@ -346,72 +459,364 @@ function fixBlockOverlaps() {
             padding: 10px 0 !important;
         }
         
-        /* S'assurer que le contenu principal a assez d'espace */
+        /* Assez d'espace en bas du conteneur principal */
         .main-container {
-            padding-bottom: 60px !important;
+            padding-bottom: 70px !important;
         }
         
-        /* S'assurer que le contenu des réunions ne déborde pas */
+        /* Section des réunions avec scroll interne */
         .meetings-list {
+            max-height: calc(100vh - 350px) !important;
             overflow-y: auto !important;
-            max-height: calc(100vh - 300px) !important;
+            padding-right: 5px !important;
         }
         
-        /* Correction de la superposition des boutons rejoindre */
+        /* Correction du z-index des boutons */
         .meeting-join-btn {
-            z-index: 5 !important;
             position: relative !important;
+            z-index: 5 !important;
         }
         
-        /* Empêcher les titres de réunion de déborder */
+        /* Éviter les débordements de texte */
         .meeting-item h3 {
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             max-width: calc(100% - 100px) !important;
         }
-    `, 'overlap-fix-styles');
+        
+        /* Styles pour la section ID */
+        .meeting-id-entry {
+            padding: 15px !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        /* Styles pour le champ ID */
+        #meeting-id {
+            background: rgba(30, 30, 30, 0.6) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 6px 0 0 6px !important;
+            padding: 8px 12px !important;
+            width: calc(100% - 120px) !important;
+        }
+        
+        /* Styles pour le bouton Rejoindre */
+        #joinMeetingBtn {
+            background: linear-gradient(to right, #6264A7, #7B83EB) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 0 6px 6px 0 !important;
+            padding: 8px 15px !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        #joinMeetingBtn:hover {
+            background: linear-gradient(to right, #7B83EB, #8A92F0) !important;
+            box-shadow: 0 2px 8px rgba(98, 100, 167, 0.4) !important;
+        }
+    `, 'spacing-fix-styles');
     
-    // Appliquer des corrections directes à certains éléments
-    fixSpecificOverlaps();
+    // Application directe à certains éléments
+    fixElementsDirectly();
     
-    function fixSpecificOverlaps() {
-        // Assurer que le conteneur de réunions a une marge en bas
+    function fixElementsDirectly() {
+        // Conteneur de réunions
         const meetingsContainer = document.querySelector('.meetings-container');
         if (meetingsContainer) {
-            meetingsContainer.style.marginBottom = '20px';
+            meetingsContainer.style.marginBottom = '80px';
+            meetingsContainer.style.marginTop = '20px';
         }
         
-        // Ajuster l'espacement du conteneur principal
+        // Conteneur principal
         const mainContainer = document.querySelector('.main-container');
         if (mainContainer) {
-            mainContainer.style.paddingBottom = '60px';
+            mainContainer.style.paddingBottom = '70px';
         }
         
-        // Ajuster les boutons rejoindre
+        // Liste des réunions
+        const meetingsList = document.querySelector('.meetings-list');
+        if (meetingsList) {
+            meetingsList.style.maxHeight = 'calc(100vh - 350px)';
+            meetingsList.style.overflowY = 'auto';
+        }
+        
+        // Boutons rejoindre
         const joinButtons = document.querySelectorAll('.meeting-join-btn');
         joinButtons.forEach(btn => {
-            btn.style.zIndex = '5';
             btn.style.position = 'relative';
+            btn.style.zIndex = '5';
         });
         
-        // Ajuster les titres des réunions
+        // Titres des réunions
         const meetingTitles = document.querySelectorAll('.meeting-item h3');
         meetingTitles.forEach(title => {
             title.style.overflow = 'hidden';
             title.style.textOverflow = 'ellipsis';
             title.style.whiteSpace = 'nowrap';
         });
+        
+        // Champ ID
+        const meetingIdField = document.getElementById('meeting-id');
+        if (meetingIdField) {
+            meetingIdField.style.backgroundColor = 'rgba(30, 30, 30, 0.6)';
+            meetingIdField.style.color = 'white';
+            meetingIdField.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+        }
     }
 }
 
 /**
- * Augmente encore plus la transparence des bannières
+ * Implémente une disposition en grille pour les salles
  */
-function increaseTransparency() {
-    // Ajouter les styles avec transparence maximale
+function implementRoomsGrid() {
+    // Styles pour la disposition en grille
     addStylesheet(`
-        /* Transparence maximale de la bannière d'en-tête */
+        /* Section des salles (au centre, en grille) */
+        .rooms-section {
+            position: fixed !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 80% !important;
+            max-width: 900px !important;
+            max-height: 70vh !important;
+            background: rgba(30, 30, 30, 0.85) !important;
+            backdrop-filter: blur(10px) !important;
+            border-radius: 15px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+            z-index: 1000 !important;
+            padding: 20px !important;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease !important;
+            overflow: auto !important;
+        }
+        
+        .rooms-section.visible {
+            display: block !important;
+            opacity: 1 !important;
+        }
+        
+        /* Disposition en grille des salles */
+        .rooms {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            grid-gap: 15px !important;
+            justify-content: center !important;
+            align-items: stretch !important;
+            padding: 10px !important;
+        }
+        
+        /* Cartes de salle adaptées à la grille */
+        .room-card {
+            background: rgba(50, 50, 50, 0.5) !important;
+            backdrop-filter: blur(5px) !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 15px !important;
+            height: 100px !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            text-align: center !important;
+        }
+        
+        .room-card:hover {
+            transform: translateY(-5px) !important;
+            background: rgba(60, 60, 60, 0.7) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Nom de la salle */
+        .room-name {
+            font-weight: bold !important;
+            font-size: 1.1em !important;
+            color: white !important;
+            margin-bottom: 10px !important;
+        }
+        
+        /* Statut de la salle */
+        .room-status {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            font-size: 0.9em !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        /* Indicateur de statut */
+        .status-icon {
+            width: 10px !important;
+            height: 10px !important;
+            border-radius: 50% !important;
+            box-shadow: 0 0 8px currentColor !important;
+        }
+        
+        .status-icon.available {
+            background-color: #4CAF50 !important;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.7) !important;
+        }
+        
+        .status-icon.occupied {
+            background-color: #F44336 !important;
+            box-shadow: 0 0 8px rgba(244, 67, 54, 0.7) !important;
+        }
+        
+        .status-icon.soon {
+            background-color: #FF9800 !important;
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.7) !important;
+        }
+        
+        /* Titre de la section des salles */
+        .rooms-section-title {
+            color: white !important;
+            text-align: center !important;
+            margin-top: 0 !important;
+            margin-bottom: 15px !important;
+            font-size: 1.3em !important;
+            font-weight: normal !important;
+            padding-bottom: 10px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        /* Bouton de fermeture */
+        .rooms-section-close {
+            position: absolute !important;
+            top: 15px !important;
+            right: 15px !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: none !important;
+            color: white !important;
+            width: 30px !important;
+            height: 30px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            transition: background 0.2s ease !important;
+            font-size: 18px !important;
+        }
+        
+        .rooms-section-close:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+    `, 'rooms-grid-styles');
+    
+    // Attacher aux boutons d'affichage
+    setupRoomsButtons();
+    
+    // Créer la structure améliorée si nécessaire
+    enhanceRoomsSection();
+    
+    function enhanceRoomsSection() {
+        // Trouver ou créer la section des salles
+        let roomsSection = document.querySelector('.rooms-section');
+        if (!roomsSection) {
+            roomsSection = document.createElement('div');
+            roomsSection.className = 'rooms-section';
+            document.body.appendChild(roomsSection);
+        }
+        
+        // Ajouter un titre et un bouton de fermeture
+        const roomsContainer = document.querySelector('.rooms');
+        if (roomsContainer && !document.querySelector('.rooms-section-title')) {
+            // Ajouter le titre
+            const title = document.createElement('h3');
+            title.className = 'rooms-section-title';
+            title.innerHTML = '<i class="fas fa-door-open"></i> Salles disponibles';
+            
+            // Ajouter le bouton de fermeture
+            const closeButton = document.createElement('button');
+            closeButton.className = 'rooms-section-close';
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', function() {
+                roomsSection.classList.remove('visible');
+                updateRoomsButtonsText(false);
+            });
+            
+            // Insérer avant le conteneur des salles
+            roomsSection.insertBefore(title, roomsContainer);
+            roomsSection.insertBefore(closeButton, roomsContainer);
+        }
+    }
+    
+    function setupRoomsButtons() {
+        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating, button[id*="salle"]');
+        
+        toggleButtons.forEach(button => {
+            if (button && !button.hasAttribute('data-rooms-grid-handler')) {
+                // Cloner pour supprimer les écouteurs existants
+                const newButton = button.cloneNode(true);
+                if (button.parentNode) {
+                    button.parentNode.replaceChild(newButton, button);
+                }
+                
+                // Ajouter le nouvel écouteur
+                newButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const roomsSection = document.querySelector('.rooms-section');
+                    if (!roomsSection) return;
+                    
+                    const isVisible = roomsSection.classList.contains('visible');
+                    roomsSection.classList.toggle('visible', !isVisible);
+                    
+                    // Mettre à jour les textes des boutons
+                    updateRoomsButtonsText(!isVisible);
+                });
+                
+                // Marquer comme traité
+                newButton.setAttribute('data-rooms-grid-handler', 'true');
+            }
+        });
+        
+        // Fermer au clic en dehors
+        document.addEventListener('click', function(e) {
+            const roomsSection = document.querySelector('.rooms-section');
+            if (!roomsSection) return;
+            
+            // Si la section est visible et le clic est en dehors
+            if (roomsSection.classList.contains('visible') && 
+                !roomsSection.contains(e.target) && 
+                !e.target.closest('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating')) {
+                roomsSection.classList.remove('visible');
+                updateRoomsButtonsText(false);
+            }
+        });
+    }
+    
+    function updateRoomsButtonsText(isVisible) {
+        const showText = '<i class="fas fa-door-open"></i> Afficher les salles';
+        const hideText = '<i class="fas fa-times"></i> Masquer les salles';
+        
+        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating, button[id*="salle"]');
+        
+        toggleButtons.forEach(button => {
+            if (button) {
+                button.innerHTML = isVisible ? hideText : showText;
+            }
+        });
+    }
+}
+
+/**
+ * Applique la transparence optimale
+ */
+function applyOptimalTransparency() {
+    // Styles pour la transparence
+    addStylesheet(`
+        /* Transparence de la bannière d'en-tête */
         .header {
             background-color: rgba(30, 30, 30, 0.4) !important;
             backdrop-filter: blur(5px) !important;
@@ -420,7 +825,7 @@ function increaseTransparency() {
             border-top: none !important;
         }
         
-        /* Transparence maximale de la bannière de bas de page */
+        /* Transparence de la bannière de bas de page */
         .controls-container {
             background-color: rgba(30, 30, 30, 0.4) !important;
             backdrop-filter: blur(5px) !important;
@@ -429,7 +834,7 @@ function increaseTransparency() {
             border-bottom: none !important;
         }
         
-        /* Transparence maximale du conteneur de réunions */
+        /* Transparence du conteneur de réunions */
         .meetings-container {
             background-color: rgba(30, 30, 30, 0.4) !important;
             backdrop-filter: blur(5px) !important;
@@ -453,7 +858,7 @@ function increaseTransparency() {
         
         /* Transparence du menu latéral */
         .side-menu {
-            background-color: rgba(25, 25, 25, 0.7) !important;
+            background-color: rgba(25, 25, 25, 0.65) !important;
             backdrop-filter: blur(10px) !important;
         }
         
@@ -463,50 +868,36 @@ function increaseTransparency() {
             border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
             backdrop-filter: blur(5px) !important;
         }
-        
-        /* Transparence du champ ID */
-        #meeting-id {
-            background-color: rgba(25, 25, 25, 0.5) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        }
-    `, 'max-transparency-styles');
+    `, 'optimal-transparency-styles');
     
-    // Appliquer directement à certains éléments
-    applyMaxTransparency();
+    // Application directe
+    const header = document.querySelector('.header');
+    if (header) {
+        header.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
+        header.style.backdropFilter = 'blur(5px)';
+    }
     
-    function applyMaxTransparency() {
-        // Header
-        const header = document.querySelector('.header');
-        if (header) {
-            header.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
-            header.style.backdropFilter = 'blur(5px)';
-        }
-        
-        // Controls container
-        const controlsContainer = document.querySelector('.controls-container');
-        if (controlsContainer) {
-            controlsContainer.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
-            controlsContainer.style.backdropFilter = 'blur(5px)';
-        }
-        
-        // Meetings container
-        const meetingsContainer = document.querySelector('.meetings-container');
-        if (meetingsContainer) {
-            meetingsContainer.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
-            meetingsContainer.style.backdropFilter = 'blur(5px)';
-        }
-        
-        // Menu latéral
-        const sideMenu = document.querySelector('.side-menu');
-        if (sideMenu) {
-            sideMenu.style.backgroundColor = 'rgba(25, 25, 25, 0.7)';
-            sideMenu.style.backdropFilter = 'blur(10px)';
-        }
+    const controlsContainer = document.querySelector('.controls-container');
+    if (controlsContainer) {
+        controlsContainer.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
+        controlsContainer.style.backdropFilter = 'blur(5px)';
+    }
+    
+    const meetingsContainer = document.querySelector('.meetings-container');
+    if (meetingsContainer) {
+        meetingsContainer.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
+        meetingsContainer.style.backdropFilter = 'blur(5px)';
+    }
+    
+    const sideMenu = document.querySelector('.side-menu');
+    if (sideMenu) {
+        sideMenu.style.backgroundColor = 'rgba(25, 25, 25, 0.65)';
+        sideMenu.style.backdropFilter = 'blur(10px)';
     }
 }
 
 /**
- * Corrige le problème nécessitant deux clics pour ouvrir le menu
+ * Corrige l'ouverture du menu au premier clic
  */
 function fixMenuFirstClick() {
     // Trouver les éléments du menu
@@ -517,22 +908,9 @@ function fixMenuFirstClick() {
     
     if (!menuToggle || !sideMenu || !mainContainer) return;
     
-    // Supprimer tous les écouteurs d'événements existants
-    const newMenuToggle = menuToggle.cloneNode(true);
-    if (menuToggle.parentNode) {
-        menuToggle.parentNode.replaceChild(newMenuToggle, menuToggle);
-    }
-    
-    if (menuOverlay) {
-        const newMenuOverlay = menuOverlay.cloneNode(true);
-        if (menuOverlay.parentNode) {
-            menuOverlay.parentNode.replaceChild(newMenuOverlay, menuOverlay);
-        }
-    }
-    
-    // S'assurer qu'il n'y a pas de délais ou d'animations bloquantes
+    // Styles optimisés pour le menu
     addStylesheet(`
-        /* Optimisation du menu pour le premier clic */
+        /* Optimisations pour le premier clic */
         .side-menu {
             transform: translateX(-100%) !important;
             transition: transform 0.25s ease !important;
@@ -554,37 +932,43 @@ function fixMenuFirstClick() {
             opacity: 1 !important;
             visibility: visible !important;
         }
-    `, 'menu-first-click-fix');
+    `, 'menu-first-click-styles');
     
-    // Ajouter l'écouteur d'événements optimisé
+    // Supprimer tous les écouteurs existants
+    const newMenuToggle = menuToggle.cloneNode(true);
+    if (menuToggle.parentNode) {
+        menuToggle.parentNode.replaceChild(newMenuToggle, menuToggle);
+    }
+    
+    if (menuOverlay) {
+        const newMenuOverlay = menuOverlay.cloneNode(true);
+        if (menuOverlay.parentNode) {
+            menuOverlay.parentNode.replaceChild(newMenuOverlay, menuOverlay);
+        }
+    }
+    
+    // Ajouter l'écouteur optimisé
     newMenuToggle.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
-        // Utiliser requestAnimationFrame pour garantir que ça se produit au prochain cycle de rendu
+        // Basculer l'état immédiatement
+        const isExpanded = sideMenu.classList.contains('expanded');
+        
+        // Utiliser requestAnimationFrame pour garantir l'exécution au prochain cycle de rendu
         requestAnimationFrame(() => {
-            // Basculer les classes directement
-            sideMenu.classList.toggle('expanded');
-            mainContainer.classList.toggle('menu-expanded');
+            sideMenu.classList.toggle('expanded', !isExpanded);
+            mainContainer.classList.toggle('menu-expanded', !isExpanded);
             
             if (menuOverlay) {
-                menuOverlay.classList.toggle('active', sideMenu.classList.contains('expanded'));
+                menuOverlay.classList.toggle('active', !isExpanded);
             }
         });
     });
     
-    // Gérer la fermeture du menu
-    if (menuOverlay) {
-        document.querySelector('.menu-overlay').addEventListener('click', function() {
-            sideMenu.classList.remove('expanded');
-            mainContainer.classList.remove('menu-expanded');
-            this.classList.remove('active');
-        });
-    }
-    
-    // Fermer le menu au clic en dehors
+    // Gérer la fermeture au clic en dehors
     document.addEventListener('click', function(e) {
-        // Si le menu est ouvert et le clic est en dehors du menu et du bouton de menu
+        // Si le menu est ouvert et le clic est en dehors
         if (sideMenu.classList.contains('expanded') && 
             !sideMenu.contains(e.target) && 
             e.target !== newMenuToggle && 
@@ -598,157 +982,13 @@ function fixMenuFirstClick() {
             }
         }
     });
-}
-
-/**
- * Gère correctement l'affichage des salles
- */
-function fixRoomsDisplay() {
-    // Ajouter les styles corrigés
-    addStylesheet(`
-        /* Affichage des salles en bas (barre horizontale) */
-        .rooms-section {
-            position: fixed !important;
-            bottom: 60px !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-            background-color: rgba(30, 30, 30, 0.5) !important;
-            backdrop-filter: blur(8px) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.2) !important;
-            z-index: 900 !important;
-            padding: 10px !important;
-            margin: 0 !important;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease !important;
-        }
-        
-        .rooms-section.visible {
-            display: block !important;
-            opacity: 1 !important;
-        }
-        
-        /* Disposition des salles en ligne */
-        .rooms {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            justify-content: center !important;
-            align-items: center !important;
-            gap: 10px !important;
-            overflow-x: auto !important;
-            padding: 5px !important;
-            scrollbar-width: thin !important;
-        }
-        
-        .room-card {
-            flex: 0 0 auto !important;
-            width: auto !important;
-            min-width: 120px !important;
-            height: 80px !important;
-            background: rgba(50, 50, 50, 0.5) !important;
-            backdrop-filter: blur(5px) !important;
-            border-radius: 8px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 10px !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-        }
-        
-        .room-card:hover {
-            transform: translateY(-3px) !important;
-            background: rgba(60, 60, 60, 0.6) !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        /* Scrollbar pour les salles */
-        .rooms::-webkit-scrollbar {
-            height: 5px !important;
-        }
-        
-        .rooms::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border-radius: 5px !important;
-        }
-        
-        .rooms::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2) !important;
-            border-radius: 5px !important;
-        }
-        
-        .rooms::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3) !important;
-        }
-    `, 'rooms-display-fix');
     
-    // Correction des boutons d'affichage des salles
-    fixRoomsToggleButtons();
-    
-    // Gestion de la fermeture au clic en dehors
-    document.addEventListener('click', function(e) {
-        const roomsSection = document.querySelector('.rooms-section');
-        if (!roomsSection) return;
-        
-        // Si la section est visible et le clic est en dehors
-        if (roomsSection.classList.contains('visible')) {
-            // Ignorer les clics sur la section ou les boutons de toggle
-            if (!roomsSection.contains(e.target) && 
-                !e.target.closest('[id*="Room"], .toggle-rooms-button, #showRoomsBtn, .rooms-toggle-button-floating')) {
-                roomsSection.classList.remove('visible');
-                updateRoomsButtonsText(false);
-            }
-        }
-    });
-    
-    function fixRoomsToggleButtons() {
-        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating');
-        
-        toggleButtons.forEach(button => {
-            if (button && !button.hasAttribute('data-fixed-rooms-handler')) {
-                // Supprimer les écouteurs existants
-                const newButton = button.cloneNode(true);
-                if (button.parentNode) {
-                    button.parentNode.replaceChild(newButton, button);
-                }
-                
-                // Ajouter le nouvel écouteur
-                newButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const roomsSection = document.querySelector('.rooms-section');
-                    if (!roomsSection) return;
-                    
-                    const isVisible = roomsSection.classList.contains('visible');
-                    roomsSection.classList.toggle('visible', !isVisible);
-                    
-                    // Mettre à jour les textes des boutons
-                    updateRoomsButtonsText(!isVisible);
-                });
-                
-                // Marquer comme traité
-                newButton.setAttribute('data-fixed-rooms-handler', 'true');
-            }
-        });
-    }
-    
-    function updateRoomsButtonsText(isVisible) {
-        const showText = '<i class="fas fa-door-open"></i> Afficher les salles';
-        const hideText = '<i class="fas fa-times"></i> Masquer les salles';
-        
-        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating');
-        
-        toggleButtons.forEach(button => {
-            if (button) {
-                button.innerHTML = isVisible ? hideText : showText;
-            }
+    // Gérer la fermeture via l'overlay
+    if (menuOverlay) {
+        document.querySelector('.menu-overlay').addEventListener('click', function() {
+            sideMenu.classList.remove('expanded');
+            mainContainer.classList.remove('menu-expanded');
+            this.classList.remove('active');
         });
     }
 }
@@ -763,7 +1003,7 @@ function addStylesheet(cssText, id) {
         return;
     }
     
-    // Créer un nouvel élément style
+    // Créer un élément style
     const style = document.createElement('style');
     if (id) style.id = id;
     style.textContent = cssText;
