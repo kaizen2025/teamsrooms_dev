@@ -5,79 +5,60 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Initialisation des améliorations d'interface v2.0");
+    // 1. FIX JOIN BUTTON FUNCTIONALITY - MOST CRITICAL
+    fixJoinButtonsFunctionality();
     
-    // Vérifier si le script a déjà été initialisé
-    if (window._interfaceImprovementsInitialized) {
-        console.log("⚠️ Les améliorations d'interface sont déjà initialisées");
-        return;
-    }
+    // 2. REORGANIZE MENU STRUCTURE 
+    reorganizeMenu();
     
-    // Marquer comme initialisé
-    window._interfaceImprovementsInitialized = true;
+    // 3. ENSURE MENU STARTS COLLAPSED AND IS FUNCTIONAL
+    initializeMenu();
     
-    // Séquence d'initialisation principale avec délai pour s'assurer que le DOM est prêt
-    setTimeout(() => {
-        // 1. AMÉLIORATION CRITIQUE DES BOUTONS DE JOINTURE TEAMS
-        fixJoinButtonsFunctionality();
-        
-        // 2. RÉORGANISATION DU MENU
-        reorganizeMenu();
-        
-        // 3. INITIALISATION CORRECTE DU MENU LATÉRAL
-        initializeMenu();
-        
-        // 4. MISE À JOUR DES TEXTES DES BOUTONS ET SUPPRESSION DES DOUBLONS
-        updateButtonsAndLayout();
-        
-        // 5. AMÉLIORATION DU CENTRAGE DU TITRE ET DE L'EN-TÊTE
-        fixTitleCentering();
-        improveDateTimeDisplay();
-        
-        // 6. AMÉLIORATION DE L'AFFICHAGE DES RÉUNIONS
-        enhanceMeetingsDisplay();
-        
-        // 7. CORRECTION DES PROBLÈMES DE CHEVAUCHEMENT DES BOUTONS
-        fixButtonOverlap();
+    // 4. UPDATE BUTTONS TEXT AND REMOVE DUPLICATES
+    updateButtonsAndLayout();
+    
+    // 5. IMPROVE TITLE CENTERING AND HEADER
+    fixTitleCentering();
+    improveDateTimeDisplay();
+    
+    // 6. IMPROVE MEETINGS DISPLAY FOR BETTER VISIBILITY
+    enhanceMeetingsDisplay();
+    
+    // 7. FIX ROOM DISPLAY ANIMATION
+    initializeRoomsDisplay();
+    
+    // 8. FIX BUTTON OVERLAP ISSUES
+    fixButtonOverlap();
 
-        // 8. CHARGEMENT COHÉRENT DES DONNÉES DE RÉUNION
-        ensureMeetingsLoading();
-        
-        // 9. INITIALISATION DE LA FONCTION D'AIDE
-        initializeHelpFunction();
-        
-        // 10. AMÉLIORATION DES PERFORMANCES DE L'INTERFACE
-        enhanceUIPerformance();
-        
-        // REMARQUE : LES FONCTIONS SUIVANTES SONT COMMENTÉES
-        // CAR ELLES SONT MIEUX GÉRÉES DANS PERFORMANCE-OPTIMIZATIONS.JS
-        
-        // initializeRoomsDisplay(); // Gestion de l'affichage des salles (laissé à performance-optimizations.js)
-        // hideAllSyncInfo(); // Masquage des informations de synchronisation (laissé à performance-optimizations.js)
-        // reduceFooterWidth(); // Réduction de la largeur de la bannière (laissé à performance-optimizations.js)
-        // increaseTransparency(); // Augmentation de la transparence (laissé à performance-optimizations.js)
-        
-        console.log('✅ Améliorations d\'interface initialisées avec succès');
-    }, 100);
+    // 9. ENSURE CONSISTENT MEETING DATA LOADING
+    ensureMeetingsLoading();
+    
+    // 10. INITIALIZE HELP FUNCTION
+    initializeHelpFunction();
+    
+    // 11. ENHANCE UI PERFORMANCE
+    enhanceUIPerformance();
+    
+    console.log('Comprehensive interface improvements initialized');
 });
 
 /**
- * Assure le chargement correct des réunions
+ * Ensure that meetings are loading properly
  */
 function ensureMeetingsLoading() {
-    // Vérifier si le conteneur des réunions existe
+    // Check if there's any meeting content
     const meetingsContainer = document.querySelector('.meetings-list');
     if (!meetingsContainer) return;
 
-    // Si la liste des réunions est vide ou ne contient que du contenu placeholder
+    // If meetings list is empty or contains only placeholder content
     const hasMeetings = meetingsContainer.querySelector('.meeting-item');
     const emptyMessage = meetingsContainer.querySelector('.empty-meetings-message');
     const loadingIndicator = meetingsContainer.querySelector('.loading-indicator');
     
     if (!hasMeetings && !emptyMessage && !loadingIndicator) {
-        console.log("Aucune réunion trouvée, déclenchement de la récupération...");
+        console.log("No meetings found, triggering fetch...");
         
-        // Créer un indicateur de chargement temporaire
+        // Create a temporary loading indicator
         const tempLoader = document.createElement('div');
         tempLoader.className = 'loading-indicator';
         tempLoader.innerHTML = `
@@ -87,21 +68,21 @@ function ensureMeetingsLoading() {
         `;
         meetingsContainer.appendChild(tempLoader);
         
-        // Déclencher la récupération des réunions si window.fetchMeetings existe
+        // Trigger meetings fetch if window.fetchMeetings exists
         if (typeof window.fetchMeetings === 'function') {
-            // Forcer une actualisation avec le paramètre true
+            // Force a refresh with true parameter
             window.fetchMeetings(true);
             
-            // Configurer un minuteur pour vérifier à nouveau si aucune réunion n'apparaît après 10 secondes
+            // Also set up a timer to check again in 10 seconds if no meetings appear
             setTimeout(() => {
                 const updatedHasMeetings = meetingsContainer.querySelector('.meeting-item');
                 if (!updatedHasMeetings) {
-                    console.log("Toujours aucune réunion après la récupération initiale, nouvel essai...");
+                    console.log("Still no meetings after initial fetch, retrying...");
                     window.fetchMeetings(true);
                 }
             }, 10000);
         } else {
-            console.error("Fonction fetchMeetings introuvable");
+            console.error("fetchMeetings function not found");
             tempLoader.innerHTML = `
                 <i class="fas fa-exclamation-triangle"></i>
                 <span>Impossible de charger les réunions</span>
@@ -112,159 +93,155 @@ function ensureMeetingsLoading() {
 }
 
 /**
- * Version optimisée de la fonction fixJoinButtonsFunctionality
- * Élimine les problèmes de tremblements et de clics multiples
- * AMÉLIORATION: Intègre le lien Teams direct pour une connexion directe
+ * Fix join button functionality - CRITICAL issue
+ * Only show join button for Teams meetings
  */
 function fixJoinButtonsFunctionality() {
-  console.log("📡 Amélioration de la fonctionnalité des boutons de jointure Teams");
+  console.log("Fixing join button functionality");
   
-  // Supprimer les gestionnaires d'événements existants de tous les boutons
-  document.querySelectorAll('.meeting-join-btn').forEach(btn => {
-    const newBtn = btn.cloneNode(true);
-    if (btn.parentNode) {
-      btn.parentNode.replaceChild(newBtn, btn);
-    }
-  });
-  
-  // Ajouter gestionnaire unique et robuste
-  document.addEventListener('click', function(e) {
-    // Utiliser la délégation d'événements au lieu de multiples écouteurs
-    if (e.target.closest('.meeting-join-btn')) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const button = e.target.closest('.meeting-join-btn');
-      
-      // Éviter les clics multiples
-      if (button.disabled) return;
-      button.disabled = true;
-      
-      // Ajouter un indicateur visuel
-      const originalText = button.innerHTML;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-      
-      // Obtenir l'URL ou l'ID de réunion
-      const meetingItem = button.closest('.meeting-item');
-      const joinUrl = button.getAttribute('data-url') || 
-                      (meetingItem ? meetingItem.getAttribute('data-url') : null);
-      const meetingId = button.getAttribute('data-meeting-id') || 
-                       (meetingItem ? meetingItem.getAttribute('data-id') : null);
-      
-      if (joinUrl) {
-        // URL directe disponible, l'ouvrir immédiatement
-        window.open(joinUrl, "_blank");
-        
-        // Réactiver le bouton après un court délai
-        setTimeout(() => {
-          button.disabled = false;
-          button.innerHTML = originalText;
-        }, 1000);
-      } 
-      else if (meetingId) {
-        // Utiliser le système de jointure avec l'ID
-        const meetingIdInput = document.getElementById('meeting-id');
-        if (meetingIdInput) {
-          meetingIdInput.value = meetingId;
-          
-          // Appeler directement la fonction
-          try {
-            joinMeetingWithId(meetingId);
-          } catch(e) {
-            console.error("Erreur lors de la jointure:", e);
-            alert("Impossible de rejoindre la réunion. Veuillez réessayer.");
-          }
-          
-          // Réactiver le bouton après un court délai
-          setTimeout(() => {
-            button.disabled = false;
-            button.innerHTML = originalText;
-          }, 1000);
-        }
-      }
-      else {
-        console.error("Aucune URL ou ID de réunion trouvé");
-        button.disabled = false;
-        button.innerHTML = originalText;
-      }
-    }
-  });
-  
-  // Fonction globale pour rejoindre avec ID (avec URL Teams directe)
-  window.joinMeetingWithId = joinMeetingWithId;
-  
-  function joinMeetingWithId(meetingId) {
-    if (!meetingId) {
-      const input = document.getElementById('meeting-id');
-      if (input) meetingId = input.value.trim();
-    }
+  // Traiter tous les éléments de réunion pour afficher/masquer correctement les boutons
+  const meetingItems = document.querySelectorAll('.meeting-item');
+  meetingItems.forEach(meetingItem => {
+    const isTeamsMeeting = meetingItem.hasAttribute('data-is-teams') ? 
+                          meetingItem.getAttribute('data-is-teams') === 'true' : 
+                          meetingItem.querySelector('.meeting-join-btn') !== null;
     
-    if (!meetingId) {
-      alert("Veuillez entrer l'ID de la réunion");
+    // Obtenir ou créer un bouton de jointure
+    let joinButton = meetingItem.querySelector('.meeting-join-btn');
+    
+    // Si ce n'est pas une réunion Teams, supprimer le bouton
+    if (!isTeamsMeeting) {
+      if (joinButton) {
+        joinButton.remove();
+      }
       return;
     }
     
-    // Nettoyer l'ID en retirant les espaces
-    meetingId = meetingId.replace(/\s+/g, '');
+    // Si le bouton n'existe pas mais devrait exister, le créer
+    if (!joinButton && isTeamsMeeting) {
+      joinButton = document.createElement('button');
+      joinButton.className = 'meeting-join-btn';
+      joinButton.innerHTML = '<i class="fas fa-video"></i> Rejoindre';
+      meetingItem.appendChild(joinButton);
+    }
     
-    // Construire l'URL Teams standard directe
-    const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingId}%40thread.v2/0`;
-    window.open(teamsUrl, "_blank");
+    // Obtenir l'URL de jointure
+    const joinUrl = meetingItem.getAttribute('data-url');
+    const meetingId = meetingItem.getAttribute('data-id');
+    
+    // S'assurer que le bouton a les données appropriées
+    if (joinUrl) {
+      joinButton.setAttribute('data-url', joinUrl);
+    } else if (meetingId) {
+      joinButton.setAttribute('data-meeting-id', meetingId);
+    }
+    
+    // IMPORTANT: Supprimer tous les gestionnaires d'événements existants
+    // en clonant et remplaçant l'élément
+    const newJoinButton = joinButton.cloneNode(true);
+    joinButton.parentNode.replaceChild(newJoinButton, joinButton);
+    joinButton = newJoinButton;
+    
+    // Ajouter un gestionnaire d'événements une seule fois
+    joinButton.addEventListener('click', joinMeetingHandler);
+  });
+  
+  // S'assurer également que le bouton principal fonctionne
+  const mainJoinButton = document.getElementById('joinMeetingBtn');
+  if (mainJoinButton) {
+    // Supprimer les écouteurs existants
+    const newMainJoinButton = mainJoinButton.cloneNode(true);
+    mainJoinButton.parentNode.replaceChild(newMainJoinButton, mainJoinButton);
+    
+    newMainJoinButton.addEventListener('click', function() {
+      const meetingIdInput = document.getElementById('meeting-id') || 
+                          document.getElementById('meetingIdInput');
+      if (meetingIdInput && meetingIdInput.value) {
+        if (window.JoinSystem) {
+          window.JoinSystem.joinMeetingWithId();
+        } else {
+          // Fallback basique
+          const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingIdInput.value}%40thread.v2/0`;
+          window.open(teamsUrl, '_blank');
+        }
+      } else {
+        alert("Veuillez entrer l'ID de la réunion.");
+      }
+    });
   }
   
-  // Améliorer le style du bouton pour éviter les tremblements
-  const style = document.createElement('style');
-  style.id = 'join-button-styles';
-  style.textContent = `
-    .meeting-join-btn {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 90px;
-      height: 36px;
-      background: linear-gradient(to right, #6264A7, #7B83EB);
-      border: none;
-      border-radius: 4px;
-      color: white;
-      font-weight: 500;
-      cursor: pointer;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      will-change: transform;
-      transform: translateZ(0);
-    }
-    
-    .meeting-join-btn:hover {
-      transform: translateY(-1px) translateZ(0);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    
-    .meeting-join-btn:active {
-      transform: translateY(1px) translateZ(0);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    }
-    
-    .meeting-join-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-  `;
-  document.head.appendChild(style);
+  // Set up a mutation observer to watch for new meeting items
+  setupMeetingsObserver();
+}
+
+// Fonction de gestionnaire d'événements séparée pour éviter les duplications
+function joinMeetingHandler(e) {
+  e.preventDefault();
+  e.stopPropagation();
   
-  // Appliquer également au bouton de jointure par ID en bas
-  const joinMeetingBtn = document.getElementById('joinMeetingBtn');
-  if (joinMeetingBtn) {
-    joinMeetingBtn.onclick = function(e) {
-      e.preventDefault();
-      window.joinMeetingWithId();
-    };
+  // Vérifier si le processus de jointure est déjà en cours
+  if (window.JoinSystem && window.JoinSystem.isJoining) {
+    console.log("Jointure déjà en cours, ignorer ce clic");
+    return;
+  }
+  
+  // Désactiver temporairement le bouton pour éviter les clics multiples
+  this.disabled = true;
+  
+  // Récupérer l'URL depuis le bouton ou le parent
+  const buttonUrl = this.getAttribute('data-url');
+  const buttonMeetingId = this.getAttribute('data-meeting-id') || 
+                         this.parentElement.getAttribute('data-id');
+  
+  if (buttonUrl) {
+    // URL directe disponible, l'ouvrir
+    console.log("Opening Teams meeting URL:", buttonUrl);
+    window.open(buttonUrl, '_blank');
+    
+    // Réactiver le bouton après un délai
+    setTimeout(() => {
+      this.disabled = false;
+    }, 2000);
+  } else if (buttonMeetingId) {
+    // Utiliser le système de jointure avec l'ID
+    if (window.JoinSystem) {
+      console.log("Using JoinSystem with ID:", buttonMeetingId);
+      // Définir l'ID dans le champ d'entrée
+      const meetingIdInput = document.getElementById('meeting-id') || 
+                          document.getElementById('meetingIdInput');
+      if (meetingIdInput) {
+        meetingIdInput.value = buttonMeetingId;
+        
+        // Déclencher la fonction de jointure
+        window.JoinSystem.joinMeetingWithId();
+        
+        // Le JoinSystem gère sa propre réactivation
+      } else {
+        console.error("Meeting ID input field not found");
+        alert("Erreur: Champ d'ID de réunion introuvable.");
+        this.disabled = false;
+      }
+    } else {
+      // Fallback si JoinSystem n'est pas disponible
+      console.error("Join system not available, using fallback");
+      const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${buttonMeetingId}%40thread.v2/0`;
+      window.open(teamsUrl, '_blank');
+      
+      // Réactiver le bouton après un délai
+      setTimeout(() => {
+        this.disabled = false;
+      }, 2000);
+    }
+  } else {
+    console.error("No join URL or meeting ID found");
+    alert("Impossible de rejoindre cette réunion: URL ou ID manquant.");
+    this.disabled = false;
   }
 }
 
 /**
- * Configure un observateur de mutation pour surveiller les nouveaux éléments de réunion
- * pour s'assurer que les boutons de jointure fonctionnent correctement sur les réunions chargées dynamiquement
+ * Set up a mutation observer to watch for new meeting items
+ * This ensures newly loaded meetings also get join buttons properly setup
  */
 function setupMeetingsObserver() {
     const meetingsContainer = document.getElementById('meetingsContainer') || 
@@ -272,7 +249,7 @@ function setupMeetingsObserver() {
     
     if (!meetingsContainer) return;
     
-    // Créer un observateur de mutation pour surveiller les changements
+    // Create a mutation observer to watch for changes
     const observer = new MutationObserver(function(mutations) {
         let shouldReprocess = false;
         
@@ -283,17 +260,17 @@ function setupMeetingsObserver() {
         });
         
         if (shouldReprocess) {
-            // Retraiter les boutons de jointure lorsque de nouvelles réunions sont ajoutées
+            // Reprocess join buttons when new meetings are added
             setTimeout(fixJoinButtonsFunctionality, 100);
         }
     });
     
-    // Démarrer l'observation
+    // Start observing
     observer.observe(meetingsContainer, { childList: true, subtree: true });
 }
 
 /**
- * Met à jour le texte des boutons d'affichage des salles
+ * Function to update the text on the rooms buttons
  */
 function updateRoomsButtonText(isVisible) {
     const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
@@ -416,7 +393,6 @@ function reorganizeMenu() {
 function addSubmenuStyles() {
     // Create a style element
     const style = document.createElement('style');
-    style.id = 'submenu-styles';
     style.textContent = `
         .menu-item-with-submenu {
             position: relative;
@@ -689,7 +665,7 @@ function improveDateTimeDisplay() {
     datetimeElement.style.padding = '8px 15px';
     datetimeElement.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
     datetimeElement.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-    datetimeElement.style.margin = '0 10px 0 70px'; // Décalé vers la droite pour éviter le bouton de menu
+    datetimeElement.style.margin = '0 10px';
     
     // Ensure proper capitalization of date
     updateDateTimeDisplay();
@@ -802,62 +778,163 @@ function enhanceMeetingsDisplay() {
     // Add refresh button to meetings header
     const createMeetingButton = document.querySelector('.create-meeting-integrated');
     if (createMeetingButton && meetingsContainer) {
-        // Vérifier si le bouton n'existe pas déjà
-        if (!document.querySelector('.refresh-meetings-btn')) {
-            const refreshButton = document.createElement('button');
-            refreshButton.className = 'refresh-meetings-btn';
-            refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
-            refreshButton.title = "Rafraîchir les réunions";
-            refreshButton.style.cssText = `
-                position: absolute;
-                right: 10px;
-                top: 10px;
-                background: rgba(255, 255, 255, 0.1);
-                border: none;
-                color: white;
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            `;
+        const refreshButton = document.createElement('button');
+        refreshButton.className = 'refresh-meetings-btn';
+        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        refreshButton.title = "Rafraîchir les réunions";
+        refreshButton.style.cssText = `
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        `;
+        
+        refreshButton.addEventListener('mouseover', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.2)';
+            this.style.transform = 'rotate(30deg)';
+        });
+        
+        refreshButton.addEventListener('mouseout', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.1)';
+            this.style.transform = 'rotate(0)';
+        });
+        
+        refreshButton.addEventListener('click', function() {
+            this.style.transform = 'rotate(360deg)';
+            // Add a spinning animation
+            this.querySelector('i').classList.add('fa-spin');
             
-            refreshButton.addEventListener('mouseover', function() {
-                this.style.background = 'rgba(255, 255, 255, 0.2)';
-                this.style.transform = 'rotate(30deg)';
-            });
-            
-            refreshButton.addEventListener('mouseout', function() {
-                this.style.background = 'rgba(255, 255, 255, 0.1)';
-                this.style.transform = 'rotate(0)';
-            });
-            
-            refreshButton.addEventListener('click', function() {
-                this.style.transform = 'rotate(360deg)';
-                // Add a spinning animation
-                this.querySelector('i').classList.add('fa-spin');
+            // Force refresh of meetings
+            if (typeof window.fetchMeetings === 'function') {
+                window.fetchMeetings(true);
                 
-                // Force refresh of meetings
-                if (typeof window.fetchMeetings === 'function') {
-                    window.fetchMeetings(true);
-                    
-                    // Remove spinning after 2 seconds
-                    setTimeout(() => {
-                        this.querySelector('i').classList.remove('fa-spin');
-                    }, 2000);
-                }
-            });
-            
-            const titleBar = document.querySelector('.meetings-title-bar');
-            if (titleBar) {
-                titleBar.style.position = 'relative';
-                titleBar.appendChild(refreshButton);
+                // Remove spinning after 2 seconds
+                setTimeout(() => {
+                    this.querySelector('i').classList.remove('fa-spin');
+                }, 2000);
             }
+        });
+        
+        const titleBar = document.querySelector('.meetings-title-bar');
+        if (titleBar) {
+            titleBar.style.position = 'relative';
+            titleBar.appendChild(refreshButton);
         }
     }
+}
+
+/**
+ * Initialize and fix the rooms display
+ */
+function initializeRoomsDisplay() {
+  // Supprimer le bouton flottant (en double)
+  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+  if (floatingButton) {
+    floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
+  }
+  
+  // Make sure the rooms toggle buttons work properly
+  const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
+  const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+  const roomsSection = document.querySelector('.rooms-section');
+  
+  // Improve room section styling for smoother animations
+  if (roomsSection) {
+      roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
+      roomsSection.style.backdropFilter = 'blur(10px)';
+      roomsSection.style.borderRadius = '15px';
+      roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
+      roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      roomsSection.style.padding = '15px';
+      
+      // Add styles for animation
+      document.head.insertAdjacentHTML('beforeend', `
+          <style>
+              .rooms-section {
+                  opacity: 0;
+                  transform: translateY(10px);
+                  display: none;
+              }
+              .rooms-section.visible {
+                  opacity: 1;
+                  transform: translateY(0);
+                  display: block;
+              }
+          </style>
+      `);
+  }
+  
+  // Define the toggle function
+  const toggleRooms = function() {
+      if (!roomsSection) return;
+      
+      const isVisible = roomsSection.classList.contains('visible');
+      
+      if (isVisible) {
+          roomsSection.classList.remove('visible');
+          setTimeout(() => {
+              roomsSection.style.display = 'none';
+          }, 300);
+          
+          // Update button text
+          updateRoomsButtonText(false);
+      } else {
+          roomsSection.style.display = 'block';
+          // Force reflow
+          roomsSection.offsetHeight;
+          roomsSection.classList.add('visible');
+          
+          // Update button text
+          updateRoomsButtonText(true);
+      }
+  };
+  
+  
+  if (toggleRoomsButton) {
+      toggleRoomsButton.addEventListener('click', toggleRooms);
+  }
+  
+  if (controlRoomsBtn) {
+      controlRoomsBtn.addEventListener('click', toggleRooms);
+  }
+  
+  // Fix room cards if they exist
+  const roomCards = document.querySelectorAll('.room-card');
+  roomCards.forEach(card => {
+      card.style.borderRadius = '10px';
+      card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+      
+      card.addEventListener('mouseover', function() {
+          this.style.transform = 'translateY(-3px)';
+          this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
+      });
+      
+      card.addEventListener('mouseout', function() {
+          this.style.transform = '';
+          this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      });
+      
+      // Make sure room cards are clickable
+      card.addEventListener('click', function() {
+          const roomName = this.getAttribute('data-room');
+          if (roomName) {
+              window.location.href = '/' + roomName.toLowerCase();
+          }
+      });
+  });
 }
 
 /**
