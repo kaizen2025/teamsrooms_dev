@@ -23,40 +23,6 @@
     
     <!-- Interface Improvements CSS -->
     <link rel="stylesheet" href="/static/css/interface-improvements.css">
-    
-    <!-- NOUVEAU: Styles d'urgence pour masquer la synchronisation et optimiser immédiatement l'interface -->
-    <style id="urgent-fixes">
-        /* Masquer l'info de synchronisation */
-        [id*="synchro"], [class*="synchro"], .sync-info, .last-sync, 
-        div:contains("Dernière"), div:contains("dernière"), div:contains("synchro"),
-        span:contains("Dernière"), span:contains("dernière"), span:contains("synchro"),
-        div:contains("mise à jour"), span:contains("mise à jour"),
-        .datetime-info, div:has(> [id*="synchro"]) {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            width: 0 !important;
-        }
-
-        /* Réduire la largeur de la barre inférieure */
-        .controls-container, .footer-banner, .app-footer {
-            width: 40% !important;
-            max-width: 600px !important;
-            margin: 0 auto !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            border-radius: 15px 15px 0 0 !important;
-        }
-
-        /* Section des salles au centre */
-        .rooms-section {
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            max-width: 800px !important;
-            width: 70% !important;
-        }
-    </style>
 </head>
 <body>
     <!-- Background Container -->
@@ -534,8 +500,6 @@
             }
         });
     </script>
-    
-    <!-- IMPORTANT: Optimisation de performance en dernier pour remplacer tout style/comportement précédent -->
     <script src="/static/js/performance-optimizations.js"></script>
 </body>
 </html>
