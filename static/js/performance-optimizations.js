@@ -74,9 +74,6 @@ function initializeUI() {
             // 8. Amélioration spécifique pour Safari et les navigateurs mobiles
             addSpecificBrowserFixes();
             
-            // 9. Mise en place de la fermeture automatique des menus au clic en dehors
-            setupClickOutsideToClose();
-            
             console.log("✅ Interface harmonieuse initialisée avec succès");
             
             // Ajouter un message visuel de succès
@@ -91,320 +88,162 @@ function initializeUI() {
             }, 500);
         }
     }, 100);
-}
-
-/**
- * Masque agressivement toutes les informations de synchronisation
- */
-function hideAllSyncInfo() {
-    console.log("📌 Masquage agressif des informations de synchronisation");
     
-    // Fonction pour vérifier si un élément contient un texte lié à la synchronisation
-    function containsSyncText(element) {
-        const text = element.textContent.toLowerCase();
-        return text.includes('dernière') || 
-               text.includes('synchro') || 
-               text.includes('mise à jour') ||
-               (text.includes(':') && (text.includes('11:') || text.includes('12:')));
-    }
-    
-    // Parcourir tous les éléments du DOM pour trouver ceux contenant des textes de synchronisation
-    function findAndHideSyncElements(root = document.body) {
-        // Utiliser querySelectorAll pour les sélecteurs connus
-        const syncSelectors = [
-            '[id*="synchro"]', '[class*="synchro"]', '.sync-info', '.last-sync',
-            'div[class*="derniere"]', 'span[class*="derniere"]'
-        ];
+    /**
+     * Masque agressivement toutes les informations de synchronisation
+     */
+    function hideAllSyncInfo() {
+        console.log("📌 Masquage agressif des informations de synchronisation");
         
-        syncSelectors.forEach(selector => {
-            try {
-                const elements = root.querySelectorAll(selector);
-                elements.forEach(element => {
-                    hideElement(element);
-                });
-            } catch (e) {
-                console.log("Erreur avec sélecteur:", selector, e);
-            }
-        });
-        
-        // Pour les éléments avec du texte spécifique, parcourir manuellement
-        const allElements = root.querySelectorAll('*');
-        allElements.forEach(element => {
-            try {
-                if (containsSyncText(element)) {
-                    hideElement(element);
-                }
-            } catch (e) {
-                // Ignorer les erreurs
-            }
-        });
-    }
-    
-    // Masquer un élément et ses enfants
-    function hideElement(element) {
-        if (!element) return;
-        
-        element.style.display = 'none';
-        element.style.visibility = 'hidden';
-        element.style.height = '0';
-        element.style.overflow = 'hidden';
-        element.style.opacity = '0';
-        element.style.position = 'absolute';
-        element.style.pointerEvents = 'none';
-        element.setAttribute('aria-hidden', 'true');
-        
-        // Masquer également tous les enfants
-        const children = element.querySelectorAll('*');
-        children.forEach(child => {
-            child.style.display = 'none';
-            child.style.visibility = 'hidden';
-        });
-    }
-    
-    // Exécuter la recherche et le masquage
-    findAndHideSyncElements();
-    
-    // Exécuter à plusieurs reprises pour être sûr
-    setTimeout(findAndHideSyncElements, 300);
-    setTimeout(findAndHideSyncElements, 1000);
-    setTimeout(findAndHideSyncElements, 2000);
-}
-
-/**
- * Configurer la fermeture des menus au clic en dehors
- */
-function setupClickOutsideToClose() {
-    console.log("📌 Configuration de la fermeture automatique des menus");
-    
-    // Éléments à fermer au clic en dehors
-    const closeableElements = [
-        {
-            selector: '.side-menu, #tableau-de-bord, .dashboard-menu',
-            isOpen: (el) => el.classList.contains('expanded') || el.classList.contains('open'),
-            close: (el) => {
-                el.classList.remove('expanded', 'open');
-                const mainContainer = document.querySelector('.main-container');
-                if (mainContainer) mainContainer.classList.remove('menu-expanded');
-            }
-        },
-        {
-            selector: '.rooms-section, .rooms-list, .available-rooms',
-            isOpen: (el) => el.style.display !== 'none' && el.classList.contains('visible'),
-            close: (el) => {
-                el.classList.remove('visible');
-                const overlay = document.querySelector('.rooms-overlay');
-                if (overlay) overlay.classList.remove('visible');
-                
-                // Mise à jour du texte des boutons
-                const buttons = document.querySelectorAll('#showRoomsBtn, .toggle-rooms-button');
-                buttons.forEach(btn => {
-                    if (btn.innerHTML.includes('Masquer')) {
-                        btn.innerHTML = btn.innerHTML.replace('Masquer', 'Afficher').replace('fa-door-closed', 'fa-door-open');
-                    }
-                });
-            }
-        },
-        {
-            selector: '.user-dropdown',
-            isOpen: (el) => el.classList.contains('active') || el.style.display === 'block',
-            close: (el) => {
-                el.classList.remove('active');
-                el.style.display = 'none';
-            }
+        // Fonction pour vérifier si un élément contient un texte lié à la synchronisation
+        function containsSyncText(element) {
+            const text = element.textContent.toLowerCase();
+            return text.includes('dernière') || 
+                   text.includes('synchro') || 
+                   text.includes('mise à jour') ||
+                   (text.includes(':') && (text.includes('11:') || text.includes('12:')));
         }
-    ];
-    
-    // Écouter les clics sur le document
-    document.addEventListener('click', function(event) {
-        closeableElements.forEach(item => {
-            const elements = document.querySelectorAll(item.selector);
+        
+        // Parcourir tous les éléments du DOM pour trouver ceux contenant des textes de synchronisation
+        function findAndHideSyncElements(root = document.body) {
+            // Utiliser querySelectorAll pour les sélecteurs connus
+            const syncSelectors = [
+                '[id*="synchro"]', '[class*="synchro"]', '.sync-info', '.last-sync',
+                'div[class*="derniere"]', 'span[class*="derniere"]'
+            ];
             
-            elements.forEach(element => {
-                // Vérifier si l'élément est ouvert
-                if (item.isOpen(element)) {
-                    // Vérifier si le clic est en dehors
-                    let isOutside = true;
-                    
-                    // Vérifier si le clic est sur l'élément lui-même ou un de ses enfants
-                    if (element.contains(event.target)) {
-                        isOutside = false;
-                    }
-                    
-                    // Vérifier si le clic est sur un bouton d'ouverture
-                    const toggleButtons = document.querySelectorAll('button[class*="toggle"], [id*="toggle"], [class*="Toggle"], [id*="show"], [class*="Show"]');
-                    toggleButtons.forEach(button => {
-                        if (button.contains(event.target)) {
-                            isOutside = false;
-                        }
+            syncSelectors.forEach(selector => {
+                try {
+                    const elements = root.querySelectorAll(selector);
+                    elements.forEach(element => {
+                        hideElement(element);
                     });
-                    
-                    // Si le clic est en dehors, fermer
-                    if (isOutside) {
-                        item.close(element);
-                    }
+                } catch (e) {
+                    console.log("Erreur avec sélecteur:", selector, e);
                 }
             });
-        });
-    });
-    
-    // Boutons d'ouverture du menu latéral
-    const menuToggleButtons = document.querySelectorAll('.menu-toggle-visible, .menu-toggle, .hamburger-menu');
-    menuToggleButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const sideMenu = document.querySelector('.side-menu');
-            if (sideMenu) {
-                sideMenu.classList.toggle('expanded');
-                sideMenu.classList.toggle('open');
-                const mainContainer = document.querySelector('.main-container');
-                if (mainContainer) mainContainer.classList.toggle('menu-expanded');
-            }
-        });
-    });
-}
-
-/**
- * Ajoute des correctifs spécifiques pour certains navigateurs
- */
-function addSpecificBrowserFixes() {
-    // Détection du navigateur
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isSafari || isMobile) {
-        console.log("📌 Application de correctifs spécifiques pour", isSafari ? "Safari" : "Mobile");
-        
-        // Correctifs pour Safari / Mobile
-        addStylesheet(`
-            /* Correctifs pour Safari et Mobile */
-            .rooms-section {
-                -webkit-backdrop-filter: blur(15px) !important;
-                transform: translate(-50%, -50%) !important;
-            }
             
-            .rooms-overlay {
-                -webkit-backdrop-filter: blur(5px) !important;
-            }
-            
-            /* Amélioration du tap sur mobile */
-            button, .room-card, .menu-item, .meeting-join-btn {
-                touch-action: manipulation !important;
-            }
-            
-            /* Éviter le zoom sur les champs texte (mobile) */
-            input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
-                font-size: 16px !important;
-            }
-        `, 'browser-specific-fixes');
-    }
-}
-
-/**
- * Implémente la jointure directe à Teams
- */
-function implementDirectTeamsJoin() {
-    console.log("📌 Implémentation de la jointure directe Teams");
-    
-    // Sélectionner le bouton de jointure et le champ d'ID
-    const joinButton = document.getElementById('joinMeetingBtn');
-    const meetingIdInput = document.getElementById('meeting-id');
-    
-    if (joinButton && meetingIdInput) {
-        // Remplacer l'événement existant
-        const newJoinButton = joinButton.cloneNode(true);
-        joinButton.parentNode.replaceChild(newJoinButton, joinButton);
-        
-        newJoinButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const meetingId = meetingIdInput.value.trim();
-            if (!meetingId) {
-                alert("Veuillez entrer l'ID de la réunion");
-                return;
-            }
-            
-            // Construire l'URL Teams standard
-            const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingId}%40thread.v2/0`;
-            window.open(teamsUrl, "_blank");
-        });
-    }
-    
-    // Améliorer également les boutons Rejoindre dans la liste des réunions
-    const joinMeetingButtons = document.querySelectorAll('.meeting-join-btn');
-    joinMeetingButtons.forEach(button => {
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        newButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Obtenir l'URL ou l'ID
-            const url = this.getAttribute('data-url');
-            const id = this.getAttribute('data-id') || this.getAttribute('data-meeting-id');
-            
-            if (url) {
-                window.open(url, "_blank");
-            } else if (id) {
-                const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${id}%40thread.v2/0`;
-                window.open(teamsUrl, "_blank");
-            }
-        });
-    });
-}
-
-/**
- * Corrige le premier clic du menu
- */
-function fixMenuFirstClick() {
-    console.log("📌 Correction du premier clic du menu");
-    
-    // Sélecteurs des menus et boutons
-    const menuItems = document.querySelectorAll('.menu-item');
-    const subMenuItems = document.querySelectorAll('.menu-submenu .menu-item');
-    
-    // Correction pour les éléments de menu principal
-    menuItems.forEach(item => {
-        const newItem = item.cloneNode(true);
-        item.parentNode.replaceChild(newItem, item);
-        
-        newItem.addEventListener('click', function(e) {
-            // Uniquement si c'est un lien réel (pas un sous-menu)
-            if (!this.querySelector('.menu-dropdown-icon')) {
-                const menuItems = document.querySelectorAll('.menu-item');
-                menuItems.forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-            }
-        });
-    });
-    
-    // Correction pour les sous-menus
-    const menuSubmenus = document.querySelectorAll('.menu-submenu');
-    menuSubmenus.forEach(submenu => {
-        if (submenu.parentElement.querySelector('.menu-dropdown-icon')) {
-            submenu.parentElement.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const isExpanded = submenu.classList.contains('expanded');
-                
-                // Fermer tous les autres sous-menus
-                document.querySelectorAll('.menu-submenu').forEach(s => {
-                    if (s !== submenu) {
-                        s.classList.remove('expanded');
-                        const icon = s.parentElement.querySelector('.menu-dropdown-icon');
-                        if (icon) icon.style.transform = 'rotate(0deg)';
+            // Pour les éléments avec du texte spécifique, parcourir manuellement
+            const allElements = root.querySelectorAll('*');
+            allElements.forEach(element => {
+                try {
+                    if (containsSyncText(element)) {
+                        hideElement(element);
                     }
-                });
-                
-                // Basculer le sous-menu actuel
-                submenu.classList.toggle('expanded');
-                const icon = this.querySelector('.menu-dropdown-icon');
-                if (icon) {
-                    icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+                } catch (e) {
+                    // Ignorer les erreurs
                 }
             });
         }
-    });
+        
+        // Masquer un élément et ses enfants
+        function hideElement(element) {
+            if (!element) return;
+            
+            element.style.display = 'none';
+            element.style.visibility = 'hidden';
+            element.style.height = '0';
+            element.style.overflow = 'hidden';
+            element.style.opacity = '0';
+            element.style.position = 'absolute';
+            element.style.pointerEvents = 'none';
+            element.setAttribute('aria-hidden', 'true');
+            
+            // Masquer également tous les enfants
+            const children = element.querySelectorAll('*');
+            children.forEach(child => {
+                child.style.display = 'none';
+                child.style.visibility = 'hidden';
+            });
+        }
+        
+        // Exécuter la recherche et le masquage
+        findAndHideSyncElements();
+        
+        // Exécuter à plusieurs reprises pour être sûr
+        setTimeout(findAndHideSyncElements, 300);
+        setTimeout(findAndHideSyncElements, 1000);
+        setTimeout(findAndHideSyncElements, 2000);
+    }
+    
+    /**
+     * Ajoute des correctifs spécifiques pour certains navigateurs
+     */
+    function addSpecificBrowserFixes() {
+        // Détection du navigateur
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isSafari || isMobile) {
+            console.log("📌 Application de correctifs spécifiques pour", isSafari ? "Safari" : "Mobile");
+            
+            // Correctifs pour Safari / Mobile
+            addStylesheet(`
+                /* Correctifs pour Safari et Mobile */
+                .rooms-section {
+                    -webkit-backdrop-filter: blur(15px) !important;
+                    transform: translate(-50%, -50%) !important;
+                }
+                
+                .rooms-overlay {
+                    -webkit-backdrop-filter: blur(5px) !important;
+                }
+                
+                /* Amélioration du tap sur mobile */
+                button, .room-card, .menu-item, .meeting-join-btn {
+                    touch-action: manipulation !important;
+                }
+                
+                /* Éviter le zoom sur les champs texte (mobile) */
+                input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
+                    font-size: 16px !important;
+                }
+            `, 'browser-specific-fixes');
+        }
+    }
+    
+    /**
+     * Affiche un message de succès temporaire
+     */
+    function showSuccessMessage(message) {
+        let messageBox = document.getElementById('success-message');
+        if (!messageBox) {
+            messageBox = document.createElement('div');
+            messageBox.id = 'success-message';
+            messageBox.style.position = 'fixed';
+            messageBox.style.top = '20px';
+            messageBox.style.left = '50%';
+            messageBox.style.transform = 'translateX(-50%)';
+            messageBox.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
+            messageBox.style.color = 'white';
+            messageBox.style.padding = '10px 20px';
+            messageBox.style.borderRadius = '5px';
+            messageBox.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+            messageBox.style.zIndex = '10000';
+            messageBox.style.opacity = '0';
+            messageBox.style.transition = 'opacity 0.3s ease';
+            document.body.appendChild(messageBox);
+        }
+        
+        messageBox.textContent = message;
+        
+        // Afficher avec animation
+        setTimeout(() => {
+            messageBox.style.opacity = '1';
+            
+            // Masquer après 3 secondes
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+                
+                // Supprimer après la transition
+                setTimeout(() => {
+                    if (messageBox.parentNode) {
+                        messageBox.parentNode.removeChild(messageBox);
+                    }
+                }, 300);
+            }, 3000);
+        }, 100);
+    }
 }
 
 /**
@@ -1125,117 +964,4 @@ function implementRoomsGrid() {
             }
         });
     }
-    
-    /**
-     * Mise à jour du texte des boutons d'affichage des salles
-     */
-    function updateRoomsButtonsText(isVisible) {
-        const buttons = document.querySelectorAll('#showRoomsBtn, .toggle-rooms-button, #toggleRoomsBtn, .rooms-toggle-button-floating');
-        
-        buttons.forEach(button => {
-            if (button) {
-                if (isVisible) {
-                    button.innerHTML = button.innerHTML.replace('Afficher', 'Masquer').replace('fa-door-open', 'fa-door-closed');
-                } else {
-                    button.innerHTML = button.innerHTML.replace('Masquer', 'Afficher').replace('fa-door-closed', 'fa-door-open');
-                }
-            }
-        });
-    }
-    
-    /**
-     * Observe les changements du DOM pour appliquer les améliorations aux nouveaux éléments
-     */
-    function observeDOMChanges() {
-        const observer = new MutationObserver(function(mutations) {
-            let shouldReapply = false;
-            
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    // Vérifier si des éléments pertinents ont été ajoutés
-                    mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeType === 1) { // Element node
-                            if (node.classList && (
-                                node.classList.contains('room-card') || 
-                                node.classList.contains('rooms-section') || 
-                                node.classList.contains('toggle-rooms-button')
-                            )) {
-                                shouldReapply = true;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            if (shouldReapply) {
-                console.log("📌 Changements DOM détectés, réapplication des optimisations pour les salles");
-                setupRoomsButtons();
-                enhanceRoomsSection();
-            }
-        });
-        
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    }
-}
-
-/**
- * Affiche un message de succès temporaire
- */
-function showSuccessMessage(message) {
-    let messageBox = document.getElementById('success-message');
-    if (!messageBox) {
-        messageBox = document.createElement('div');
-        messageBox.id = 'success-message';
-        messageBox.style.position = 'fixed';
-        messageBox.style.top = '20px';
-        messageBox.style.left = '50%';
-        messageBox.style.transform = 'translateX(-50%)';
-        messageBox.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
-        messageBox.style.color = 'white';
-        messageBox.style.padding = '10px 20px';
-        messageBox.style.borderRadius = '5px';
-        messageBox.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
-        messageBox.style.zIndex = '10000';
-        messageBox.style.opacity = '0';
-        messageBox.style.transition = 'opacity 0.3s ease';
-        document.body.appendChild(messageBox);
-    }
-    
-    messageBox.textContent = message;
-    
-    // Afficher avec animation
-    setTimeout(() => {
-        messageBox.style.opacity = '1';
-        
-        // Masquer après 3 secondes
-        setTimeout(() => {
-            messageBox.style.opacity = '0';
-            
-            // Supprimer après la transition
-            setTimeout(() => {
-                if (messageBox.parentNode) {
-                    messageBox.parentNode.removeChild(messageBox);
-                }
-            }, 300);
-        }, 3000);
-    }, 100);
-}
-
-/**
- * Utilitaire pour ajouter une feuille de style au document
- */
-function addStylesheet(css, id) {
-    // Vérifier si le style existe déjà
-    if (id && document.getElementById(id)) {
-        document.getElementById(id).remove();
-    }
-    
-    // Créer une nouvelle feuille de style
-    const style = document.createElement('style');
-    if (id) style.id = id;
-    style.textContent = css;
-    document.head.appendChild(style);
 }
