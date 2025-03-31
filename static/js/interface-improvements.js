@@ -7,76 +7,77 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Initialisation des améliorations d'interface v2.0");
     
-    // Séquence d'initialisation principale
+    // Vérifier si le script a déjà été initialisé
+    if (window._interfaceImprovementsInitialized) {
+        console.log("⚠️ Les améliorations d'interface sont déjà initialisées");
+        return;
+    }
+    
+    // Marquer comme initialisé
+    window._interfaceImprovementsInitialized = true;
+    
+    // Séquence d'initialisation principale avec délai pour s'assurer que le DOM est prêt
     setTimeout(() => {
-        // 1. FIX JOIN BUTTON FUNCTIONALITY - MOST CRITICAL
+        // 1. AMÉLIORATION CRITIQUE DES BOUTONS DE JOINTURE TEAMS
         fixJoinButtonsFunctionality();
         
-        // 2. REORGANIZE MENU STRUCTURE 
+        // 2. RÉORGANISATION DU MENU
         reorganizeMenu();
         
-        // 3. ENSURE MENU STARTS COLLAPSED AND IS FUNCTIONAL
+        // 3. INITIALISATION CORRECTE DU MENU LATÉRAL
         initializeMenu();
         
-        // 4. UPDATE BUTTONS TEXT AND REMOVE DUPLICATES
+        // 4. MISE À JOUR DES TEXTES DES BOUTONS ET SUPPRESSION DES DOUBLONS
         updateButtonsAndLayout();
         
-        // 5. IMPROVE TITLE CENTERING AND HEADER
+        // 5. AMÉLIORATION DU CENTRAGE DU TITRE ET DE L'EN-TÊTE
         fixTitleCentering();
-        fixHeaderAlignment();
         improveDateTimeDisplay();
         
-        // 6. IMPROVE MEETINGS DISPLAY FOR BETTER VISIBILITY
+        // 6. AMÉLIORATION DE L'AFFICHAGE DES RÉUNIONS
         enhanceMeetingsDisplay();
         
-        // 7. FIX ROOM DISPLAY ANIMATION
-        initializeRoomsDisplay();
-        
-        // 8. FIX BUTTON OVERLAP ISSUES
+        // 7. CORRECTION DES PROBLÈMES DE CHEVAUCHEMENT DES BOUTONS
         fixButtonOverlap();
 
-        // 9. ENSURE CONSISTENT MEETING DATA LOADING
+        // 8. CHARGEMENT COHÉRENT DES DONNÉES DE RÉUNION
         ensureMeetingsLoading();
         
-        // 10. INITIALIZE HELP FUNCTION
+        // 9. INITIALISATION DE LA FONCTION D'AIDE
         initializeHelpFunction();
         
-        // 11. ENHANCE UI PERFORMANCE
+        // 10. AMÉLIORATION DES PERFORMANCES DE L'INTERFACE
         enhanceUIPerformance();
         
-        // 12. HIDE SYNC INFO
-        hideAllSyncInfo();
+        // REMARQUE : LES FONCTIONS SUIVANTES SONT COMMENTÉES
+        // CAR ELLES SONT MIEUX GÉRÉES DANS PERFORMANCE-OPTIMIZATIONS.JS
         
-        // 13. REDUCE FOOTER WIDTH
-        reduceFooterWidth();
+        // initializeRoomsDisplay(); // Gestion de l'affichage des salles (laissé à performance-optimizations.js)
+        // hideAllSyncInfo(); // Masquage des informations de synchronisation (laissé à performance-optimizations.js)
+        // reduceFooterWidth(); // Réduction de la largeur de la bannière (laissé à performance-optimizations.js)
+        // increaseTransparency(); // Augmentation de la transparence (laissé à performance-optimizations.js)
         
-        // 14. INCREASE TRANSPARENCY
-        increaseTransparency();
-        
-        // 15. SETUP OUTSIDE CLICK HANDLERS
-        setupOutsideClickHandlers();
-        
-        console.log('✅ Comprehensive interface improvements initialized');
+        console.log('✅ Améliorations d\'interface initialisées avec succès');
     }, 100);
 });
 
 /**
- * Ensure that meetings are loading properly
+ * Assure le chargement correct des réunions
  */
 function ensureMeetingsLoading() {
-    // Check if there's any meeting content
+    // Vérifier si le conteneur des réunions existe
     const meetingsContainer = document.querySelector('.meetings-list');
     if (!meetingsContainer) return;
 
-    // If meetings list is empty or contains only placeholder content
+    // Si la liste des réunions est vide ou ne contient que du contenu placeholder
     const hasMeetings = meetingsContainer.querySelector('.meeting-item');
     const emptyMessage = meetingsContainer.querySelector('.empty-meetings-message');
     const loadingIndicator = meetingsContainer.querySelector('.loading-indicator');
     
     if (!hasMeetings && !emptyMessage && !loadingIndicator) {
-        console.log("No meetings found, triggering fetch...");
+        console.log("Aucune réunion trouvée, déclenchement de la récupération...");
         
-        // Create a temporary loading indicator
+        // Créer un indicateur de chargement temporaire
         const tempLoader = document.createElement('div');
         tempLoader.className = 'loading-indicator';
         tempLoader.innerHTML = `
@@ -86,21 +87,21 @@ function ensureMeetingsLoading() {
         `;
         meetingsContainer.appendChild(tempLoader);
         
-        // Trigger meetings fetch if window.fetchMeetings exists
+        // Déclencher la récupération des réunions si window.fetchMeetings existe
         if (typeof window.fetchMeetings === 'function') {
-            // Force a refresh with true parameter
+            // Forcer une actualisation avec le paramètre true
             window.fetchMeetings(true);
             
-            // Also set up a timer to check again in 10 seconds if no meetings appear
+            // Configurer un minuteur pour vérifier à nouveau si aucune réunion n'apparaît après 10 secondes
             setTimeout(() => {
                 const updatedHasMeetings = meetingsContainer.querySelector('.meeting-item');
                 if (!updatedHasMeetings) {
-                    console.log("Still no meetings after initial fetch, retrying...");
+                    console.log("Toujours aucune réunion après la récupération initiale, nouvel essai...");
                     window.fetchMeetings(true);
                 }
             }, 10000);
         } else {
-            console.error("fetchMeetings function not found");
+            console.error("Fonction fetchMeetings introuvable");
             tempLoader.innerHTML = `
                 <i class="fas fa-exclamation-triangle"></i>
                 <span>Impossible de charger les réunions</span>
@@ -113,10 +114,10 @@ function ensureMeetingsLoading() {
 /**
  * Version optimisée de la fonction fixJoinButtonsFunctionality
  * Élimine les problèmes de tremblements et de clics multiples
- * AMÉLIORATION: Intègre le lien Teams direct
+ * AMÉLIORATION: Intègre le lien Teams direct pour une connexion directe
  */
 function fixJoinButtonsFunctionality() {
-  console.log("Fixing join button functionality");
+  console.log("📡 Amélioration de la fonctionnalité des boutons de jointure Teams");
   
   // Supprimer les gestionnaires d'événements existants de tous les boutons
   document.querySelectorAll('.meeting-join-btn').forEach(btn => {
@@ -166,7 +167,7 @@ function fixJoinButtonsFunctionality() {
         if (meetingIdInput) {
           meetingIdInput.value = meetingId;
           
-          // Appeler directement la fonction au lieu d'utiliser un objet intermédiaire
+          // Appeler directement la fonction
           try {
             joinMeetingWithId(meetingId);
           } catch(e) {
@@ -213,6 +214,7 @@ function fixJoinButtonsFunctionality() {
   
   // Améliorer le style du bouton pour éviter les tremblements
   const style = document.createElement('style');
+  style.id = 'join-button-styles';
   style.textContent = `
     .meeting-join-btn {
       position: relative;
@@ -261,8 +263,8 @@ function fixJoinButtonsFunctionality() {
 }
 
 /**
- * Set up a mutation observer to watch for new meeting items
- * This ensures newly loaded meetings also get join buttons properly setup
+ * Configure un observateur de mutation pour surveiller les nouveaux éléments de réunion
+ * pour s'assurer que les boutons de jointure fonctionnent correctement sur les réunions chargées dynamiquement
  */
 function setupMeetingsObserver() {
     const meetingsContainer = document.getElementById('meetingsContainer') || 
@@ -270,7 +272,7 @@ function setupMeetingsObserver() {
     
     if (!meetingsContainer) return;
     
-    // Create a mutation observer to watch for changes
+    // Créer un observateur de mutation pour surveiller les changements
     const observer = new MutationObserver(function(mutations) {
         let shouldReprocess = false;
         
@@ -281,17 +283,17 @@ function setupMeetingsObserver() {
         });
         
         if (shouldReprocess) {
-            // Reprocess join buttons when new meetings are added
+            // Retraiter les boutons de jointure lorsque de nouvelles réunions sont ajoutées
             setTimeout(fixJoinButtonsFunctionality, 100);
         }
     });
     
-    // Start observing
+    // Démarrer l'observation
     observer.observe(meetingsContainer, { childList: true, subtree: true });
 }
 
 /**
- * Function to update the text on the rooms buttons
+ * Met à jour le texte des boutons d'affichage des salles
  */
 function updateRoomsButtonText(isVisible) {
     const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
@@ -414,6 +416,7 @@ function reorganizeMenu() {
 function addSubmenuStyles() {
     // Create a style element
     const style = document.createElement('style');
+    style.id = 'submenu-styles';
     style.textContent = `
         .menu-item-with-submenu {
             position: relative;
@@ -674,75 +677,6 @@ function fixTitleCentering() {
 }
 
 /**
- * Corrige l'alignement de l'en-tête pour éviter les superpositions
- * NOUVELLE FONCTION
- */
-function fixHeaderAlignment() {
-    console.log("📐 Correction de l'alignement de l'en-tête");
-    
-    // Ajouter des styles pour corriger l'alignement
-    const style = document.createElement('style');
-    style.id = 'header-alignment-styles';
-    style.textContent = `
-        /* Amélioration de l'alignement de l'en-tête */
-        .header {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            padding: 10px 15px !important;
-            background-color: rgba(30, 30, 30, 0.7) !important;
-            backdrop-filter: blur(10px) !important;
-        }
-        
-        /* Décaler l'horloge pour éviter le chevauchement avec le menu */
-        .datetime {
-            margin-left: 70px !important;
-            background-color: rgba(40, 40, 40, 0.7) !important;
-            padding: 8px 15px !important;
-            border-radius: 12px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        /* Améliorer l'apparence du bouton de menu */
-        .menu-toggle-visible {
-            background-color: rgba(50, 50, 50, 0.8) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 8px !important;
-            width: 40px !important;
-            height: 40px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            z-index: 1000 !important;
-            position: relative !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Application directe aux éléments
-    const datetimeEl = document.querySelector('.datetime');
-    const menuToggle = document.querySelector('.menu-toggle-visible');
-    
-    if (datetimeEl) {
-        datetimeEl.style.marginLeft = '70px';
-        datetimeEl.style.backgroundColor = 'rgba(40, 40, 40, 0.7)';
-        datetimeEl.style.padding = '8px 15px';
-        datetimeEl.style.borderRadius = '12px';
-    }
-    
-    if (menuToggle) {
-        menuToggle.style.backgroundColor = 'rgba(50, 50, 50, 0.8)';
-        menuToggle.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        menuToggle.style.borderRadius = '8px';
-        menuToggle.style.width = '40px';
-        menuToggle.style.height = '40px';
-        menuToggle.style.display = 'flex';
-        menuToggle.style.alignItems = 'center';
-        menuToggle.style.justifyContent = 'center';
-    }
-}
-
-/**
  * Improve date and time display in the header
  */
 function improveDateTimeDisplay() {
@@ -755,7 +689,7 @@ function improveDateTimeDisplay() {
     datetimeElement.style.padding = '8px 15px';
     datetimeElement.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
     datetimeElement.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-    datetimeElement.style.margin = '0 10px';
+    datetimeElement.style.margin = '0 10px 0 70px'; // Décalé vers la droite pour éviter le bouton de menu
     
     // Ensure proper capitalization of date
     updateDateTimeDisplay();
@@ -868,308 +802,62 @@ function enhanceMeetingsDisplay() {
     // Add refresh button to meetings header
     const createMeetingButton = document.querySelector('.create-meeting-integrated');
     if (createMeetingButton && meetingsContainer) {
-        const refreshButton = document.createElement('button');
-        refreshButton.className = 'refresh-meetings-btn';
-        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
-        refreshButton.title = "Rafraîchir les réunions";
-        refreshButton.style.cssText = `
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        `;
-        
-        refreshButton.addEventListener('mouseover', function() {
-            this.style.background = 'rgba(255, 255, 255, 0.2)';
-            this.style.transform = 'rotate(30deg)';
-        });
-        
-        refreshButton.addEventListener('mouseout', function() {
-            this.style.background = 'rgba(255, 255, 255, 0.1)';
-            this.style.transform = 'rotate(0)';
-        });
-        
-        refreshButton.addEventListener('click', function() {
-            this.style.transform = 'rotate(360deg)';
-            // Add a spinning animation
-            this.querySelector('i').classList.add('fa-spin');
+        // Vérifier si le bouton n'existe pas déjà
+        if (!document.querySelector('.refresh-meetings-btn')) {
+            const refreshButton = document.createElement('button');
+            refreshButton.className = 'refresh-meetings-btn';
+            refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            refreshButton.title = "Rafraîchir les réunions";
+            refreshButton.style.cssText = `
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                color: white;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            `;
             
-            // Force refresh of meetings
-            if (typeof window.fetchMeetings === 'function') {
-                window.fetchMeetings(true);
+            refreshButton.addEventListener('mouseover', function() {
+                this.style.background = 'rgba(255, 255, 255, 0.2)';
+                this.style.transform = 'rotate(30deg)';
+            });
+            
+            refreshButton.addEventListener('mouseout', function() {
+                this.style.background = 'rgba(255, 255, 255, 0.1)';
+                this.style.transform = 'rotate(0)';
+            });
+            
+            refreshButton.addEventListener('click', function() {
+                this.style.transform = 'rotate(360deg)';
+                // Add a spinning animation
+                this.querySelector('i').classList.add('fa-spin');
                 
-                // Remove spinning after 2 seconds
-                setTimeout(() => {
-                    this.querySelector('i').classList.remove('fa-spin');
-                }, 2000);
+                // Force refresh of meetings
+                if (typeof window.fetchMeetings === 'function') {
+                    window.fetchMeetings(true);
+                    
+                    // Remove spinning after 2 seconds
+                    setTimeout(() => {
+                        this.querySelector('i').classList.remove('fa-spin');
+                    }, 2000);
+                }
+            });
+            
+            const titleBar = document.querySelector('.meetings-title-bar');
+            if (titleBar) {
+                titleBar.style.position = 'relative';
+                titleBar.appendChild(refreshButton);
             }
-        });
-        
-        const titleBar = document.querySelector('.meetings-title-bar');
-        if (titleBar) {
-            titleBar.style.position = 'relative';
-            titleBar.appendChild(refreshButton);
         }
     }
-}
-
-/**
- * Initialize and fix the rooms display
- * AMÉLIORATION: Implémentation de l'affichage centré des salles en grille
- */
-function initializeRoomsDisplay() {
-  console.log("🏢 Amélioration de l'affichage des salles");
-
-  // Styles pour la section des salles
-  const roomsStyle = document.createElement('style');
-  roomsStyle.id = 'rooms-display-styles';
-  roomsStyle.textContent = `
-    /* Styles optimisés pour la section des salles */
-    .rooms-section {
-        position: fixed !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 70% !important;
-        max-width: 800px !important;
-        max-height: 80vh !important;
-        background-color: rgba(30, 30, 30, 0.85) !important;
-        backdrop-filter: blur(15px) !important;
-        border-radius: 15px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-        z-index: 9999 !important;
-        padding: 20px !important;
-        display: none !important;
-        opacity: 0 !important;
-        transition: opacity 0.3s ease, transform 0.3s ease !important;
-        overflow: auto !important;
-    }
-    
-    /* Classe pour afficher la section des salles */
-    .rooms-section.visible {
-        display: block !important;
-        opacity: 1 !important;
-        transform: translate(-50%, -50%) scale(1) !important;
-    }
-    
-    /* Overlay pour fermer au clic en dehors */
-    .rooms-overlay {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        backdrop-filter: blur(3px) !important;
-        z-index: 9998 !important;
-        display: none !important;
-        opacity: 0 !important;
-        transition: opacity 0.3s ease !important;
-    }
-    
-    /* Classe pour afficher l'overlay */
-    .rooms-overlay.visible {
-        display: block !important;
-        opacity: 1 !important;
-    }
-    
-    /* Disposition en grille pour les salles */
-    .rooms {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-        grid-gap: 15px !important;
-        padding: 10px !important;
-    }
-    
-    /* Style des cartes de salle */
-    .room-card {
-        background-color: rgba(50, 50, 50, 0.5) !important;
-        backdrop-filter: blur(5px) !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        padding: 15px !important;
-        height: 120px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        transition: all 0.2s ease !important;
-        cursor: pointer !important;
-        text-align: center !important;
-    }
-    
-    /* Effet de survol des cartes */
-    .room-card:hover {
-        transform: translateY(-5px) !important;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
-        background-color: rgba(60, 60, 60, 0.7) !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-    }
-    
-    /* Titre de la section des salles */
-    .rooms-section-title {
-        color: white !important;
-        text-align: center !important;
-        margin-top: 0 !important;
-        margin-bottom: 15px !important;
-        padding-bottom: 10px !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-    
-    /* Bouton de fermeture */
-    .rooms-section-close {
-        position: absolute !important;
-        top: 15px !important;
-        right: 15px !important;
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border: none !important;
-        color: white !important;
-        width: 30px !important;
-        height: 30px !important;
-        border-radius: 50% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        font-size: 18px !important;
-        transition: background-color 0.2s ease !important;
-    }
-    
-    .rooms-section-close:hover {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-    }
-  `;
-  document.head.appendChild(roomsStyle);
-  
-  // Vérifier si l'overlay existe déjà
-  let roomsOverlay = document.querySelector('.rooms-overlay');
-  if (!roomsOverlay) {
-    roomsOverlay = document.createElement('div');
-    roomsOverlay.className = 'rooms-overlay';
-    document.body.appendChild(roomsOverlay);
-  }
-  
-  // Supprimer le bouton flottant (en double)
-  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
-  if (floatingButton) {
-    floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
-  }
-  
-  // Récupérer la section des salles ou la créer si nécessaire
-  let roomsSection = document.querySelector('.rooms-section');
-  if (roomsSection) {
-    // S'assurer que la section a les bonnes propriétés CSS
-    roomsSection.style.position = 'fixed';
-    roomsSection.style.left = '50%';
-    roomsSection.style.top = '50%';
-    roomsSection.style.transform = 'translate(-50%, -50%)';
-    roomsSection.style.width = '70%';
-    roomsSection.style.maxWidth = '800px';
-    
-    // Vérifier si le titre existe
-    if (!roomsSection.querySelector('.rooms-section-title')) {
-      const title = document.createElement('h3');
-      title.className = 'rooms-section-title';
-      title.innerHTML = '<i class="fas fa-door-open"></i> Salles disponibles';
-      roomsSection.insertBefore(title, roomsSection.firstChild);
-    }
-    
-    // Vérifier si le bouton de fermeture existe
-    if (!roomsSection.querySelector('.rooms-section-close')) {
-      const closeButton = document.createElement('button');
-      closeButton.className = 'rooms-section-close';
-      closeButton.innerHTML = '&times;';
-      closeButton.addEventListener('click', function() {
-        roomsSection.classList.remove('visible');
-        roomsOverlay.classList.remove('visible');
-        updateRoomsButtonText(false);
-      });
-      roomsSection.appendChild(closeButton);
-    }
-  }
-  
-  // Make sure the rooms toggle buttons work properly
-  const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
-  const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
-  
-  // Define the toggle function
-  const toggleRooms = function() {
-    if (!roomsSection) return;
-    
-    const isVisible = roomsSection.classList.contains('visible');
-    
-    if (isVisible) {
-      roomsSection.classList.remove('visible');
-      roomsOverlay.classList.remove('visible');
-      
-      // Update button text
-      updateRoomsButtonText(false);
-    } else {
-      roomsSection.classList.add('visible');
-      roomsOverlay.classList.add('visible');
-      
-      // Update button text
-      updateRoomsButtonText(true);
-    }
-  };
-  
-  // Attach the toggle function
-  if (toggleRoomsButton && !toggleRoomsButton._hasRoomsHandler) {
-    toggleRoomsButton.addEventListener('click', toggleRooms);
-    toggleRoomsButton._hasRoomsHandler = true;
-  }
-  
-  if (controlRoomsBtn && !controlRoomsBtn._hasRoomsHandler) {
-    controlRoomsBtn.addEventListener('click', toggleRooms);
-    controlRoomsBtn._hasRoomsHandler = true;
-  }
-  
-  // Close when clicking the overlay
-  roomsOverlay.addEventListener('click', function() {
-    if (roomsSection) {
-      roomsSection.classList.remove('visible');
-      roomsOverlay.classList.remove('visible');
-      updateRoomsButtonText(false);
-    }
-  });
-  
-  // Fix room cards
-  const roomCards = document.querySelectorAll('.room-card');
-  roomCards.forEach(card => {
-    card.style.borderRadius = '10px';
-    card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-    card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-    card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-    
-    card.addEventListener('mouseover', function() {
-      this.style.transform = 'translateY(-3px)';
-      this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
-    });
-    
-    card.addEventListener('mouseout', function() {
-      this.style.transform = '';
-      this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-    });
-    
-    // Make sure room cards are clickable
-    card.addEventListener('click', function() {
-      const roomName = this.getAttribute('data-room');
-      if (roomName) {
-        window.location.href = '/' + roomName.toLowerCase();
-      }
-    });
-  });
 }
 
 /**
@@ -1318,256 +1006,4 @@ function enhanceUIPerformance() {
       element.style.zIndex = '5';
     }
   });
-}
-
-/**
- * Masque aggressivement toutes les informations de synchronisation
- * NOUVELLE FONCTION
- */
-function hideAllSyncInfo() {
-    console.log("🙈 Masquage des informations de synchronisation");
-    
-    // Styles pour masquer les infos de synchro
-    const style = document.createElement('style');
-    style.id = 'hide-sync-info-styles';
-    style.textContent = `
-        /* Masquage des informations de synchronisation */
-        [id*="synchro"], 
-        [class*="synchro"], 
-        .sync-info, 
-        .last-sync, 
-        .datetime-info,
-        [data-sync-info],
-        div:has(> [id*="synchro"]),
-        div:has(> [class*="synchro"]),
-        div:has(span:contains("Dernière")),
-        div:has(span:contains("dernière")),
-        div:has(span:contains("synchro")),
-        div:has(span:contains("Synchro")),
-        div:has(span:contains("mise à jour")),
-        span:contains("Dernière"),
-        span:contains("dernière"),
-        span:contains("synchro"),
-        span:contains("Synchro"),
-        span:contains("mise à jour") {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            width: 0 !important;
-            overflow: hidden !important;
-            position: absolute !important;
-            pointer-events: none !important;
-            opacity: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Masquer directement tous les éléments potentiels
-    const syncElements = document.querySelectorAll('[id*="synchro"], [class*="synchro"], .sync-info, .last-sync');
-    syncElements.forEach(element => {
-        if (element) {
-            element.style.display = 'none';
-            element.style.visibility = 'hidden';
-            element.style.height = '0';
-            element.style.width = '0';
-            element.style.overflow = 'hidden';
-            element.style.opacity = '0';
-            element.style.position = 'absolute';
-            element.style.pointerEvents = 'none';
-        }
-    });
-    
-    // Rechercher par texte
-    document.querySelectorAll('*').forEach(element => {
-        try {
-            const text = element.textContent.toLowerCase();
-            if (text.includes('dernière') || 
-                text.includes('synchro') || 
-                text.includes('mise à jour')) {
-                element.style.display = 'none';
-            }
-        } catch (e) {}
-    });
-}
-
-/**
- * Réduit la largeur de la bannière du bas
- * NOUVELLE FONCTION
- */
-function reduceFooterWidth() {
-    console.log("📏 Réduction de la largeur de la bannière du bas");
-    
-    // Styles pour réduire la largeur
-    const style = document.createElement('style');
-    style.id = 'reduced-footer-styles';
-    style.textContent = `
-        /* Réduction de la largeur de la bannière du bas */
-        .controls-container, 
-        .footer-banner, 
-        .app-footer,
-        .bottom-controls {
-            width: 40% !important;
-            max-width: 500px !important;
-            min-width: 400px !important;
-            margin: 0 auto !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            border-radius: 15px 15px 0 0 !important;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
-            background-color: rgba(30, 30, 30, 0.7) !important;
-            backdrop-filter: blur(10px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            padding: 10px !important;
-            display: flex !important;
-            justify-content: center !important;
-            flex-wrap: wrap !important;
-            gap: 10px !important;
-            position: fixed !important;
-            bottom: 0 !important;
-            z-index: 1000 !important;
-        }
-        
-        /* Ajustement pour mobile */
-        @media (max-width: 768px) {
-            .controls-container, 
-            .footer-banner, 
-            .app-footer,
-            .bottom-controls {
-                width: 100% !important;
-                min-width: unset !important;
-                border-radius: 0 !important;
-            }
-        }
-        
-        /* Améliorer l'apparence des boutons */
-        .controls-container button,
-        .footer-banner button,
-        .app-footer button,
-        .bottom-controls button {
-            background-color: rgba(50, 50, 50, 0.8) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 8px !important;
-            padding: 8px 12px !important;
-            color: white !important;
-            font-size: 14px !important;
-            transition: all 0.2s ease !important;
-            margin: 0 5px !important;
-        }
-        
-        .controls-container button:hover,
-        .footer-banner button:hover,
-        .app-footer button:hover,
-        .bottom-controls button:hover {
-            background-color: rgba(60, 60, 60, 0.9) !important;
-            transform: translateY(-2px) !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Application directe
-    const footerElements = document.querySelectorAll('.controls-container, .footer-banner, .app-footer, .bottom-controls');
-    footerElements.forEach(element => {
-        if (element) {
-            element.style.width = '40%';
-            element.style.maxWidth = '500px';
-            element.style.minWidth = '400px';
-            element.style.margin = '0 auto';
-            element.style.left = '50%';
-            element.style.transform = 'translateX(-50%)';
-            element.style.borderRadius = '15px 15px 0 0';
-            element.style.backgroundColor = 'rgba(30, 30, 30, 0.7)';
-            element.style.backdropFilter = 'blur(10px)';
-        }
-    });
-}
-
-/**
- * Augmente la transparence des éléments
- * NOUVELLE FONCTION
- */
-function increaseTransparency() {
-    console.log("🔍 Augmentation de la transparence des éléments");
-    
-    // Styles pour la transparence
-    const style = document.createElement('style');
-    style.id = 'transparency-styles';
-    style.textContent = `
-        /* Augmentation de la transparence */
-        .header {
-            background-color: rgba(30, 30, 30, 0.7) !important;
-            backdrop-filter: blur(10px) !important;
-        }
-        
-        .meetings-container {
-            background-color: rgba(30, 30, 30, 0.6) !important;
-            backdrop-filter: blur(10px) !important;
-            border-radius: 15px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            overflow: hidden !important;
-        }
-        
-        .meetings-title-bar {
-            background-color: rgba(40, 40, 40, 0.7) !important;
-            backdrop-filter: blur(5px) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        .meeting-item {
-            background-color: rgba(45, 45, 45, 0.7) !important;
-            backdrop-filter: blur(5px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 10px !important;
-            margin-bottom: 10px !important;
-            transition: all 0.2s ease !important;
-        }
-        
-        .meeting-item:hover {
-            background-color: rgba(55, 55, 55, 0.8) !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
-        }
-        
-        .meeting-id-entry {
-            background-color: rgba(40, 40, 40, 0.7) !important;
-            backdrop-filter: blur(5px) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-            padding: 15px !important;
-        }
-        
-        .side-menu {
-            background-color: rgba(25, 25, 25, 0.85) !important;
-            backdrop-filter: blur(15px) !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-/**
- * Configure les gestionnaires pour fermer au clic en dehors
- * NOUVELLE FONCTION
- */
-function setupOutsideClickHandlers() {
-    console.log("👆 Configuration des gestionnaires de clic extérieur");
-    
-    // Pour le menu latéral
-    document.addEventListener('click', function(e) {
-        const sideMenu = document.querySelector('.side-menu');
-        const menuToggle = document.querySelector('.menu-toggle-visible');
-        const menuOverlay = document.querySelector('.menu-overlay');
-        
-        if (sideMenu && 
-            sideMenu.classList.contains('expanded') && 
-            !sideMenu.contains(e.target) && 
-            !menuToggle.contains(e.target)) {
-            
-            sideMenu.classList.remove('expanded');
-            document.querySelector('.main-container')?.classList.remove('menu-expanded');
-            if (menuOverlay) menuOverlay.classList.remove('active');
-        }
-    });
-    
-    // L'overlay des salles est déjà configuré dans initializeRoomsDisplay()
 }
