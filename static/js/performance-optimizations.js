@@ -75,12 +75,19 @@ function removeHeaderAndShrinkFooter() {
             border: none !important;
         }
         
-        /* Réduire la largeur de la bannière du bas */
+        /* Masquer l'information de dernière synchro */
+        [id*="synchro"], [class*="synchro"], .sync-info, .last-sync, 
+        span:has(> [id*="synchro"]), div:has(> [id*="synchro"]) {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        /* Réduire la largeur de la bannière du bas - Version compact */
         .controls-container, .footer-banner, .app-footer, 
         div[class*="footer"], div[class*="Footer"], 
         div[id*="footer"], div[id*="Footer"] {
-            width: 80% !important;
-            max-width: 900px !important;
+            width: 50% !important;
+            max-width: 600px !important;
             margin: 0 auto !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
@@ -588,8 +595,8 @@ function fixSpacingAndOverlaps() {
             bottom: 0 !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
-            width: 80% !important;
-            max-width: 900px !important;
+            width: 50% !important;
+            max-width: 600px !important;
             z-index: 100 !important;
             padding: 10px 15px !important;
             border-bottom: none !important;
