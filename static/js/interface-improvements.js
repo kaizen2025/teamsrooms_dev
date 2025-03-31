@@ -50,121 +50,75 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Masque aggressivement TOUTES les informations de synchronisation
+ * Masque les informations de synchronisation (version simplifiée et robuste)
  */
 function hideAllSynchronizationInfo() {
-    // 1. Ajouter des styles CSS pour masquer tous les éléments de synchronisation
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Masquer tous les éléments liés à la synchronisation */
-        [id*="synchro"], [class*="synchro"], .sync-info, .last-sync,
-        [id*="derniere"], [class*="derniere"], 
-        [id*="mise-a-jour"], [class*="mise-a-jour"],
+    try {
+        // 1. Ajouter des styles CSS pour masquer tous les éléments de synchronisation
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Masquer les éléments liés à la synchronisation par ID ou classe */
+            [id*="synchro"], [class*="synchro"], .sync-info, .last-sync,
+            [id*="derniere"], [class*="derniere"], 
+            [id*="mise-a-jour"], [class*="mise-a-jour"],
+            
+            /* Cibler spécifiquement l'élément dans le pied de page */
+            div[class*="derniere"], span[class*="derniere"],
+            div[class*="synchro"], span[class*="synchro"] {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+            }
+        `;
+        document.head.appendChild(style);
         
-        /* Cibler spécifiquement l'élément de dernière synchro dans le pied de page */
-        div[class*="Dernière"], span[class*="Dernière"],
-        div[class*="dernière"], span[class*="dernière"],
-        div[class*="synchro"], span[class*="synchro"],
-        div[class*="Synchro"], span[class*="Synchro"],
+        // 2. Masquer spécifiquement l'élément de "Dernière synchro" par son texte
+        const synchroTerms = ['dernière synchro', 'derniere synchro', 'mise à jour', 'mise a jour'];
+        const timePattern = /\d{1,2}:\d{2}:\d{2}/;
         
-        /* Ciblage spécifique pour les éléments de synchronisation en bas de page */
-        .derniere-synchro, .derniere-sync, .last-update, .update-info,
-        .sync-timestamp, .update-timestamp,
-        
-        /* Éléments de synchronisation spécifiques */
-        div:has(> span:contains("Dernière")),
-        div:has(> span:contains("dernière")),
-        div:has(> span:contains("synchro")) {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            height: 0 !important;
-            width: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-            position: absolute !important;
-            pointer-events: none !important;
-            z-index: -9999 !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // 2. Approche JavaScript pour masquer les éléments de manière dynamique
-    function masquerElementsSynchro() {
-        // Liste des termes à rechercher dans le texte
-        const termes = [
-            'dernière synchro', 'derniere synchro', 
-            'dernière mise à jour', 'derniere mise a jour',
-            'synchronisation', 'mise à jour', 'mise a jour',
-            'Dernière synchro', 'Derniere synchro',
-            'Dernière mise à jour', 'Derniere mise a jour'
-        ];
-        
-        // Rechercher tous les éléments qui contiennent ces termes
-        document.querySelectorAll('*').forEach(el => {
-            if (el.textContent && el.nodeType === 1) { // Élément HTML
-                // Vérifier si le texte de l'élément contient l'un des termes
-                const texte = el.textContent.toLowerCase();
-                const contientTerme = termes.some(terme => texte.includes(terme.toLowerCase()));
-                
-                // Si l'élément contient un terme de synchronisation
-                if (contientTerme) {
-                    masquerElement(el);
+        // Sélecteur simple pour éviter de parcourir tous les éléments
+        const elements = document.querySelectorAll('.controls-container div, .controls-container span, .footer div, .footer span');
+        elements.forEach(el => {
+            try {
+                // Vérifier si l'élément existe et a du texte
+                if (el && el.textContent) {
+                    const lowerText = el.textContent.toLowerCase();
+                    
+                    // Si l'élément contient un terme de synchronisation ou un horodatage
+                    if (synchroTerms.some(term => lowerText.includes(term)) || 
+                        timePattern.test(el.textContent)) {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                    }
                 }
-                
-                // Vérifier si l'élément contient une horodatage (format HH:MM:SS)
-                if (el.textContent.match(/\d{1,2}:\d{2}(:\d{2})?/) && 
-                    (texte.includes('dernière') || texte.includes('synchro'))) {
-                    masquerElement(el);
-                }
+            } catch (error) {
+                // Ignorer les erreurs sur des éléments individuels
             }
         });
         
-        // Cibler spécifiquement l'élément près des boutons de contrôle
-        document.querySelectorAll('.controls-container > *').forEach(el => {
-            if (el.textContent.match(/\d{1,2}:\d{2}:\d{2}/) || 
-                el.textContent.toLowerCase().includes('synchro') || 
-                el.textContent.toLowerCase().includes('dernière')) {
-                masquerElement(el);
-            }
-        });
-    }
-    
-    // Fonction pour masquer complètement un élément
-    function masquerElement(el) {
-        el.style.display = 'none';
-        el.style.visibility = 'hidden';
-        el.style.opacity = '0';
-        el.style.height = '0';
-        el.style.width = '0';
-        el.style.overflow = 'hidden';
-        el.style.position = 'absolute';
-        el.style.pointerEvents = 'none';
-        el.style.zIndex = '-9999';
-        el.setAttribute('aria-hidden', 'true');
-    }
-    
-    // Exécuter immédiatement
-    masquerElementsSynchro();
-    
-    // Masquer spécifiquement l'élément contenant "Dernière synchro"
-    document.querySelectorAll('div, span').forEach(el => {
-        if (el.textContent.includes('Dernière synchro') || 
-            el.textContent.includes('dernière synchro') ||
-            el.textContent.includes('dernière mise à jour')) {
-            masquerElement(el);
+        // 3. Cibler l'élément "Dernière synchro" dans la barre inférieure spécifiquement
+        try {
+            const footerElements = document.querySelectorAll('.controls-container > *');
+            footerElements.forEach(el => {
+                if (el && el.textContent) {
+                    const text = el.textContent.toLowerCase();
+                    if (text.includes('synchro') || 
+                        text.includes('dernière') || 
+                        timePattern.test(el.textContent)) {
+                        el.style.display = 'none';
+                    }
+                }
+            });
+        } catch (error) {
+            // Ignorer les erreurs
+            console.log("Erreur lors du masquage des éléments spécifiques:", error);
         }
-    });
-    
-    // Cibler l'élément qui contient la date/heure de mise à jour
-    document.querySelectorAll('[id*="synchro"], [class*="synchro"]').forEach(masquerElement);
-    
-    // Configurez une observation des changements du DOM pour masquer les nouveaux éléments
-    const observer = new MutationObserver(masquerElementsSynchro);
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    console.log("Toutes les informations de synchronisation ont été masquées");
+        
+        console.log("Informations de synchronisation masquées avec succès");
+    } catch (error) {
+        console.log("Erreur lors du masquage des infos de synchronisation:", error);
+    }
 }
 
 /**
@@ -761,131 +715,162 @@ function updateButtonsAndLayout() {
  * avec fermeture en cliquant n'importe où en dehors du menu
  */
 function initializeMenu() {
-    const menuToggleBtn = document.querySelector('.menu-toggle-visible');
-    const sideMenu = document.querySelector('.side-menu');
-    const mainContainer = document.querySelector('.main-container');
-    const menuOverlay = document.querySelector('.menu-overlay');
-    
-    // Ensure menu starts collapsed by default
-    if (sideMenu && mainContainer) {
-        // Ensure menu starts collapsed
-        sideMenu.classList.remove('expanded');
-        mainContainer.classList.remove('menu-expanded');
-    }
-    
-    // Créer un overlay global pour détecter les clics en dehors si nécessaire
-    let globalOverlay = document.querySelector('.global-click-overlay');
-    if (!globalOverlay) {
-        globalOverlay = document.createElement('div');
-        globalOverlay.className = 'global-click-overlay';
-        globalOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            z-index: 9000;
-            display: none;
-        `;
-        document.body.appendChild(globalOverlay);
+    try {
+        const menuToggleBtn = document.querySelector('.menu-toggle-visible');
+        const sideMenu = document.querySelector('.side-menu');
+        const mainContainer = document.querySelector('.main-container');
+        const menuOverlay = document.querySelector('.menu-overlay');
         
-        // Fermeture du menu et des salles au clic sur l'overlay global
-        globalOverlay.addEventListener('click', function() {
-            // Fermer le menu latéral
-            if (sideMenu && sideMenu.classList.contains('expanded')) {
-                sideMenu.classList.remove('expanded');
-                if (mainContainer) mainContainer.classList.remove('menu-expanded');
-            }
-            
-            // Fermer la liste des salles si elle est ouverte
-            const roomsSection = document.querySelector('.rooms-section');
-            if (roomsSection && roomsSection.classList.contains('visible')) {
-                roomsSection.classList.remove('visible');
-                setTimeout(() => {
-                    roomsSection.style.display = 'none';
-                }, 300);
-                
-                // Mise à jour du texte des boutons
-                updateRoomsButtonText(false);
-            }
-            
-            // Cacher l'overlay global
-            this.style.display = 'none';
-            
-            // Update title centering
-            setTimeout(fixTitleCentering, 50);
-        });
-    }
-    
-    // Menu toggle button functionality
-    if (menuToggleBtn && sideMenu && mainContainer) {
-        menuToggleBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            sideMenu.classList.toggle('expanded');
-            mainContainer.classList.toggle('menu-expanded');
-            
-            // Activer l'overlay global si le menu est ouvert
-            if (globalOverlay) {
-                globalOverlay.style.display = sideMenu.classList.contains('expanded') ? 'block' : 'none';
-            }
-            
-            // Activate overlay on mobile
-            if (window.innerWidth <= 768 && menuOverlay) {
-                if (sideMenu.classList.contains('expanded')) {
-                    menuOverlay.classList.add('active');
-                } else {
-                    menuOverlay.classList.remove('active');
-                }
-            }
-            
-            // Update title centering
-            setTimeout(fixTitleCentering, 50);
-        });
-    }
-    
-    // Empêcher la propagation des clics depuis le menu
-    if (sideMenu) {
-        sideMenu.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-    
-    // Close menu when clicking overlay
-    if (menuOverlay) {
-        menuOverlay.addEventListener('click', function() {
+        // Ensure menu starts collapsed by default
+        if (sideMenu && mainContainer) {
+            // Ensure menu starts collapsed
             sideMenu.classList.remove('expanded');
             mainContainer.classList.remove('menu-expanded');
-            menuOverlay.classList.remove('active');
+        }
+        
+        // Utiliser l'overlay partagé
+        let clickOverlay = document.getElementById('click-outside-overlay');
+        if (!clickOverlay) {
+            clickOverlay = document.createElement('div');
+            clickOverlay.id = 'click-outside-overlay';
+            clickOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: transparent;
+                z-index: 500;
+                display: none;
+            `;
+            document.body.appendChild(clickOverlay);
             
-            // Update title centering
-            setTimeout(fixTitleCentering, 50);
-        });
-    }
-    
-    // Ensure menu items are interactive and close menu on mobile
-    const menuItems = document.querySelectorAll('.menu-item:not(.menu-item-with-submenu .menu-item)');
-    menuItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            // Only handle clicks for items that don't have submenus
-            if (!this.querySelector('.menu-dropdown-icon')) {
-                // Remove active class from all menu items
-                menuItems.forEach(i => i.classList.remove('active'));
-                // Add active class to clicked item
-                this.classList.add('active');
-                
-                // On mobile, close the menu after selection
-                if (window.innerWidth <= 768) {
+            // Gestionnaire pour fermer les menus lors d'un clic sur l'overlay
+            clickOverlay.addEventListener('click', function() {
+                // Fermer le menu latéral
+                if (sideMenu && sideMenu.classList.contains('expanded')) {
                     sideMenu.classList.remove('expanded');
-                    mainContainer.classList.remove('menu-expanded');
-                    if (menuOverlay) menuOverlay.classList.remove('active');
+                    if (mainContainer) mainContainer.classList.remove('menu-expanded');
+                }
+                
+                // Fermer aussi la liste des salles si elle est ouverte
+                const roomsSection = document.querySelector('.rooms-section');
+                if (roomsSection && roomsSection.classList.contains('visible')) {
+                    roomsSection.classList.remove('visible');
+                    setTimeout(() => {
+                        roomsSection.style.display = 'none';
+                    }, 300);
                     
-                    // Update title centering
+                    // Mise à jour du texte des boutons
+                    if (typeof updateRoomsButtonText === 'function') {
+                        updateRoomsButtonText(false);
+                    }
+                }
+                
+                // Cacher l'overlay
+                this.style.display = 'none';
+                
+                // Update title centering
+                if (typeof fixTitleCentering === 'function') {
                     setTimeout(fixTitleCentering, 50);
                 }
+            });
+        }
+        
+        // Remplacer le gestionnaire du menu pour éviter les doublons
+        if (menuToggleBtn && sideMenu && mainContainer) {
+            // Cloner pour supprimer les gestionnaires existants
+            const newMenuToggleBtn = menuToggleBtn.cloneNode(true);
+            if (menuToggleBtn.parentNode) {
+                menuToggleBtn.parentNode.replaceChild(newMenuToggleBtn, menuToggleBtn);
             }
+            
+            newMenuToggleBtn.addEventListener('click', function(e) {
+                if (e) e.preventDefault();
+                
+                const isExpanded = sideMenu.classList.contains('expanded');
+                
+                if (!isExpanded) {
+                    // Ouvrir le menu
+                    sideMenu.classList.add('expanded');
+                    mainContainer.classList.add('menu-expanded');
+                    
+                    // Afficher l'overlay de détection des clics
+                    if (clickOverlay) clickOverlay.style.display = 'block';
+                } else {
+                    // Fermer le menu
+                    sideMenu.classList.remove('expanded');
+                    mainContainer.classList.remove('menu-expanded');
+                    
+                    // Cacher l'overlay
+                    if (clickOverlay) clickOverlay.style.display = 'none';
+                }
+                
+                // Gestion de l'overlay mobile existant
+                if (window.innerWidth <= 768 && menuOverlay) {
+                    if (sideMenu.classList.contains('expanded')) {
+                        menuOverlay.classList.add('active');
+                    } else {
+                        menuOverlay.classList.remove('active');
+                    }
+                }
+                
+                // Update title centering
+                if (typeof fixTitleCentering === 'function') {
+                    setTimeout(fixTitleCentering, 50);
+                }
+            });
+        }
+        
+        // Empêcher la propagation des clics depuis le menu
+        if (sideMenu) {
+            sideMenu.addEventListener('click', function(e) {
+                if (e) e.stopPropagation();
+            });
+        }
+        
+        // Close menu when clicking overlay
+        if (menuOverlay) {
+            menuOverlay.addEventListener('click', function() {
+                sideMenu.classList.remove('expanded');
+                mainContainer.classList.remove('menu-expanded');
+                menuOverlay.classList.remove('active');
+                
+                // Update title centering
+                if (typeof fixTitleCentering === 'function') {
+                    setTimeout(fixTitleCentering, 50);
+                }
+            });
+        }
+        
+        // Ensure menu items are interactive and close menu on mobile
+        const menuItems = document.querySelectorAll('.menu-item:not(.menu-item-with-submenu .menu-item)');
+        menuItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Only handle clicks for items that don't have submenus
+                if (!this.querySelector('.menu-dropdown-icon')) {
+                    // Remove active class from all menu items
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // On mobile, close the menu after selection
+                    if (window.innerWidth <= 768) {
+                        sideMenu.classList.remove('expanded');
+                        mainContainer.classList.remove('menu-expanded');
+                        if (menuOverlay) menuOverlay.classList.remove('active');
+                        
+                        // Update title centering
+                        if (typeof fixTitleCentering === 'function') {
+                            setTimeout(fixTitleCentering, 50);
+                        }
+                    }
+                }
+            });
         });
-    });
+    } catch (error) {
+        console.log("Erreur dans initializeMenu:", error);
+    }
 }
 
 /**
@@ -1113,160 +1098,180 @@ function enhanceMeetingsDisplay() {
  * avec fermeture en cliquant n'importe où en dehors de la liste des salles
  */
 function initializeRoomsDisplay() {
-  // Supprimer le bouton flottant (en double)
-  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
-  if (floatingButton) {
-    floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
+  try {
+    // Supprimer le bouton flottant (en double)
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    if (floatingButton) {
+      floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
+    }
+    
+    // Make sure the rooms toggle buttons work properly
+    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
+    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    const roomsSection = document.querySelector('.rooms-section');
+    
+    // Improve room section styling for smoother animations
+    if (roomsSection) {
+        roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
+        roomsSection.style.backdropFilter = 'blur(10px)';
+        roomsSection.style.borderRadius = '15px';
+        roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
+        roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        roomsSection.style.padding = '15px';
+        
+        // Add styles for animation
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+                .rooms-section {
+                    opacity: 0;
+                    transform: translateY(10px);
+                    display: none;
+                }
+                .rooms-section.visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                    display: block;
+                }
+            </style>
+        `);
+        
+        // Empêcher la propagation des clics depuis la liste des salles
+        roomsSection.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+    
+    // Créer un overlay simple pour la détection des clics en dehors
+    let clickOverlay = document.getElementById('click-outside-overlay');
+    if (!clickOverlay) {
+        clickOverlay = document.createElement('div');
+        clickOverlay.id = 'click-outside-overlay';
+        clickOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+            z-index: 500;
+            display: none;
+        `;
+        document.body.appendChild(clickOverlay);
+        
+        // Gestionnaire pour fermer les menus lors d'un clic sur l'overlay
+        clickOverlay.addEventListener('click', function() {
+            // Fermer la liste des salles si ouverte
+            if (roomsSection && roomsSection.classList.contains('visible')) {
+                roomsSection.classList.remove('visible');
+                setTimeout(() => {
+                    roomsSection.style.display = 'none';
+                }, 300);
+                
+                // Mise à jour du texte des boutons
+                if (typeof updateRoomsButtonText === 'function') {
+                    updateRoomsButtonText(false);
+                }
+            }
+            
+            // Fermer aussi le menu latéral s'il est ouvert
+            const sideMenu = document.querySelector('.side-menu');
+            const mainContainer = document.querySelector('.main-container');
+            if (sideMenu && sideMenu.classList.contains('expanded')) {
+                sideMenu.classList.remove('expanded');
+                if (mainContainer) mainContainer.classList.remove('menu-expanded');
+            }
+            
+            // Cacher l'overlay
+            this.style.display = 'none';
+        });
+    }
+    
+    // Define the toggle function
+    function toggleRooms(e) {
+        if (e) e.preventDefault();
+        if (!roomsSection) return;
+        
+        const isVisible = roomsSection.classList.contains('visible');
+        
+        if (isVisible) {
+            roomsSection.classList.remove('visible');
+            setTimeout(() => {
+                roomsSection.style.display = 'none';
+            }, 300);
+            
+            // Update button text
+            if (typeof updateRoomsButtonText === 'function') {
+                updateRoomsButtonText(false);
+            }
+            
+            // Cacher l'overlay
+            if (clickOverlay) clickOverlay.style.display = 'none';
+        } else {
+            roomsSection.style.display = 'block';
+            // Force reflow
+            roomsSection.offsetHeight;
+            roomsSection.classList.add('visible');
+            
+            // Update button text
+            if (typeof updateRoomsButtonText === 'function') {
+                updateRoomsButtonText(true);
+            }
+            
+            // Afficher l'overlay
+            if (clickOverlay) clickOverlay.style.display = 'block';
+        }
+    }
+    
+    // Attacher la fonction aux boutons
+    if (toggleRoomsButton) {
+        // Remplacer le gestionnaire existant
+        const newToggleButton = toggleRoomsButton.cloneNode(true);
+        if (toggleRoomsButton.parentNode) {
+            toggleRoomsButton.parentNode.replaceChild(newToggleButton, toggleRoomsButton);
+            newToggleButton.addEventListener('click', toggleRooms);
+        }
+    }
+    
+    if (controlRoomsBtn) {
+        // Remplacer le gestionnaire existant
+        const newControlBtn = controlRoomsBtn.cloneNode(true);
+        if (controlRoomsBtn.parentNode) {
+            controlRoomsBtn.parentNode.replaceChild(newControlBtn, controlRoomsBtn);
+            newControlBtn.addEventListener('click', toggleRooms);
+        }
+    }
+    
+    // Fix room cards if they exist
+    const roomCards = document.querySelectorAll('.room-card');
+    roomCards.forEach(card => {
+        card.style.borderRadius = '10px';
+        card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+        card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+        
+        card.addEventListener('mouseover', function() {
+            this.style.transform = 'translateY(-3px)';
+            this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
+        });
+        
+        card.addEventListener('mouseout', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+        });
+        
+        // Make sure room cards are clickable
+        card.addEventListener('click', function(e) {
+            e.stopPropagation(); // Empêcher la fermeture immédiate
+            const roomName = this.getAttribute('data-room');
+            if (roomName) {
+                window.location.href = '/' + roomName.toLowerCase();
+            }
+        });
+    });
+  } catch (error) {
+    console.log("Erreur dans initializeRoomsDisplay:", error);
   }
-  
-  // Make sure the rooms toggle buttons work properly
-  const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
-  const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
-  const roomsSection = document.querySelector('.rooms-section');
-  
-  // Improve room section styling for smoother animations
-  if (roomsSection) {
-      roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
-      roomsSection.style.backdropFilter = 'blur(10px)';
-      roomsSection.style.borderRadius = '15px';
-      roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
-      roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-      roomsSection.style.padding = '15px';
-      
-      // Add styles for animation
-      document.head.insertAdjacentHTML('beforeend', `
-          <style>
-              .rooms-section {
-                  opacity: 0;
-                  transform: translateY(10px);
-                  display: none;
-              }
-              .rooms-section.visible {
-                  opacity: 1;
-                  transform: translateY(0);
-                  display: block;
-              }
-          </style>
-      `);
-      
-      // Empêcher la propagation des clics depuis la liste des salles
-      roomsSection.addEventListener('click', function(e) {
-          e.stopPropagation();
-      });
-  }
-  
-  // Define the toggle function
-  const toggleRooms = function(e) {
-      if (e) e.stopPropagation();
-      if (!roomsSection) return;
-      
-      const isVisible = roomsSection.classList.contains('visible');
-      
-      // Obtenir ou créer l'overlay global
-      let globalOverlay = document.querySelector('.global-click-overlay');
-      if (!globalOverlay) {
-          globalOverlay = document.createElement('div');
-          globalOverlay.className = 'global-click-overlay';
-          globalOverlay.style.cssText = `
-              position: fixed;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background: transparent;
-              z-index: 9000;
-              display: none;
-          `;
-          document.body.appendChild(globalOverlay);
-          
-          // Gestionnaire d'événements pour l'overlay
-          globalOverlay.addEventListener('click', function() {
-              // Fermer la liste des salles
-              if (roomsSection && roomsSection.classList.contains('visible')) {
-                  roomsSection.classList.remove('visible');
-                  setTimeout(() => {
-                      roomsSection.style.display = 'none';
-                  }, 300);
-                  
-                  // Mise à jour du texte des boutons
-                  updateRoomsButtonText(false);
-              }
-              
-              // Fermer le menu latéral s'il est ouvert
-              const sideMenu = document.querySelector('.side-menu');
-              const mainContainer = document.querySelector('.main-container');
-              if (sideMenu && sideMenu.classList.contains('expanded')) {
-                  sideMenu.classList.remove('expanded');
-                  if (mainContainer) mainContainer.classList.remove('menu-expanded');
-              }
-              
-              // Cacher l'overlay
-              this.style.display = 'none';
-          });
-      }
-      
-      if (isVisible) {
-          roomsSection.classList.remove('visible');
-          setTimeout(() => {
-              roomsSection.style.display = 'none';
-          }, 300);
-          
-          // Update button text
-          updateRoomsButtonText(false);
-          
-          // Cacher l'overlay global
-          if (globalOverlay) globalOverlay.style.display = 'none';
-      } else {
-          roomsSection.style.display = 'block';
-          // Force reflow
-          roomsSection.offsetHeight;
-          roomsSection.classList.add('visible');
-          
-          // Update button text
-          updateRoomsButtonText(true);
-          
-          // Afficher l'overlay global
-          if (globalOverlay) globalOverlay.style.display = 'block';
-      }
-  };
-  
-  
-  if (toggleRoomsButton) {
-      toggleRoomsButton.addEventListener('click', toggleRooms);
-  }
-  
-  if (controlRoomsBtn) {
-      controlRoomsBtn.addEventListener('click', toggleRooms);
-  }
-  
-  // Fix room cards if they exist
-  const roomCards = document.querySelectorAll('.room-card');
-  roomCards.forEach(card => {
-      card.style.borderRadius = '10px';
-      card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-      card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-      card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-      
-      card.addEventListener('mouseover', function() {
-          this.style.transform = 'translateY(-3px)';
-          this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
-      });
-      
-      card.addEventListener('mouseout', function() {
-          this.style.transform = '';
-          this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-      });
-      
-      // Make sure room cards are clickable
-      card.addEventListener('click', function(e) {
-          e.stopPropagation(); // Empêcher la fermeture immédiate
-          const roomName = this.getAttribute('data-room');
-          if (roomName) {
-              window.location.href = '/' + roomName.toLowerCase();
-          }
-      });
-  });
 }
 
 /**
