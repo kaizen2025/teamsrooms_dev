@@ -1,343 +1,718 @@
 /**
- * Optimisations de performance pour l'application de réservation de salles
- * Ce fichier contient des améliorations ciblées pour résoudre les problèmes de fluidité
+ * Optimisations améliorées pour l'application de réservation de salles
+ * Version 2.0 - Résout les problèmes spécifiques avec:
+ * 1. Format d'affichage des salles
+ * 2. Redirection directe des réunions Teams
+ * 3. Historique des ID de réunion
+ * 4. Latence des interactions
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Application des optimisations
-    optimizeMenuToggle();
-    optimizeRoomsDisplay();
-    applyGlobalOptimizations();
+    // Appliquer les optimisations et corrections
+    fixRoomsDisplaySize();
+    fixTeamsDirectJoin();
+    improveIdHistory();
+    reduceInteractionLatency();
 });
 
 /**
- * Optimise le comportement du toggle du menu principal
- * - Utilise transform au lieu de margin/width pour l'animation
- * - Élimine les requêtes forcées de layout
- * - Réduit les manipulations DOM répétées
+ * Corrige le format d'affichage des salles pour revenir à un style plus compact
  */
-function optimizeMenuToggle() {
-    const menuToggle = document.querySelector('.menu-toggle-visible');
-    const sideMenu = document.querySelector('.side-menu');
-    const mainContainer = document.querySelector('.main-container');
-    const menuOverlay = document.querySelector('.menu-overlay');
-    
-    if (!menuToggle || !sideMenu || !mainContainer) return;
-    
-    // Supprimer tous les écouteurs existants pour éviter les doublons
-    const newMenuToggle = menuToggle.cloneNode(true);
-    menuToggle.parentNode.replaceChild(newMenuToggle, menuToggle);
-    
-    // Ajouter les styles de performance
-    addGlobalStyles(`
-        .side-menu {
-            will-change: transform;
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateX(-100%);
-        }
-        
-        .side-menu.expanded {
-            transform: translateX(0);
-        }
-        
-        .main-container {
-            will-change: transform;
-            transition: padding-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .menu-overlay {
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            opacity: 0;
-            visibility: hidden;
-            will-change: opacity;
-        }
-        
-        .menu-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-    `);
-    
-    // Optimiser le menu en déléguant les écouteurs d'événements
-    let isMenuExpanded = false;
-    newMenuToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // Utiliser requestAnimationFrame pour optimiser les modifications DOM
-        requestAnimationFrame(() => {
-            isMenuExpanded = !isMenuExpanded;
-            
-            // Appliquer toutes les modifications en une seule passe
-            sideMenu.classList.toggle('expanded', isMenuExpanded);
-            mainContainer.classList.toggle('menu-expanded', isMenuExpanded);
-            
-            if (menuOverlay) {
-                menuOverlay.classList.toggle('active', isMenuExpanded);
-            }
-        });
-    });
-    
-    // Optimiser la fermeture du menu via l'overlay
-    if (menuOverlay) {
-        const newMenuOverlay = menuOverlay.cloneNode(true);
-        menuOverlay.parentNode.replaceChild(newMenuOverlay, menuOverlay);
-        
-        newMenuOverlay.addEventListener('click', function() {
-            requestAnimationFrame(() => {
-                isMenuExpanded = false;
-                sideMenu.classList.remove('expanded');
-                mainContainer.classList.remove('menu-expanded');
-                newMenuOverlay.classList.remove('active');
-            });
-        });
-    }
-}
-
-/**
- * Optimise l'affichage et la performance des salles
- * - Précharge les données des salles
- * - Améliore les transitions avec will-change
- * - Évite les calculs répétés inutiles
- */
-function optimizeRoomsDisplay() {
-    const roomsSection = document.querySelector('.rooms-section');
-    const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, .rooms-toggle-button-floating');
-    
-    if (!roomsSection || toggleButtons.length === 0) return;
-    
-    // Ajouter les styles optimisés pour l'affichage des salles
+function fixRoomsDisplaySize() {
+    // Remplacer les styles précédents qui rendaient l'affichage trop grand
     addGlobalStyles(`
         .rooms-section {
-            will-change: transform, opacity;
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform: translateY(20px);
-            opacity: 0;
-            pointer-events: none;
-            position: fixed;
+            position: absolute; /* Au lieu de fixed */
             z-index: 100;
-            top: 20%;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            max-width: 90%;
-            max-height: 70vh;
+            top: 80px; /* Position plus haute */
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto; /* Au lieu de max-width: 90% */
+            max-width: 1200px; /* Limiter la largeur maximale */
+            height: auto;
+            max-height: 230px; /* Hauteur plus adaptée */
             overflow-y: auto;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            background: rgba(40, 40, 40, 0.95);
+            background: rgba(40, 40, 40, 0.9);
             backdrop-filter: blur(10px);
-            padding: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
         .rooms-section.visible {
-            transform: translateY(0);
+            display: block;
             opacity: 1;
-            pointer-events: auto;
+        }
+        
+        /* Style pour les cartes de salle en format plus compact */
+        .rooms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
         }
         
         .room-card {
-            will-change: transform;
+            width: 120px;
+            height: 80px;
+            padding: 10px;
+            background: rgba(50, 50, 50, 0.8);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border-radius: 10px;
-            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
         }
         
         .room-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .room-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .room-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8em;
+        }
+        
+        .status-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-icon.available {
+            background-color: #4CAF50;
+        }
+        
+        .status-icon.occupied {
+            background-color: #F44336;
+        }
+        
+        .status-icon.soon {
+            background-color: #FFC107;
         }
     `);
     
-    // Pré-rendre les cartes de salle pour éviter les calculs coûteux lors de l'affichage
-    preRenderRoomCards();
-    
-    // Flag pour suivre l'état visible/masqué
-    let isRoomsVisible = false;
-    
-    // Utiliser la délégation d'événements pour tous les boutons
-    document.addEventListener('click', function(e) {
-        const toggleButton = e.target.closest('.toggle-rooms-button, #toggleRoomsBtn, .rooms-toggle-button-floating');
-        
-        if (toggleButton) {
-            e.preventDefault();
-            
-            // Utiliser requestAnimationFrame pour améliorer la performance
-            requestAnimationFrame(() => {
-                isRoomsVisible = !isRoomsVisible;
-                roomsSection.classList.toggle('visible', isRoomsVisible);
-                
-                // Mettre à jour le texte de tous les boutons en une seule fois
-                updateRoomButtonsText(isRoomsVisible);
-            });
-        }
-        
-        // Fermer au clic en dehors
-        if (isRoomsVisible && !roomsSection.contains(e.target) && !e.target.closest('.toggle-rooms-button, #toggleRoomsBtn, .rooms-toggle-button-floating')) {
-            requestAnimationFrame(() => {
-                isRoomsVisible = false;
-                roomsSection.classList.remove('visible');
-                updateRoomButtonsText(false);
-            });
-        }
+    // Observer la mutation du DOM pour s'assurer que les styles sont appliqués
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                for (let node of mutation.addedNodes) {
+                    if (node.classList && node.classList.contains('rooms-section')) {
+                        applyRoomCardStyles(node);
+                    }
+                }
+            }
+        });
     });
     
-    // Précharger les données de salles une seule fois
-    function preRenderRoomCards() {
-        if (!window.SALLES || Object.keys(window.SALLES).length === 0) return;
-        
-        const roomsContainer = roomsSection.querySelector('.rooms');
-        if (!roomsContainer) return;
-        
-        // Mémoriser le contenu initial
-        const originalContent = roomsContainer.innerHTML;
-        const hasRoomCards = roomsContainer.querySelector('.room-card') !== null;
-        
-        // Ne pas re-rendre si des cartes existent déjà
-        if (hasRoomCards) return;
-        
-        // Créer un fragment pour éviter les reflows multiples
-        const fragment = document.createDocumentFragment();
-        
-        for (const [roomName, roomEmail] of Object.entries(window.SALLES)) {
-            const card = document.createElement('div');
-            card.className = 'room-card available';
-            card.dataset.room = roomName.toLowerCase();
-            
-            card.innerHTML = `
-                <div class="room-name">${roomName}</div>
-                <div class="room-status">
-                    <span class="status-icon available"></span> Disponible
-                </div>
-            `;
-            
-            // Ajouter au fragment
-            fragment.appendChild(card);
-        }
-        
-        // Ajouter le fragment au DOM une seule fois
-        roomsContainer.innerHTML = '';
-        roomsContainer.appendChild(fragment);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Appliquer les styles aux cartes de salle existantes
+    const roomsSection = document.querySelector('.rooms-section');
+    if (roomsSection) {
+        applyRoomCardStyles(roomsSection);
     }
     
-    // Mettre à jour le texte des boutons de manière optimisée
-    function updateRoomButtonsText(isVisible) {
-        const showText = '<i class="fas fa-door-open"></i> Afficher les salles';
-        const hideText = '<i class="fas fa-times"></i> Masquer les salles';
-        
-        toggleButtons.forEach(button => {
-            if (button) button.innerHTML = isVisible ? hideText : showText;
+    function applyRoomCardStyles(container) {
+        const roomCards = container.querySelectorAll('.room-card');
+        roomCards.forEach(card => {
+            card.style.width = '120px';
+            card.style.height = '80px';
+            card.style.padding = '10px';
+            card.style.margin = '0';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.justifyContent = 'center';
+            card.style.alignItems = 'center';
+            card.style.textAlign = 'center';
+            
+            // Assurer la visibilité du texte
+            const roomName = card.querySelector('.room-name');
+            if (roomName) {
+                roomName.style.fontSize = '0.9em';
+                roomName.style.fontWeight = 'bold';
+                roomName.style.marginBottom = '5px';
+            }
+            
+            const roomStatus = card.querySelector('.room-status');
+            if (roomStatus) {
+                roomStatus.style.fontSize = '0.8em';
+                roomStatus.style.display = 'flex';
+                roomStatus.style.alignItems = 'center';
+                roomStatus.style.gap = '5px';
+            }
         });
     }
 }
 
 /**
- * Applique des optimisations globales à l'application
- * - Améliore la performance des scrolls et animations
- * - Optimise l'utilisation des ressources
- * - Réduit les calculs inutiles
+ * Optimise la fonction de jointure des réunions Teams pour rediriger directement
+ * dans la réunion sans passer par l'écran de choix
  */
-function applyGlobalOptimizations() {
-    // 1. Optimiser les animations de rendu
-    optimizeRendering();
-    
-    // 2. Réduire la fréquence des mises à jour des réunions
-    optimizeMeetingsRefresh();
-    
-    // 3. Améliorer la gestion des images d'arrière-plan
-    optimizeBackgroundImages();
-    
-    // 4. Optimiser le bouton Rejoindre pour une meilleure réactivité
-    optimizeJoinButton();
-}
-
-/**
- * Ajoute des styles globaux d'optimisation au document
- */
-function addGlobalStyles(cssText) {
-    // Vérifier si un style avec le même contenu existe déjà
-    const existingStyles = document.querySelectorAll('style');
-    for (const style of existingStyles) {
-        if (style.textContent === cssText) return;
+function fixTeamsDirectJoin() {
+    // Capture la fonction originale JoinSystem.joinMeetingWithId si elle existe
+    let originalJoinFunction = null;
+    if (window.JoinSystem && typeof window.JoinSystem.joinMeetingWithId === 'function') {
+        originalJoinFunction = window.JoinSystem.joinMeetingWithId;
     }
     
-    const styleElement = document.createElement('style');
-    styleElement.textContent = cssText;
-    document.head.appendChild(styleElement);
+    // Fonction améliorée pour la redirection directe vers les réunions Teams
+    function enhancedJoinMeetingWithId(providedId = null) {
+        // Empêcher les déclenchements multiples
+        if (window.joiningMeeting) {
+            console.log("Jointure déjà en cours, ignorer ce clic");
+            return;
+        }
+        window.joiningMeeting = true;
+        
+        const meetingIdField = document.getElementById('meeting-id') || document.getElementById('meetingIdInput');
+        if (!meetingIdField && !providedId) {
+            alert("Veuillez entrer l'ID de la réunion");
+            window.joiningMeeting = false;
+            return;
+        }
+        
+        // Déterminer l'ID à utiliser
+        let meetingId = providedId || meetingIdField.value.trim();
+        
+        if (!meetingId) {
+            alert("Veuillez entrer l'ID de la réunion");
+            window.joiningMeeting = false;
+            return;
+        }
+        
+        // Nettoyer l'ID pour qu'il soit utilisable
+        meetingId = cleanMeetingId(meetingId);
+        
+        // Modification critique: Interface visuelle
+        const joinButton = document.getElementById('joinMeetingBtn');
+        if (joinButton) {
+            joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            joinButton.disabled = true;
+        }
+        
+        // Amélioration cruciale: essayer d'abord l'API lookupMeeting
+        tryLookupMeeting(meetingId)
+            .then(joinUrl => {
+                if (joinUrl) {
+                    // Construire une URL Teams optimisée pour la redirection directe
+                    const enhancedUrl = enhanceTeamsUrl(joinUrl);
+                    saveRecentId(meetingId);
+                    
+                    // Ouvrir dans un nouvel onglet avec les paramètres pour redirection directe
+                    window.open(enhancedUrl, "_blank");
+                    showSuccessMessage("Redirection vers la réunion Teams...");
+                } else {
+                    // Fallback: Construire une URL générique avec des paramètres directs
+                    const fallbackUrl = buildDirectTeamsUrl(meetingId);
+                    saveRecentId(meetingId);
+                    
+                    // Ouvrir dans un nouvel onglet
+                    window.open(fallbackUrl, "_blank");
+                    showWarningMessage("URL directe non trouvée, tentative avec ID...");
+                }
+            })
+            .catch(error => {
+                console.error("Erreur lors de la jointure:", error);
+                showErrorMessage("Erreur: impossible de rejoindre la réunion");
+            })
+            .finally(() => {
+                // Restaurer l'interface
+                if (joinButton) {
+                    joinButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Rejoindre';
+                    joinButton.disabled = false;
+                }
+                window.joiningMeeting = false;
+            });
+    }
+    
+    // Tenter d'utiliser l'API lookupMeeting pour obtenir l'URL de jointure directe
+    async function tryLookupMeeting(meetingId) {
+        try {
+            const response = await fetch(`/lookupMeeting?meetingId=${encodeURIComponent(meetingId)}`);
+            if (!response.ok) {
+                return null;
+            }
+            const data = await response.json();
+            return data.joinUrl || null;
+        } catch (error) {
+            console.error("Erreur lors de la recherche de la réunion:", error);
+            return null;
+        }
+    }
+    
+    // Construire une URL Teams optimisée pour la redirection directe
+    function enhanceTeamsUrl(baseUrl) {
+        try {
+            const url = new URL(baseUrl);
+            
+            // Ajouter les paramètres pour redirection directe
+            url.searchParams.set('directDl', 'true'); // Lancer directement
+            url.searchParams.set('msLaunch', 'true'); // Lancer dans l'application
+            url.searchParams.set('enableMobilePage', 'true'); // Support mobile
+            url.searchParams.set('suppressPrompt', 'true'); // Supprimer les invites
+            
+            return url.toString();
+        } catch (error) {
+            console.error("Erreur lors de l'amélioration de l'URL:", error);
+            return baseUrl; // En cas d'erreur, retourner l'URL d'origine
+        }
+    }
+    
+    // Construire une URL Teams directe à partir de l'ID
+    function buildDirectTeamsUrl(meetingId) {
+        // Construire l'URL avec tous les paramètres nécessaires pour une redirection directe
+        return `https://teams.microsoft.com/l/meetup-join/19%3Ameeting_${meetingId}%40thread.v2/0?context=%7B%22Tid%22%3A%224dc0974a-7836-414e-8dda-347f31dac3eb%22%7D&directDl=true&msLaunch=true&enableMobilePage=true&suppressPrompt=true`;
+    }
+    
+    // Nettoyer l'ID de réunion
+    function cleanMeetingId(id) {
+        // Si c'est une URL complète, extraire l'ID
+        if (id.includes('teams.microsoft.com/l/meetup-join')) {
+            const urlMatch = id.match(/19%3ameeting_([^%@]+)/i);
+            if (urlMatch && urlMatch[1]) {
+                return urlMatch[1];
+            }
+        }
+        
+        // Si c'est un ID numérique simple (comme dans l'exemple)
+        if (/^\d+$/.test(id)) {
+            return id; // Garder tel quel
+        }
+        
+        // Nettoyage général
+        return id.replace(/[^a-zA-Z0-9]/g, '');
+    }
+    
+    // Sauvegarder l'ID récent
+    function saveRecentId(id) {
+        let recentIds = JSON.parse(localStorage.getItem('recentMeetingIds') || '[]');
+        
+        // Ajouter l'ID s'il n'existe pas déjà
+        if (!recentIds.includes(id)) {
+            recentIds.unshift(id);
+            recentIds = recentIds.slice(0, 5); // Garder les 5 derniers
+            localStorage.setItem('recentMeetingIds', JSON.stringify(recentIds));
+        }
+    }
+    
+    // Afficher un message de succès
+    function showSuccessMessage(message) {
+        showStatusMessage(message, 'success');
+    }
+    
+    // Afficher un message d'avertissement
+    function showWarningMessage(message) {
+        showStatusMessage(message, 'warning');
+    }
+    
+    // Afficher un message d'erreur
+    function showErrorMessage(message) {
+        showStatusMessage(message, 'error');
+    }
+    
+    // Afficher un message de statut
+    function showStatusMessage(message, type) {
+        // Créer l'élément de message s'il n'existe pas
+        let messageContainer = document.getElementById('join-status-message');
+        if (!messageContainer) {
+            messageContainer = document.createElement('div');
+            messageContainer.id = 'join-status-message';
+            messageContainer.style.position = 'fixed';
+            messageContainer.style.top = '20px';
+            messageContainer.style.left = '50%';
+            messageContainer.style.transform = 'translateX(-50%)';
+            messageContainer.style.padding = '10px 20px';
+            messageContainer.style.borderRadius = '5px';
+            messageContainer.style.color = 'white';
+            messageContainer.style.fontWeight = 'bold';
+            messageContainer.style.zIndex = '9999';
+            messageContainer.style.textAlign = 'center';
+            messageContainer.style.display = 'none';
+            document.body.appendChild(messageContainer);
+        }
+        
+        // Définir le style en fonction du type
+        switch (type) {
+            case 'success':
+                messageContainer.style.backgroundColor = '#4CAF50';
+                break;
+            case 'warning':
+                messageContainer.style.backgroundColor = '#FF9800';
+                break;
+            case 'error':
+                messageContainer.style.backgroundColor = '#F44336';
+                break;
+            default:
+                messageContainer.style.backgroundColor = '#2196F3';
+        }
+        
+        // Afficher le message
+        messageContainer.textContent = message;
+        messageContainer.style.display = 'block';
+        
+        // Cacher après 3 secondes
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Remplacer la fonction d'origine si elle existe
+    if (window.JoinSystem) {
+        window.JoinSystem.joinMeetingWithId = enhancedJoinMeetingWithId;
+        
+        // Remplacer également la fonction globale si elle existe
+        if (window.joinMeetingWithId) {
+            window.joinMeetingWithId = enhancedJoinMeetingWithId;
+        }
+    } else {
+        // Créer un objet JoinSystem minimal si nécessaire
+        window.JoinSystem = {
+            joinMeetingWithId: enhancedJoinMeetingWithId
+        };
+        window.joinMeetingWithId = enhancedJoinMeetingWithId;
+    }
+    
+    // Attacher la fonction au bouton de jointure
+    const joinButton = document.getElementById('joinMeetingBtn');
+    if (joinButton) {
+        // Cloner pour supprimer les anciens écouteurs
+        const newJoinButton = joinButton.cloneNode(true);
+        joinButton.parentNode.replaceChild(newJoinButton, joinButton);
+        
+        // Attacher le nouvel écouteur
+        newJoinButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            enhancedJoinMeetingWithId();
+        });
+    }
+    
+    // Attacher à l'événement d'appui sur Entrée dans le champ d'ID
+    const meetingIdField = document.getElementById('meeting-id') || document.getElementById('meetingIdInput');
+    if (meetingIdField) {
+        meetingIdField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                enhancedJoinMeetingWithId();
+            }
+        });
+    }
 }
 
 /**
- * Optimise le rendu et les animations
+ * Améliore l'affichage de l'historique des ID récents
  */
-function optimizeRendering() {
+function improveIdHistory() {
+    // Styles améliorés pour l'historique des ID
     addGlobalStyles(`
-        /* Prévention de layout thrashing */
-        .main-container, .header, .meetings-container, .controls-container {
-            will-change: transform;
-            transform: translateZ(0);
-            backface-visibility: hidden;
+        .recent-ids-container {
+            position: absolute;
+            background: rgba(40, 40, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            min-width: 200px;
+            max-width: 300px;
+            padding: 8px 0;
+            margin-top: 5px;
+            backdrop-filter: blur(5px);
         }
         
-        /* Optimisation des animations */
-        .meeting-item, .room-card, .popup, .modal, button {
+        .recent-ids-container h4 {
+            margin: 0;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            color: #ddd;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .recent-id {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .recent-id:last-child {
+            border-bottom: none;
+        }
+        
+        .recent-id i {
+            margin-right: 8px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .recent-id:hover {
+            background: rgba(73, 109, 199, 0.3);
+        }
+        
+        .recent-id:active {
+            background: rgba(73, 109, 199, 0.5);
+        }
+    `);
+
+    // Fonction pour afficher l'historique des ID récents
+    function setupRecentIdsDisplay() {
+        const meetingIdField = document.getElementById('meeting-id') || document.getElementById('meetingIdInput');
+        if (!meetingIdField) return;
+        
+        // Créer ou récupérer le conteneur pour les IDs récents
+        let recentIdsContainer = document.getElementById('recent-ids');
+        if (!recentIdsContainer) {
+            recentIdsContainer = document.createElement('div');
+            recentIdsContainer.id = 'recent-ids';
+            recentIdsContainer.className = 'recent-ids-container';
+            document.body.appendChild(recentIdsContainer);
+        }
+        
+        // Gérer le focus sur le champ ID
+        meetingIdField.addEventListener('focus', function() {
+            updateRecentIdsList(this, recentIdsContainer);
+        });
+        
+        // Gérer le clic en dehors pour fermer la liste
+        document.addEventListener('click', function(e) {
+            if (e.target !== meetingIdField && !recentIdsContainer.contains(e.target)) {
+                recentIdsContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    // Mettre à jour l'affichage de la liste des IDs récents
+    function updateRecentIdsList(inputField, container) {
+        const recentIds = JSON.parse(localStorage.getItem('recentMeetingIds') || '[]');
+        
+        if (recentIds.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        // Positionner la liste par rapport au champ de saisie
+        const rect = inputField.getBoundingClientRect();
+        container.style.top = (rect.bottom + window.scrollY) + 'px';
+        container.style.left = (rect.left + window.scrollX) + 'px';
+        container.style.width = rect.width + 'px';
+        
+        // Construire le contenu
+        container.innerHTML = '<h4><i class="fas fa-history"></i> Récemment utilisés</h4>';
+        
+        recentIds.forEach(id => {
+            const idItem = document.createElement('div');
+            idItem.className = 'recent-id';
+            idItem.innerHTML = `<i class="fas fa-id-card"></i> ${id}`;
+            
+            idItem.addEventListener('click', function() {
+                inputField.value = id;
+                container.style.display = 'none';
+                
+                // Tenter de rejoindre directement
+                if (window.JoinSystem && typeof window.JoinSystem.joinMeetingWithId === 'function') {
+                    window.JoinSystem.joinMeetingWithId(id);
+                }
+            });
+            
+            container.appendChild(idItem);
+        });
+        
+        container.style.display = 'block';
+    }
+    
+    // Initialiser l'affichage des IDs récents
+    setupRecentIdsDisplay();
+}
+
+/**
+ * Optimisations ciblées pour réduire la latence des interactions (INP)
+ */
+function reduceInteractionLatency() {
+    // 1. Optimiser les interactions avec les boutons
+    optimizeButtonInteractions();
+    
+    // 2. Optimiser les animations du DOM
+    optimizeDomAnimations();
+    
+    // 3. Réduire la fréquence des timers
+    reduceTimerFrequency();
+    
+    // 4. Débrancher les loggers de débogage
+    disableDebugLogging();
+}
+
+/**
+ * Optimise les interactions avec les boutons pour réduire la latence
+ */
+function optimizeButtonInteractions() {
+    // Utiliser un seul écouteur avec délégation d'événements pour tous les boutons
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('button, .clickable, [data-action]');
+        if (!target) return;
+        
+        // Garantir une réponse visuelle immédiate
+        target.style.transform = 'scale(0.97)';
+        setTimeout(() => {
+            target.style.transform = '';
+        }, 100);
+    });
+    
+    // Optimiser spécifiquement les boutons de rafraîchissement
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        const newRefreshBtn = refreshBtn.cloneNode(true);
+        refreshBtn.parentNode.replaceChild(newRefreshBtn, refreshBtn);
+        
+        newRefreshBtn.addEventListener('click', function() {
+            // Effet visuel immédiat
+            this.classList.add('spinning');
+            
+            // Utiliser requestIdleCallback pour le rafraîchissement
+            if (window.requestIdleCallback) {
+                window.requestIdleCallback(() => {
+                    if (typeof window.fetchMeetings === 'function') {
+                        window.fetchMeetings(true);
+                    }
+                    
+                    // Supprimer l'effet après un délai
+                    setTimeout(() => {
+                        this.classList.remove('spinning');
+                    }, 1000);
+                });
+            } else {
+                // Fallback pour les navigateurs qui ne supportent pas requestIdleCallback
+                setTimeout(() => {
+                    if (typeof window.fetchMeetings === 'function') {
+                        window.fetchMeetings(true);
+                    }
+                    
+                    // Supprimer l'effet après un délai
+                    setTimeout(() => {
+                        this.classList.remove('spinning');
+                    }, 1000);
+                }, 0);
+            }
+        });
+        
+        // Ajouter un style pour l'animation de rotation
+        addGlobalStyles(`
+            .spinning i {
+                animation: spin 1s linear infinite;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `);
+    }
+}
+
+/**
+ * Optimise les animations du DOM pour réduire la latence
+ */
+function optimizeDomAnimations() {
+    addGlobalStyles(`
+        /* Utiliser transform et opacity pour les animations */
+        .meeting-item, .room-card, button, .modal, .popup {
             will-change: transform, opacity;
-            backface-visibility: hidden;
-        }
-        
-        /* Prévention des reflows sur hover */
-        button:hover, .menu-item:hover, .meeting-item:hover {
-            will-change: transform, background-color;
-        }
-        
-        /* Faciliter le travail du GPU */
-        #background-container {
-            will-change: opacity;
             transform: translateZ(0);
+            transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+        }
+        
+        /* Éviter d'animer les propriétés coûteuses */
+        .meeting-item:hover, .room-card:hover, button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Optimiser les animations de la modale */
+        .modal {
+            will-change: opacity;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-content {
+            will-change: transform;
+            transition: transform 0.3s ease;
         }
     `);
     
-    // Éviter les mises à jour DOM inutiles pendant le défilement
-    let scrollTimeout;
-    window.addEventListener('scroll', function() {
-        if (scrollTimeout) return;
+    // Observer les mutations DOM pour les optimiser
+    const observer = new MutationObserver((mutations) => {
+        let needsOptimization = false;
         
-        scrollTimeout = setTimeout(function() {
-            scrollTimeout = null;
-        }, 100);
-    }, { passive: true });
+        mutations.forEach(mutation => {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                needsOptimization = true;
+            }
+        });
+        
+        if (needsOptimization) {
+            for (const selector of ['.meeting-item', '.room-card', 'button', '.modal', '.popup']) {
+                document.querySelectorAll(selector).forEach(el => {
+                    if (!el.getAttribute('data-optimized')) {
+                        el.style.willChange = 'transform, opacity';
+                        el.style.transform = 'translateZ(0)';
+                        el.setAttribute('data-optimized', 'true');
+                    }
+                });
+            }
+        }
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 /**
- * Optimise la fréquence des mises à jour des réunions
+ * Réduit la fréquence des timers pour diminuer la charge CPU
  */
-function optimizeMeetingsRefresh() {
-    // Si une fonction de rafraîchissement existe, réduire sa fréquence
-    if (typeof window.fetchMeetings === 'function') {
-        // Remplacer par une version optimisée
+function reduceTimerFrequency() {
+    // Throttling de la fonction fetchMeetings
+    if (typeof window.fetchMeetings === 'function' && !window.fetchMeetingsThrottled) {
         const originalFetchMeetings = window.fetchMeetings;
         
-        window.fetchMeetings = function(forceVisibleUpdate = false) {
-            // Si un rafraîchissement est déjà en cours, ne pas en lancer un autre
-            if (window.isLoadingMeetings) return;
-            
-            // Limiter la fréquence des mises à jour forcées
+        window.fetchMeetingsThrottled = true;
+        window.fetchMeetingsLastCall = 0;
+        window.fetchMeetings = function(forceUpdate = false) {
             const now = Date.now();
-            if (!forceVisibleUpdate && (now - window.lastRefreshTime) < 5000) {
+            
+            // Limiter les appels à 5 secondes d'intervalle minimum sauf si force=true
+            if (!forceUpdate && (now - window.fetchMeetingsLastCall < 5000)) {
                 return;
             }
             
-            // Appeler la fonction d'origine
-            originalFetchMeetings(forceVisibleUpdate);
+            window.fetchMeetingsLastCall = now;
+            return originalFetchMeetings(forceUpdate);
         };
     }
     
-    // Optimiser les mises à jour des chronomètres
-    const originalUpdateMeetingTimers = window.updateMeetingTimers;
-    if (typeof originalUpdateMeetingTimers === 'function') {
+    // Optimiser updateMeetingTimers
+    if (typeof window.updateMeetingTimers === 'function' && !window.updateMeetingTimersOptimized) {
+        const originalUpdateMeetingTimers = window.updateMeetingTimers;
+        
+        window.updateMeetingTimersOptimized = true;
         window.updateMeetingTimers = function() {
-            // Utiliser requestAnimationFrame pour synchroniser avec les rafraîchissements d'écran
-            requestAnimationFrame(() => {
+            // Utiliser requestAnimationFrame pour synchroniser avec le cycle de rendu
+            return requestAnimationFrame(() => {
                 originalUpdateMeetingTimers();
             });
         };
@@ -345,84 +720,59 @@ function optimizeMeetingsRefresh() {
 }
 
 /**
- * Optimise le chargement et l'affichage des images d'arrière-plan
+ * Désactive les logs de débogage en production pour améliorer les performances
  */
-function optimizeBackgroundImages() {
-    const backgroundContainer = document.getElementById('background-container');
-    if (!backgroundContainer) return;
+function disableDebugLogging() {
+    // Ne pas désactiver les logs en mode développement
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return;
+    }
     
-    // Ajouter des styles d'optimisation
-    addGlobalStyles(`
-        #background-container {
-            will-change: background-image;
-            transform: translateZ(0);
-            transition: opacity 0.5s ease;
-        }
-    `);
+    // Créer des versions noop des fonctions de console
+    const noop = () => {};
     
-    // Précharger la prochaine image en arrière-plan
-    if (window.BackgroundSystem && window.BACKGROUNDS && window.BACKGROUNDS.length > 0) {
-        // Précharger la première image si ce n'est pas déjà fait
-        if (!backgroundContainer.style.backgroundImage) {
-            const firstImage = window.BACKGROUNDS[0];
-            const img = new Image();
-            img.onload = () => {
-                backgroundContainer.style.backgroundImage = `url('${firstImage}')`;
-            };
-            img.src = firstImage;
-        }
-        
-        // Optimiser la fonction de rotation d'arrière-plan
-        const originalNextBackground = window.BackgroundSystem.nextBackground;
-        if (typeof originalNextBackground === 'function') {
-            window.BackgroundSystem.nextBackground = function() {
-                const nextIndex = (this.currentBackgroundIndex + 1) % this.backgrounds.length;
-                const nextImage = this.backgrounds[nextIndex];
-                
-                // Précharger l'image avant de l'afficher
-                const img = new Image();
-                img.onload = () => {
-                    originalNextBackground.call(window.BackgroundSystem);
-                };
-                img.src = nextImage;
-            };
-        }
+    // Sauvegarder la console originale au cas où
+    window._originalConsole = {
+        log: console.log,
+        debug: console.debug,
+        info: console.info
+    };
+    
+    // Remplacer par des fonctions qui ne font rien
+    console.log = noop;
+    console.debug = noop;
+    console.info = noop;
+    
+    // Conserver les fonctions d'erreur
+    // console.error reste inchangé
+    // console.warn reste inchangé
+}
+
+/**
+ * Utilitaire pour ajouter des styles globaux
+ */
+function addGlobalStyles(cssText) {
+    const hash = hashString(cssText);
+    const styleId = `optimized-style-${hash}`;
+    
+    // Vérifier si ce style existe déjà
+    if (!document.getElementById(styleId)) {
+        const styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        styleElement.textContent = cssText;
+        document.head.appendChild(styleElement);
     }
 }
 
 /**
- * Optimise le comportement du bouton Rejoindre
+ * Utilitaire pour calculer un hash simple d'une chaîne
  */
-function optimizeJoinButton() {
-    // Utiliser la délégation d'événements pour tous les boutons de jointure
-    document.addEventListener('click', function(e) {
-        const joinButton = e.target.closest('.meeting-join-btn');
-        if (!joinButton) return;
-        
-        e.preventDefault();
-        
-        // Empêcher les clics multiples
-        if (joinButton.dataset.joining === 'true') return;
-        joinButton.dataset.joining = 'true';
-        
-        // Effet visuel immédiat
-        const originalText = joinButton.innerHTML;
-        joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        // Récupérer l'URL ou l'ID
-        const url = joinButton.dataset.url;
-        
-        setTimeout(() => {
-            // Ouvrir l'URL si disponible
-            if (url) {
-                window.open(url, '_blank');
-            }
-            
-            // Restaurer le bouton après un court délai
-            setTimeout(() => {
-                joinButton.innerHTML = originalText;
-                joinButton.dataset.joining = 'false';
-            }, 500);
-        }, 10);
-    });
+function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convertir en entier 32-bit
+    }
+    return Math.abs(hash).toString(16);
 }
