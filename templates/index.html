@@ -11,7 +11,7 @@
     <!-- Fontawesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Base Stylesheets -->
+    <!-- Base Stylesheets - Garder les originaux pour maintenir la compatibilité -->
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/layout.css">
     <link rel="stylesheet" href="/static/css/menu.css">
@@ -21,8 +21,8 @@
     <link rel="stylesheet" href="/static/css/auth.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     
-    <!-- Interface Improvements CSS -->
-    <link rel="stylesheet" href="/static/css/interface-improvements.css">
+    <!-- Nouvelle feuille de style unifiée - AJOUT IMPORTANT -->
+    <link rel="stylesheet" href="/static/css/styles-unified.css">
 </head>
 <body>
     <!-- Background Container -->
@@ -111,8 +111,8 @@
             
             <!-- Date & Time -->
             <div class="datetime">
-                <p>Lundi 17 mars 2025</p>
-                <p>10:30:52</p>
+                <p id="current-date">Lundi 31 mars 2025</p>
+                <p id="current-time">10:30:52</p>
             </div>
             
             <!-- Title -->
@@ -431,10 +431,10 @@
     <script>
         // Global configuration object for debugging and features
         window.APP_CONFIG = {
-            DEBUG: true,
-            REFRESH_INTERVAL: 10000, // 10 seconds for meetings refresh
-            AUTO_REFRESH: true,      // Auto-refresh meetings
-            VERSION: '1.0.5'         // Version tracking
+            DEBUG: false,                // Désactiver les logs de debugging
+            REFRESH_INTERVAL: 10000,     // 10 secondes pour meetings refresh
+            AUTO_REFRESH: true,          // Auto-refresh meetings
+            VERSION: '2.0.0'             // Version mise à jour
         };
     </script>
 
@@ -442,19 +442,15 @@
     <script src="/static/js/config.js"></script>
     <script src="/static/js/datetime.js"></script>
     <script src="/static/js/background.js"></script>
-
-    <!-- Core Functionality -->
-    <script src="/static/js/meetings.js"></script>
-    <script src="/static/js/join.js"></script>
+    
+    <!-- Scripts Optimisés - Remplacent les scripts originaux -->
+    <script src="/static/js/interface-unified.js"></script>
+    <script src="/static/js/join-optimized.js"></script>
+    <script src="/static/js/rooms-optimized.js"></script>
+    
+    <!-- Scripts utilitaires conservés -->
     <script src="/static/js/booking.js"></script>
-    <script src="/static/js/rooms.js"></script>
-
-    <!-- Secondary Features -->
     <script src="/static/js/auth.js"></script>
-    <script src="/static/js/ui.js"></script>
-
-    <!-- Enhanced Interface -->
-    <script src="/static/js/interface-improvements.js"></script>
 
     <script>
         // Initialize room name from URL or config
@@ -498,8 +494,19 @@
                     window.fetchMeetings(true);
                 }, 500);
             }
+            
+            // Vérifier la compatibilité des navigateurs
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                document.body.classList.add('mobile-device');
+            }
+            
+            if (isSafari) {
+                document.body.classList.add('safari-browser');
+            }
         });
     </script>
-    <script src="/static/js/performance-optimizations.js"></script>
 </body>
 </html>
