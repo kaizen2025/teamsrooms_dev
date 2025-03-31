@@ -1,17 +1,18 @@
 /**
- * SOLUTION COMPLÈTE FINALE - Correction de tous les problèmes
- * Version 7.0 - Combinaison de toutes les améliorations:
+ * SOLUTION COMPLÈTE FINALE - Correction de tous les problèmes visuels
+ * Version 8.0 - Refonte visuelle harmonieuse:
  * 1. Connexion Teams directe (méthode éprouvée avec votre URL)
  * 2. Correction de l'espacement entre les blocs (plus de superposition)
- * 3. Disposition des salles en grille multi-colonnes au centre
- * 4. Transparence optimale
- * 5. Correction du premier clic du menu
+ * 3. Suppression de la bannière du haut
+ * 4. Réduction de la largeur de la bannière du bas
+ * 5. Disposition harmonieuse des salles en grille
+ * 6. Espace vide sous le bloc d'ID pour voir l'arrière-plan
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Initialisation de la solution complète finale v7.0");
+    console.log("Initialisation de la solution complète finale v8.0 - Interface harmonieuse");
     
-    // Appliquer toutes les corrections
+    // Appliquer toutes les corrections visuelles et fonctionnelles
     setTimeout(() => {
         // 1. Connexion Teams directe
         implementDirectTeamsJoin();
@@ -27,8 +28,109 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 5. Correction du premier clic du menu
         fixMenuFirstClick();
+        
+        // 6. Suppression de la bannière du haut et réduction de celle du bas
+        removeHeaderAndShrinkFooter();
     }, 100);
 });
+
+/**
+ * Supprime la bannière du haut et réduit la largeur de la bannière du bas
+ */
+function removeHeaderAndShrinkFooter() {
+    // Styles pour masquer le header et réduire la largeur du footer
+    addStylesheet(`
+        /* Masquer complètement la bannière du haut */
+        .header, .top-banner, .app-header, div[class*="header"], 
+        div[class*="Header"], div[id*="header"], div[id*="Header"] {
+            display: none !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+        
+        /* Réduire la largeur de la bannière du bas */
+        .controls-container, .footer-banner, .app-footer, 
+        div[class*="footer"], div[class*="Footer"], 
+        div[id*="footer"], div[id*="Footer"] {
+            width: 80% !important;
+            max-width: 900px !important;
+            margin: 0 auto !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        /* Ajustement de l'espace sous le bloc d'ID de réunion */
+        .meeting-id-entry, .id-entry, div[class*="id-entry"], 
+        div[id*="id-entry"] {
+            margin-bottom: 40px !important;
+            border-bottom-left-radius: 15px !important;
+            border-bottom-right-radius: 15px !important;
+        }
+        
+        /* Ajuster le contenu principal pour compenser l'absence de bannière */
+        .main-container, .content-container, .app-content {
+            padding-top: 20px !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Ajuster la positon verticale des blocs de contenu */
+        .meetings-container, .content-block, .app-block {
+            margin-top: 20px !important;
+        }
+        
+        /* Assurer que tout le contenu est bien visible */
+        body {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+    `, 'header-footer-adjustment-styles');
+    
+    // Application directe à certains éléments
+    const headerElements = document.querySelectorAll('.header, .top-banner, .app-header, [class*="header"], [class*="Header"], [id*="header"], [id*="Header"]');
+    headerElements.forEach(element => {
+        if (element) {
+            element.style.display = 'none';
+            element.style.height = '0';
+            element.style.opacity = '0';
+            element.style.visibility = 'hidden';
+        }
+    });
+    
+    const footerElements = document.querySelectorAll('.controls-container, .footer-banner, .app-footer, [class*="footer"], [class*="Footer"], [id*="footer"], [id*="Footer"]');
+    footerElements.forEach(element => {
+        if (element) {
+            element.style.width = '80%';
+            element.style.maxWidth = '900px';
+            element.style.margin = '0 auto';
+            element.style.left = '50%';
+            element.style.transform = 'translateX(-50%)';
+            element.style.borderRadius = '15px 15px 0 0';
+        }
+    });
+    
+    const idEntryElements = document.querySelectorAll('.meeting-id-entry, .id-entry, [class*="id-entry"], [id*="id-entry"]');
+    idEntryElements.forEach(element => {
+        if (element) {
+            element.style.marginBottom = '40px';
+            element.style.borderBottomLeftRadius = '15px';
+            element.style.borderBottomRightRadius = '15px';
+        }
+    });
+    
+    // Ajuster les conteneurs principaux
+    const mainContainers = document.querySelectorAll('.main-container, .content-container, .app-content');
+    mainContainers.forEach(container => {
+        if (container) {
+            container.style.paddingTop = '20px';
+            container.style.marginTop = '0';
+        }
+    });
+}
 
 /**
  * Implémente la solution éprouvée de connexion Teams directe
@@ -444,31 +546,45 @@ function fixSpacingAndOverlaps() {
     addStylesheet(`
         /* Correction de l'espacement du conteneur de réunions */
         .meetings-container {
-            margin-bottom: 80px !important;
+            margin-bottom: 100px !important;
             margin-top: 20px !important;
             overflow: visible !important;
+            width: 90% !important;
+            max-width: 1000px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            border-radius: 15px !important;
         }
         
         /* Position fixe de la barre du bas */
         .controls-container {
             position: fixed !important;
             bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: 80% !important;
+            max-width: 900px !important;
             z-index: 100 !important;
             padding: 10px 0 !important;
+            border-bottom: none !important;
         }
         
         /* Assez d'espace en bas du conteneur principal */
         .main-container {
-            padding-bottom: 70px !important;
+            padding-bottom: 80px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            box-sizing: border-box !important;
         }
         
         /* Section des réunions avec scroll interne */
         .meetings-list {
-            max-height: calc(100vh - 350px) !important;
+            max-height: calc(100vh - 250px) !important;
             overflow-y: auto !important;
             padding-right: 5px !important;
+            margin-bottom: 15px !important;
         }
         
         /* Correction du z-index des boutons */
@@ -490,6 +606,19 @@ function fixSpacingAndOverlaps() {
             padding: 15px !important;
             position: relative !important;
             z-index: 1 !important;
+            margin-top: 15px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-bottom-left-radius: 15px !important;
+            border-bottom-right-radius: 15px !important;
+        }
+        
+        /* Espace vide sous le bloc d'ID */
+        .meeting-id-entry:after {
+            content: '' !important;
+            display: block !important;
+            height: 40px !important;
+            width: 100% !important;
+            margin-bottom: -40px !important;
         }
         
         /* Styles pour le champ ID */
@@ -518,6 +647,27 @@ function fixSpacingAndOverlaps() {
             background: linear-gradient(to right, #7B83EB, #8A92F0) !important;
             box-shadow: 0 2px 8px rgba(98, 100, 167, 0.4) !important;
         }
+        
+        /* Correction des éléments de réunion */
+        .meeting-item {
+            margin-bottom: 12px !important;
+            border-radius: 10px !important;
+            padding: 12px !important;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Titre de la section des réunions */
+        .meetings-title-bar, .section-title {
+            padding: 15px !important;
+            border-top-left-radius: 15px !important;
+            border-top-right-radius: 15px !important;
+        }
+        
+        /* Espacements internes cohérents */
+        .meetings-list {
+            padding: 15px !important;
+            padding-top: 5px !important;
+        }
     `, 'spacing-fix-styles');
     
     // Application directe à certains éléments
@@ -527,485 +677,32 @@ function fixSpacingAndOverlaps() {
         // Conteneur de réunions
         const meetingsContainer = document.querySelector('.meetings-container');
         if (meetingsContainer) {
-            meetingsContainer.style.marginBottom = '80px';
+            meetingsContainer.style.marginBottom = '100px';
             meetingsContainer.style.marginTop = '20px';
+            meetingsContainer.style.width = '90%';
+            meetingsContainer.style.maxWidth = '1000px';
+            meetingsContainer.style.marginLeft = 'auto';
+            meetingsContainer.style.marginRight = 'auto';
+            meetingsContainer.style.borderRadius = '15px';
+        }
+        
+        // Contrôles (footer)
+        const controlsContainer = document.querySelector('.controls-container');
+        if (controlsContainer) {
+            controlsContainer.style.position = 'fixed';
+            controlsContainer.style.bottom = '0';
+            controlsContainer.style.left = '50%';
+            controlsContainer.style.transform = 'translateX(-50%)';
+            controlsContainer.style.width = '80%';
+            controlsContainer.style.maxWidth = '900px';
+            controlsContainer.style.borderBottomLeftRadius = '0';
+            controlsContainer.style.borderBottomRightRadius = '0';
+            controlsContainer.style.borderBottom = 'none';
         }
         
         // Conteneur principal
         const mainContainer = document.querySelector('.main-container');
         if (mainContainer) {
-            mainContainer.style.paddingBottom = '70px';
-        }
-        
-        // Liste des réunions
-        const meetingsList = document.querySelector('.meetings-list');
-        if (meetingsList) {
-            meetingsList.style.maxHeight = 'calc(100vh - 350px)';
-            meetingsList.style.overflowY = 'auto';
-        }
-        
-        // Boutons rejoindre
-        const joinButtons = document.querySelectorAll('.meeting-join-btn');
-        joinButtons.forEach(btn => {
-            btn.style.position = 'relative';
-            btn.style.zIndex = '5';
-        });
-        
-        // Titres des réunions
-        const meetingTitles = document.querySelectorAll('.meeting-item h3');
-        meetingTitles.forEach(title => {
-            title.style.overflow = 'hidden';
-            title.style.textOverflow = 'ellipsis';
-            title.style.whiteSpace = 'nowrap';
-        });
-        
-        // Champ ID
-        const meetingIdField = document.getElementById('meeting-id');
-        if (meetingIdField) {
-            meetingIdField.style.backgroundColor = 'rgba(30, 30, 30, 0.6)';
-            meetingIdField.style.color = 'white';
-            meetingIdField.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        }
-    }
-}
-
-/**
- * Implémente une disposition en grille pour les salles
- */
-function implementRoomsGrid() {
-    // Styles pour la disposition en grille
-    addStylesheet(`
-        /* Section des salles (au centre, en grille) */
-        .rooms-section {
-            position: fixed !important;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 80% !important;
-            max-width: 900px !important;
-            max-height: 70vh !important;
-            background: rgba(30, 30, 30, 0.85) !important;
-            backdrop-filter: blur(10px) !important;
-            border-radius: 15px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-            z-index: 1000 !important;
-            padding: 20px !important;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease !important;
-            overflow: auto !important;
-        }
-        
-        .rooms-section.visible {
-            display: block !important;
-            opacity: 1 !important;
-        }
-        
-        /* Disposition en grille des salles */
-        .rooms {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-            grid-gap: 15px !important;
-            justify-content: center !important;
-            align-items: stretch !important;
-            padding: 10px !important;
-        }
-        
-        /* Cartes de salle adaptées à la grille */
-        .room-card {
-            background: rgba(50, 50, 50, 0.5) !important;
-            backdrop-filter: blur(5px) !important;
-            border-radius: 10px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 15px !important;
-            height: 100px !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-            text-align: center !important;
-        }
-        
-        .room-card:hover {
-            transform: translateY(-5px) !important;
-            background: rgba(60, 60, 60, 0.7) !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        /* Nom de la salle */
-        .room-name {
-            font-weight: bold !important;
-            font-size: 1.1em !important;
-            color: white !important;
-            margin-bottom: 10px !important;
-        }
-        
-        /* Statut de la salle */
-        .room-status {
-            display: flex !important;
-            align-items: center !important;
-            gap: 6px !important;
-            font-size: 0.9em !important;
-            color: rgba(255, 255, 255, 0.9) !important;
-        }
-        
-        /* Indicateur de statut */
-        .status-icon {
-            width: 10px !important;
-            height: 10px !important;
-            border-radius: 50% !important;
-            box-shadow: 0 0 8px currentColor !important;
-        }
-        
-        .status-icon.available {
-            background-color: #4CAF50 !important;
-            box-shadow: 0 0 8px rgba(76, 175, 80, 0.7) !important;
-        }
-        
-        .status-icon.occupied {
-            background-color: #F44336 !important;
-            box-shadow: 0 0 8px rgba(244, 67, 54, 0.7) !important;
-        }
-        
-        .status-icon.soon {
-            background-color: #FF9800 !important;
-            box-shadow: 0 0 8px rgba(255, 152, 0, 0.7) !important;
-        }
-        
-        /* Titre de la section des salles */
-        .rooms-section-title {
-            color: white !important;
-            text-align: center !important;
-            margin-top: 0 !important;
-            margin-bottom: 15px !important;
-            font-size: 1.3em !important;
-            font-weight: normal !important;
-            padding-bottom: 10px !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        /* Bouton de fermeture */
-        .rooms-section-close {
-            position: absolute !important;
-            top: 15px !important;
-            right: 15px !important;
-            background: rgba(255, 255, 255, 0.1) !important;
-            border: none !important;
-            color: white !important;
-            width: 30px !important;
-            height: 30px !important;
-            border-radius: 50% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            cursor: pointer !important;
-            transition: background 0.2s ease !important;
-            font-size: 18px !important;
-        }
-        
-        .rooms-section-close:hover {
-            background: rgba(255, 255, 255, 0.2) !important;
-        }
-    `, 'rooms-grid-styles');
-    
-    // Attacher aux boutons d'affichage
-    setupRoomsButtons();
-    
-    // Créer la structure améliorée si nécessaire
-    enhanceRoomsSection();
-    
-    function enhanceRoomsSection() {
-        // Trouver ou créer la section des salles
-        let roomsSection = document.querySelector('.rooms-section');
-        if (!roomsSection) {
-            roomsSection = document.createElement('div');
-            roomsSection.className = 'rooms-section';
-            document.body.appendChild(roomsSection);
-        }
-        
-        // Ajouter un titre et un bouton de fermeture
-        const roomsContainer = document.querySelector('.rooms');
-        if (roomsContainer && !document.querySelector('.rooms-section-title')) {
-            // Ajouter le titre
-            const title = document.createElement('h3');
-            title.className = 'rooms-section-title';
-            title.innerHTML = '<i class="fas fa-door-open"></i> Salles disponibles';
-            
-            // Ajouter le bouton de fermeture
-            const closeButton = document.createElement('button');
-            closeButton.className = 'rooms-section-close';
-            closeButton.innerHTML = '&times;';
-            closeButton.addEventListener('click', function() {
-                roomsSection.classList.remove('visible');
-                updateRoomsButtonsText(false);
-            });
-            
-            // Insérer avant le conteneur des salles
-            roomsSection.insertBefore(title, roomsContainer);
-            roomsSection.insertBefore(closeButton, roomsContainer);
-        }
-    }
-    
-    function setupRoomsButtons() {
-        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating, button[id*="salle"]');
-        
-        toggleButtons.forEach(button => {
-            if (button && !button.hasAttribute('data-rooms-grid-handler')) {
-                // Cloner pour supprimer les écouteurs existants
-                const newButton = button.cloneNode(true);
-                if (button.parentNode) {
-                    button.parentNode.replaceChild(newButton, button);
-                }
-                
-                // Ajouter le nouvel écouteur
-                newButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const roomsSection = document.querySelector('.rooms-section');
-                    if (!roomsSection) return;
-                    
-                    const isVisible = roomsSection.classList.contains('visible');
-                    roomsSection.classList.toggle('visible', !isVisible);
-                    
-                    // Mettre à jour les textes des boutons
-                    updateRoomsButtonsText(!isVisible);
-                });
-                
-                // Marquer comme traité
-                newButton.setAttribute('data-rooms-grid-handler', 'true');
-            }
-        });
-        
-        // Fermer au clic en dehors
-        document.addEventListener('click', function(e) {
-            const roomsSection = document.querySelector('.rooms-section');
-            if (!roomsSection) return;
-            
-            // Si la section est visible et le clic est en dehors
-            if (roomsSection.classList.contains('visible') && 
-                !roomsSection.contains(e.target) && 
-                !e.target.closest('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating')) {
-                roomsSection.classList.remove('visible');
-                updateRoomsButtonsText(false);
-            }
-        });
-    }
-    
-    function updateRoomsButtonsText(isVisible) {
-        const showText = '<i class="fas fa-door-open"></i> Afficher les salles';
-        const hideText = '<i class="fas fa-times"></i> Masquer les salles';
-        
-        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating, button[id*="salle"]');
-        
-        toggleButtons.forEach(button => {
-            if (button) {
-                button.innerHTML = isVisible ? hideText : showText;
-            }
-        });
-    }
-}
-
-/**
- * Applique la transparence optimale
- */
-function applyOptimalTransparency() {
-    // Styles pour la transparence
-    addStylesheet(`
-        /* Transparence de la bannière d'en-tête */
-        .header {
-            background-color: rgba(30, 30, 30, 0.4) !important;
-            backdrop-filter: blur(5px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 0 0 15px 15px !important;
-            border-top: none !important;
-        }
-        
-        /* Transparence de la bannière de bas de page */
-        .controls-container {
-            background-color: rgba(30, 30, 30, 0.4) !important;
-            backdrop-filter: blur(5px) !important;
-            border-radius: 15px 15px 0 0 !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-bottom: none !important;
-        }
-        
-        /* Transparence du conteneur de réunions */
-        .meetings-container {
-            background-color: rgba(30, 30, 30, 0.4) !important;
-            backdrop-filter: blur(5px) !important;
-            border-radius: 15px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        /* Transparence de l'en-tête des réunions */
-        .meetings-title-bar {
-            background-color: rgba(40, 40, 40, 0.3) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-            backdrop-filter: blur(5px) !important;
-        }
-        
-        /* Transparence des éléments de réunion */
-        .meeting-item {
-            background-color: rgba(40, 40, 40, 0.3) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            backdrop-filter: blur(3px) !important;
-        }
-        
-        /* Transparence du menu latéral */
-        .side-menu {
-            background-color: rgba(25, 25, 25, 0.65) !important;
-            backdrop-filter: blur(10px) !important;
-        }
-        
-        /* Transparence de la section ID de réunion */
-        .meeting-id-entry {
-            background-color: rgba(40, 40, 40, 0.3) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-            backdrop-filter: blur(5px) !important;
-        }
-    `, 'optimal-transparency-styles');
-    
-    // Application directe
-    const header = document.querySelector('.header');
-    if (header) {
-        header.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
-        header.style.backdropFilter = 'blur(5px)';
-    }
-    
-    const controlsContainer = document.querySelector('.controls-container');
-    if (controlsContainer) {
-        controlsContainer.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
-        controlsContainer.style.backdropFilter = 'blur(5px)';
-    }
-    
-    const meetingsContainer = document.querySelector('.meetings-container');
-    if (meetingsContainer) {
-        meetingsContainer.style.backgroundColor = 'rgba(30, 30, 30, 0.4)';
-        meetingsContainer.style.backdropFilter = 'blur(5px)';
-    }
-    
-    const sideMenu = document.querySelector('.side-menu');
-    if (sideMenu) {
-        sideMenu.style.backgroundColor = 'rgba(25, 25, 25, 0.65)';
-        sideMenu.style.backdropFilter = 'blur(10px)';
-    }
-}
-
-/**
- * Corrige l'ouverture du menu au premier clic
- */
-function fixMenuFirstClick() {
-    // Trouver les éléments du menu
-    const menuToggle = document.querySelector('.menu-toggle-visible');
-    const sideMenu = document.querySelector('.side-menu');
-    const mainContainer = document.querySelector('.main-container');
-    const menuOverlay = document.querySelector('.menu-overlay');
-    
-    if (!menuToggle || !sideMenu || !mainContainer) return;
-    
-    // Styles optimisés pour le menu
-    addStylesheet(`
-        /* Optimisations pour le premier clic */
-        .side-menu {
-            transform: translateX(-100%) !important;
-            transition: transform 0.25s ease !important;
-            will-change: transform !important;
-        }
-        
-        .side-menu.expanded {
-            transform: translateX(0) !important;
-        }
-        
-        .menu-overlay {
-            opacity: 0 !important;
-            visibility: hidden !important;
-            transition: opacity 0.25s ease, visibility 0.25s ease !important;
-            will-change: opacity !important;
-        }
-        
-        .menu-overlay.active {
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-    `, 'menu-first-click-styles');
-    
-    // Supprimer tous les écouteurs existants
-    const newMenuToggle = menuToggle.cloneNode(true);
-    if (menuToggle.parentNode) {
-        menuToggle.parentNode.replaceChild(newMenuToggle, menuToggle);
-    }
-    
-    if (menuOverlay) {
-        const newMenuOverlay = menuOverlay.cloneNode(true);
-        if (menuOverlay.parentNode) {
-            menuOverlay.parentNode.replaceChild(newMenuOverlay, menuOverlay);
-        }
-    }
-    
-    // Ajouter l'écouteur optimisé
-    newMenuToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Basculer l'état immédiatement
-        const isExpanded = sideMenu.classList.contains('expanded');
-        
-        // Utiliser requestAnimationFrame pour garantir l'exécution au prochain cycle de rendu
-        requestAnimationFrame(() => {
-            sideMenu.classList.toggle('expanded', !isExpanded);
-            mainContainer.classList.toggle('menu-expanded', !isExpanded);
-            
-            if (menuOverlay) {
-                menuOverlay.classList.toggle('active', !isExpanded);
-            }
-        });
-    });
-    
-    // Gérer la fermeture au clic en dehors
-    document.addEventListener('click', function(e) {
-        // Si le menu est ouvert et le clic est en dehors
-        if (sideMenu.classList.contains('expanded') && 
-            !sideMenu.contains(e.target) && 
-            e.target !== newMenuToggle && 
-            !newMenuToggle.contains(e.target)) {
-            
-            sideMenu.classList.remove('expanded');
-            mainContainer.classList.remove('menu-expanded');
-            
-            if (menuOverlay) {
-                menuOverlay.classList.remove('active');
-            }
-        }
-    });
-    
-    // Gérer la fermeture via l'overlay
-    if (menuOverlay) {
-        document.querySelector('.menu-overlay').addEventListener('click', function() {
-            sideMenu.classList.remove('expanded');
-            mainContainer.classList.remove('menu-expanded');
-            this.classList.remove('active');
-        });
-    }
-}
-
-/**
- * Utilitaire pour ajouter une feuille de style
- */
-function addStylesheet(cssText, id) {
-    // Vérifier si elle existe déjà
-    if (id && document.getElementById(id)) {
-        document.getElementById(id).textContent = cssText;
-        return;
-    }
-    
-    // Créer un élément style
-    const style = document.createElement('style');
-    if (id) style.id = id;
-    style.textContent = cssText;
-    document.head.appendChild(style);
-}
+            mainContainer.style.paddingBottom = '80px';
+            mainContainer.style.width = '100%';
+            mainContainer.style
