@@ -1,701 +1,350 @@
-/**
- * Gestion de la réservation de réunions
- * Version améliorée avec:
- * - Intégration plus étroite avec la liste des réunions
- * - Meilleure gestion des états et des erreurs
- * - Vérification plus robuste des disponibilités
- * - Retour visuel amélioré
- */
+// static/js/booking.js
 
-// Système de réservation de salles
-const BookingSystem = {
-  // État du système
-  isLoading: false,
-  selectedRoom: '',
-  selectedDate: '',
-  startTime: '',
-  endTime: '',
-  selectedDuration: 30, // minutes
-  debug: true, // Activer les logs de débogage
-  
-  /**
-   * Initialise le système de réservation
-   */
-  init() {
-    // Initialiser les gestionnaires d'événements de la modal
-    this.initializeModalHandlers();
-    
-    // Associer les boutons de création
-    this.attachCreateButtons();
-    
-    // Initialiser les autres événements
-    this.initializeEvents();
-    
-    if (this.debug) console.log("Système de réservation initialisé");
-  },
-  
-  /**
-   * Attache les gestionnaires d'événements aux boutons de création
-   */
-  attachCreateButtons() {
-    // Trouver tous les boutons de création de réunion
-    const createButtons = document.querySelectorAll(
-      '.create-meeting-integrated, #createMeetingBtn, button[data-action="create-meeting"]'
-    );
-    
-    createButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        this.openModal();
-      });
+// Initialisation du modal de réservation
+function initBookingModal() {
+    const modal = document.getElementById('bookingModal');
+    const overlay = document.getElementById('bookingModalOverlay');
+    const openButtons = document.querySelectorAll('#createMeetingTeamsBtnHeader, #createMeetingBtnFooter, #menu-reservation-salle');
+    const closeButton = document.getElementById('closeBookingModalBtn');
+    const cancelButton = document.getElementById('cancelBookingBtn');
+    const form = document.getElementById('bookingForm');
+    const roomSelect = document.getElementById('bookingRoomSelect');
+    const dateInput = document.getElementById('bookingDate');
+    const startTimeInput = document.getElementById('bookingStartTime');
+    const endTimeInput = document.getElementById('bookingEndTime');
+    const quickDurationBtnsContainer = document.getElementById('quickDurationBtns');
+    const statusDiv = document.getElementById('bookingStatus');
+
+    if (!modal || !overlay || !closeButton || !cancelButton || !form || !roomSelect || !dateInput || !startTimeInput || !endTimeInput || !quickDurationBtnsContainer) {
+        console.error("Éléments du modal de réservation manquants.");
+        return;
+    }
+
+    // --- Ouverture du Modal ---
+    openButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetBookingForm(); // Réinitialiser le formulaire à chaque ouverture
+            populateRoomSelect(); // Remplir la liste des salles
+            setDefaultDateTime(); // Pré-remplir date/heure
+            overlay.classList.add('visible');
+            // Tenter de focus le premier champ
+             setTimeout(() => document.getElementById('bookingTitle')?.focus(), 100);
+        });
     });
-    
-    if (this.debug) console.log(`${createButtons.length} boutons de création attachés`);
-  },
-  
-  /**
-   * Ouvre le modal de réservation
-   */
-  openModal() {
-    const modal = document.getElementById('bookingModal');
-    if (!modal) {
-      console.error("Modal de réservation introuvable");
-      return;
-    }
-    
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Empêche le défilement en arrière-plan
-    
-    // Remplir le select avec les salles
-    this.populateRooms();
-    
-    // Définir la date à aujourd'hui
-    const dateInput = document.getElementById('booking-date');
-    if (dateInput) {
-      const today = new Date().toISOString().split('T')[0];
-      dateInput.value = today;
-      dateInput.min = today; // Empêcher les dates passées
-      this.selectedDate = today;
-    }
-    
-    // Mettre à jour l'heure actuelle pour le début
-    const startTimeInput = document.getElementById('booking-start');
-    if (startTimeInput) {
-      const roundedTime = this.getRoundedCurrentTime();
-      startTimeInput.value = roundedTime;
-      this.startTime = roundedTime;
-    }
-    
-    // Mettre à jour l'heure de fin par défaut (start + 30min)
-    this.updateEndTimeFromDuration(30);
-    
-    // Sélectionner par défaut le bouton 30 minutes
-    const durationButtons = document.querySelectorAll('.duration-button');
-    durationButtons.forEach(btn => btn.classList.remove('active'));
-    const defaultDuration = document.querySelector('.duration-button[data-minutes="30"]');
-    if (defaultDuration) {
-      defaultDuration.classList.add('active');
-      this.selectedDuration = 30;
-    }
-    
-    // Effacer les champs de formulaire précédents
-    const titleInput = document.getElementById('booking-title');
-    const participantsInput = document.getElementById('booking-participants');
-    if (titleInput) titleInput.value = '';
-    if (participantsInput) participantsInput.value = '';
-    
-    // Masquer le message de disponibilité
-    const availabilityDiv = document.getElementById('room-availability');
-    if (availabilityDiv) availabilityDiv.innerHTML = '';
-    
-    // Animation d'entrée
-    setTimeout(() => {
-      const modalContent = modal.querySelector('.booking-modal-content');
-      if (modalContent) {
-        modalContent.style.opacity = '1';
-        modalContent.style.transform = 'translateY(0)';
-      }
-    }, 50);
-  },
-  
-  /**
-   * Ferme proprement la modal de réservation et réinitialise son état
-   */
-  closeModal() {
-    const modal = document.getElementById('bookingModal');
-    if (!modal) return;
-    
-    // Supprimer tous les écouteurs d'événements des boutons dans la modal
-    const buttons = modal.querySelectorAll('button');
-    buttons.forEach(button => {
-      const newButton = button.cloneNode(true);
-      if (button.parentNode) {
-        button.parentNode.replaceChild(newButton, button);
-      }
+
+    // --- Fermeture du Modal ---
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+    };
+    closeButton.addEventListener('click', closeModal);
+    cancelButton.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) { // Fermer seulement si clic sur l'overlay direct
+            closeModal();
+        }
     });
-    
-    // Animation de sortie avec gestion du display none
-    const modalContent = modal.querySelector('.booking-modal-content');
-    if (modalContent) {
-      modalContent.style.opacity = '0';
-      modalContent.style.transform = 'translateY(-20px)';
-      
-      // Utiliser requestAnimationFrame pour garantir la fermeture complète
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          modal.style.display = 'none';
-          document.body.style.overflow = ''; // Restaurer le défilement
-          
-          // Réinitialiser complètement l'état de la modal
-          if (modalContent) {
-            modalContent.style.opacity = '1';
-            modalContent.style.transform = 'translateY(0)';
-          }
-        }, 300);
-      });
-    } else {
-      // Fallback si le contenu de la modal n'est pas trouvé
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-    
-    // Réinitialiser les états
-    this.isLoading = false;
-    this.selectedRoom = '';
-    
-    // Réattacher les gestionnaires d'événements après la fermeture
-    setTimeout(() => {
-      this.initializeModalHandlers();
-    }, 500);
-  },
-  
-  /**
-   * Réinitialise tous les gestionnaires d'événements pour la modal
-   */
-  initializeModalHandlers() {
-    // Bouton de fermeture
-    const closeBtn = document.getElementById('closeBookingModalBtn');
-    if (closeBtn) {
-      const newCloseBtn = closeBtn.cloneNode(true);
-      if (closeBtn.parentNode) {
-        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-      }
-      newCloseBtn.addEventListener('click', () => {
-        if (!this.isLoading) {
-          this.closeModal();
+
+    // --- Gestion du Formulaire ---
+    form.addEventListener('submit', handleBookingSubmit);
+
+    // --- Gestion des boutons de durée rapide ---
+    quickDurationBtnsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('duration-button')) {
+            const buttons = quickDurationBtnsContainer.querySelectorAll('.duration-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            updateEndTimeFromDuration(parseInt(e.target.dataset.minutes, 10));
         }
-      });
-    }
-    
-    // Bouton Annuler
-    const cancelBtn = document.getElementById('cancelBookingBtn');
-    if (cancelBtn) {
-      const newCancelBtn = cancelBtn.cloneNode(true);
-      if (cancelBtn.parentNode) {
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-      }
-      newCancelBtn.addEventListener('click', () => {
-        if (!this.isLoading) {
-          this.closeModal();
+    });
+
+    // Mettre à jour l'heure de fin si l'heure de début change
+    startTimeInput.addEventListener('change', () => {
+        const activeButton = quickDurationBtnsContainer.querySelector('.duration-button.active');
+        if (activeButton) {
+            updateEndTimeFromDuration(parseInt(activeButton.dataset.minutes, 10));
         }
-      });
+    });
+     // Mettre à jour la durée active si l'heure de fin change manuellement
+    endTimeInput.addEventListener('change', updateActiveDurationButton);
+
+}
+
+// Réinitialiser le formulaire
+function resetBookingForm() {
+    const form = document.getElementById('bookingForm');
+    const statusDiv = document.getElementById('bookingStatus');
+    if (form) form.reset();
+    if (statusDiv) {
+        statusDiv.textContent = '';
+        statusDiv.className = 'form-status'; // Reset classes
     }
-    
-    // Gestion du clic en dehors de la modal
-    const modal = document.getElementById('bookingModal');
-    if (modal) {
-      // Supprimer tous les écouteurs d'événements sur la modal
-      const newModal = modal.cloneNode(false);
-      Array.from(modal.children).forEach(child => {
-        newModal.appendChild(child);
-      });
-      if (modal.parentNode) {
-        modal.parentNode.replaceChild(newModal, modal);
-      }
-      
-      // Ajouter à nouveau l'écouteur d'événements
-      newModal.addEventListener('click', (e) => {
-        if (e.target === newModal && !this.isLoading) {
-          this.closeModal();
-        }
-      });
+    // Réactiver le bouton de durée 30 min par défaut
+    const quickDurationBtnsContainer = document.getElementById('quickDurationBtns');
+    if(quickDurationBtnsContainer) {
+        quickDurationBtnsContainer.querySelectorAll('.duration-button').forEach(btn => btn.classList.remove('active'));
+        const defaultDurationBtn = quickDurationBtnsContainer.querySelector('[data-minutes="30"]');
+        if (defaultDurationBtn) defaultDurationBtn.classList.add('active');
     }
-    
-    // Bouton de création de réunion
-    const createBtn = document.getElementById('createTeamsMeetingBtn');
-    if (createBtn) {
-      const newCreateBtn = createBtn.cloneNode(true);
-      if (createBtn.parentNode) {
-        createBtn.parentNode.replaceChild(newCreateBtn, createBtn);
-      }
-      newCreateBtn.addEventListener('click', () => {
-        if (!this.isLoading) {
-          this.createTeamsMeeting();
-        }
-      });
-    }
-  },
-  
-  /**
-   * Remplit le sélecteur de salles
-   */
-  populateRooms() {
-    const roomSelect = document.getElementById('booking-room');
+}
+
+// Remplir le select des salles
+function populateRoomSelect() {
+    const roomSelect = document.getElementById('bookingRoomSelect');
     if (!roomSelect) return;
-    
-    // Vider les options sauf la première
-    while (roomSelect.children.length > 1) {
-      roomSelect.removeChild(roomSelect.lastChild);
-    }
-    
-    // Ajouter les salles depuis la configuration
-    if (window.SALLES) {
-      for (const room in window.SALLES) {
-        const option = document.createElement('option');
-        option.value = room;
-        option.textContent = room;
-        roomSelect.appendChild(option);
-      }
-      
-      // Sélectionner la salle actuelle si on est sur une page spécifique de salle
-      const currentRoom = window.salleName || window.resourceName;
-      if (currentRoom && currentRoom !== 'toutes les salles') {
-        const normalized = currentRoom.charAt(0).toUpperCase() + currentRoom.slice(1).toLowerCase();
-        
-        // Trouver l'option correspondante
-        for (let i = 0; i < roomSelect.options.length; i++) {
-          if (roomSelect.options[i].value.toLowerCase() === normalized.toLowerCase()) {
-            roomSelect.selectedIndex = i;
-            this.selectedRoom = roomSelect.options[i].value;
-            
-            // Vérifier la disponibilité
-            setTimeout(() => this.checkRoomAvailability(), 300);
-            break;
-          }
+
+    roomSelect.innerHTML = '<option value="" selected disabled>Chargement...</option>'; // Indicateur
+
+    // Utiliser les salles de la config globale
+    const salles = Object.keys(window.SALLES || {});
+    if (salles.length > 0) {
+        roomSelect.innerHTML = '<option value="" selected disabled>Sélectionnez une salle</option>'; // Reset
+        salles.sort().forEach(salleName => {
+            const option = document.createElement('option');
+            option.value = salleName; // Utiliser le nom comme valeur
+            option.textContent = salleName;
+            roomSelect.appendChild(option);
+        });
+         // Pré-sélectionner la salle si on est sur une page de salle spécifique
+        if (window.APP_CONTEXT && !window.APP_CONTEXT.isAllResources && window.APP_CONTEXT.resourceType === 'room') {
+            const currentRoomOption = roomSelect.querySelector(`option[value="${window.APP_CONTEXT.resourceName}"]`);
+             if (currentRoomOption) {
+                currentRoomOption.selected = true;
+            }
         }
-      }
+
     } else {
-      console.warn("Configuration des salles non trouvée (window.SALLES)");
+        roomSelect.innerHTML = '<option value="" selected disabled>Aucune salle configurée</option>';
     }
-  },
-  
-  /**
-   * Obtient l'heure actuelle arrondie au quart d'heure supérieur
-   */
-  getRoundedCurrentTime() {
+}
+
+// Pré-remplir date et heure (au prochain créneau de 15 min)
+function setDefaultDateTime() {
+    const dateInput = document.getElementById('bookingDate');
+    const startTimeInput = document.getElementById('bookingStartTime');
+    const endTimeInput = document.getElementById('bookingEndTime');
+
+    if (!dateInput || !startTimeInput || !endTimeInput) return;
+
     const now = new Date();
     const minutes = now.getMinutes();
-    const roundedMinutes = Math.ceil(minutes / 15) * 15;
-    
-    now.setMinutes(roundedMinutes);
-    now.setSeconds(0);
-    
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  },
-  
-  /**
-   * Met à jour l'heure de fin en fonction de la durée sélectionnée
-   */
-  updateEndTimeFromDuration(durationMinutes) {
-    const startTimeInput = document.getElementById('booking-start');
-    const endTimeInput = document.getElementById('booking-end');
-    const dateInput = document.getElementById('booking-date');
-    
-    if (!startTimeInput || !endTimeInput || !dateInput || !startTimeInput.value) return;
-    
-    this.selectedDuration = durationMinutes;
-    const selectedDate = dateInput.value;
-    const [startHours, startMinutes] = startTimeInput.value.split(':').map(Number);
-    
-    const startDateTime = new Date(selectedDate);
-    startDateTime.setHours(startHours, startMinutes);
-    
-    const endDateTime = new Date(startDateTime);
-    endDateTime.setMinutes(endDateTime.getMinutes() + durationMinutes);
-    
-    const endTimeStr = `${String(endDateTime.getHours()).padStart(2, '0')}:${String(endDateTime.getMinutes()).padStart(2, '0')}`;
-    endTimeInput.value = endTimeStr;
-    this.endTime = endTimeStr;
-    
-    // Vérifier la disponibilité
-    this.checkRoomAvailability();
-  },
-  
-  /**
-   * Vérifie la disponibilité d'une salle
-   */
-  async checkRoomAvailability() {
-    const roomSelect = document.getElementById('booking-room');
-    const availabilityDiv = document.getElementById('room-availability');
-    const startTimeInput = document.getElementById('booking-start');
-    const endTimeInput = document.getElementById('booking-end');
-    const dateInput = document.getElementById('booking-date');
-    
-    if (!roomSelect || !availabilityDiv || !startTimeInput || !endTimeInput || !dateInput) return;
-    
-    const selectedRoom = roomSelect.value;
-    this.selectedRoom = selectedRoom;
-    
-    const selectedDate = dateInput.value;
-    this.selectedDate = selectedDate;
-    
-    const startTime = startTimeInput.value;
-    this.startTime = startTime;
-    
-    const endTime = endTimeInput.value;
-    this.endTime = endTime;
-    
-    if (!selectedRoom || !selectedDate || !startTime || !endTime) {
-      availabilityDiv.innerHTML = '';
-      return;
+    const nextQuarterHour = Math.ceil((minutes + 1) / 15) * 15; // +1 pour éviter l'heure actuelle pile
+
+    const startDate = new Date(now);
+    startDate.setMinutes(nextQuarterHour, 0, 0); // Arrondir au prochain 1/4h
+
+    // Gérer le passage à l'heure ou au jour suivant
+    if (nextQuarterHour >= 60) {
+        startDate.setHours(startDate.getHours() + 1);
+        startDate.setMinutes(0, 0, 0);
     }
-    
-    // Afficher un indicateur de chargement
-    availabilityDiv.innerHTML = '<div class="modal-loading"><i class="fas fa-circle-notch fa-spin"></i> Vérification de la disponibilité...</div>';
-    
-    // Convertir en objets Date
-    const startDateTime = new Date(`${selectedDate}T${startTime}`);
-    const endDateTime = new Date(`${selectedDate}T${endTime}`);
-    
-    // Vérifier que l'heure de fin est après l'heure de début
-    if (endDateTime <= startDateTime) {
-      availabilityDiv.innerHTML = `
-        <div class="occupied">
-          <i class="fas fa-exclamation-triangle"></i>
-          L'heure de fin doit être après l'heure de début.
-        </div>
-      `;
-      return;
-    }
-    
-    try {
-      // Récupérer les réunions du jour
-      const apiUrl = window.API_URLS && window.API_URLS.GET_MEETINGS 
-        ? window.API_URLS.GET_MEETINGS 
-        : '/meetings.json';
-      
-      // Ajouter un timestamp pour éviter le cache
-      const cacheBust = `?t=${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-      const response = await fetch(`${apiUrl}${cacheBust}`);
-      
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
-      }
-      
-      const meetings = await response.json();
-      
-      // Vérifier les conflits
-      let isAvailable = true;
-      let conflictingMeeting = null;
-      
-      // Normaliser le nom de la salle pour la comparaison
-      const normalizedRoomName = selectedRoom.toLowerCase().trim();
-      
-      // Filtrer les réunions de la même salle
-      const roomMeetings = meetings.filter(m => {
-        const meetingSalle = (m.salle || '').toLowerCase().trim();
-        return meetingSalle === normalizedRoomName || 
-               meetingSalle.includes(normalizedRoomName) || 
-               normalizedRoomName.includes(meetingSalle);
-      });
-      
-      if (this.debug) console.log(`Vérification de disponibilité pour ${selectedRoom}: ${roomMeetings.length} réunions trouvées`);
-      
-      // Vérifier chaque réunion pour un conflit
-      for (const meeting of roomMeetings) {
-        const meetingStart = new Date(meeting.start);
-        const meetingEnd = new Date(meeting.end);
-        
-        // Vérifier si les plages horaires se chevauchent
-        if ((startDateTime >= meetingStart && startDateTime < meetingEnd) || 
-            (endDateTime > meetingStart && endDateTime <= meetingEnd) ||
-            (startDateTime <= meetingStart && endDateTime >= meetingEnd)) {
-          isAvailable = false;
-          conflictingMeeting = meeting;
-          break;
-        }
-      }
-      
-      // Afficher le résultat
-      if (isAvailable) {
-        availabilityDiv.innerHTML = `
-          <div class="available">
-            <i class="fas fa-check-circle"></i> 
-            Salle disponible pour cette période
-          </div>
-        `;
-      } else {
-        const conflictStart = new Date(conflictingMeeting.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        const conflictEnd = new Date(conflictingMeeting.end).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        availabilityDiv.innerHTML = `
-          <div class="occupied">
-            <i class="fas fa-times-circle"></i> 
-            Salle déjà réservée (${conflictStart} - ${conflictEnd} : ${conflictingMeeting.subject})
-          </div>
-        `;
-      }
-    } catch (error) {
-      console.error("Erreur lors de la vérification de disponibilité:", error);
-      availabilityDiv.innerHTML = `
-        <div class="occupied">
-          <i class="fas fa-exclamation-triangle"></i> 
-          Impossible de vérifier la disponibilité
-        </div>
-      `;
-    }
-  },
-  
-  /**
-   * Crée une réunion Teams avec l'API Graph
-   */
-  async createTeamsMeeting() {
-    const title = document.getElementById('booking-title').value;
-    const room = document.getElementById('booking-room').value;
-    const dateInput = document.getElementById('booking-date').value;
-    const startTime = document.getElementById('booking-start').value;
-    const endTime = document.getElementById('booking-end').value;
-    const participantsInput = document.getElementById('booking-participants').value;
-    const isOnlineMeeting = document.getElementById('booking-online-meeting')?.checked ?? true;
-    
-    // Validation de base
-    if (!title) {
-      this.showError("Veuillez entrer un titre pour la réunion.");
-      return;
-    }
-    
-    if (!room) {
-      this.showError("Veuillez sélectionner une salle.");
-      return;
-    }
-    
-    if (!dateInput) {
-      this.showError("Veuillez sélectionner une date.");
-      return;
-    }
-    
-    if (!startTime) {
-      this.showError("Veuillez spécifier une heure de début.");
-      return;
-    }
-    
-    if (!endTime) {
-      this.showError("Veuillez spécifier une heure de fin.");
-      return;
-    }
-    
-    // Construire les dates de début et de fin
-    const startDateTime = new Date(`${dateInput}T${startTime}`);
-    const endDateTime = new Date(`${dateInput}T${endTime}`);
-    
-    // Vérifier que l'heure de fin est après l'heure de début
-    if (endDateTime <= startDateTime) {
-      this.showError("L'heure de fin doit être après l'heure de début.");
-      return;
-    }
-    
-    // Récupérer les participants 
-    const participants = participantsInput
-      .split(',')
-      .map(email => email.trim())
-      .filter(email => email.length > 0 && email.includes('@'));
-    
-    // Obtenir l'adresse email de la salle depuis la configuration
-    const roomEmail = window.SALLES?.[room] || '';
-    
-    if (!roomEmail) {
-      this.showError("Erreur: impossible de trouver l'email de la salle sélectionnée.");
-      return;
-    }
-    
-    // Préparation des données pour la création de la réunion
-    const meetingData = {
-      title,
-      room,
-      roomEmail,
-      start: startDateTime.toISOString(),
-      end: endDateTime.toISOString(),
-      participants,
-      isOnlineMeeting
-    };
-    
-    if (this.debug) console.log("Données de réunion à créer:", meetingData);
-    
-    // Afficher un indicateur de chargement
-    this.showLoading(true);
-    
-    try {
-      // URL de l'API
-      const apiUrl = window.API_URLS && window.API_URLS.CREATE_MEETING 
-        ? window.API_URLS.CREATE_MEETING 
-        : '/api/create-meeting';
-      
-      // Appel à l'API pour créer la réunion
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(meetingData)
-      });
-      
-      // Analyser la réponse
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || "Erreur lors de la création de la réunion");
-      }
-      
-      // Afficher un message de succès
-      this.showSuccess("Réunion créée avec succès !");
-      
-      // Fermer le modal après un délai
-      setTimeout(() => {
-        this.closeModal();
-        
-        // Rafraîchir la liste des réunions
-        if (typeof window.fetchMeetings === 'function') {
-          console.log("Rafraîchissement des réunions après création...");
-          window.fetchMeetings(true);
+
+    // Format YYYY-MM-DD
+    const year = startDate.getFullYear();
+    const month = String(startDate.getMonth() + 1).padStart(2, '0');
+    const day = String(startDate.getDate()).padStart(2, '0');
+    dateInput.value = `${year}-${month}-${day}`;
+
+    // Format HH:MM
+    const startHours = String(startDate.getHours()).padStart(2, '0');
+    const startMinutes = String(startDate.getMinutes()).padStart(2, '0');
+    startTimeInput.value = `${startHours}:${startMinutes}`;
+
+    // Calculer l'heure de fin par défaut (30 min)
+    updateEndTimeFromDuration(30);
+}
+
+// Mettre à jour l'heure de fin basée sur la durée sélectionnée
+function updateEndTimeFromDuration(durationMinutes) {
+    const startTimeInput = document.getElementById('bookingStartTime');
+    const endTimeInput = document.getElementById('bookingEndTime');
+    if (!startTimeInput || !endTimeInput || !startTimeInput.value) return;
+
+    const startTime = startTimeInput.value.split(':');
+    const startHour = parseInt(startTime[0], 10);
+    const startMinute = parseInt(startTime[1], 10);
+
+    if (isNaN(startHour) || isNaN(startMinute)) return;
+
+    const startDate = new Date(); // Date fictive pour calcul
+    startDate.setHours(startHour, startMinute, 0, 0);
+
+    const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+
+    const endHours = String(endDate.getHours()).padStart(2, '0');
+    const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+    endTimeInput.value = `${endHours}:${endMinutes}`;
+}
+
+// Mettre à jour le bouton de durée actif si l'heure de fin change
+function updateActiveDurationButton() {
+    const startTimeInput = document.getElementById('bookingStartTime');
+    const endTimeInput = document.getElementById('bookingEndTime');
+    const quickDurationBtnsContainer = document.getElementById('quickDurationBtns');
+
+     if (!startTimeInput || !endTimeInput || !quickDurationBtnsContainer || !startTimeInput.value || !endTimeInput.value) return;
+
+    const startTime = startTimeInput.value.split(':');
+    const endTime = endTimeInput.value.split(':');
+    const startHour = parseInt(startTime[0], 10);
+    const startMinute = parseInt(startTime[1], 10);
+    const endHour = parseInt(endTime[0], 10);
+    const endMinute = parseInt(endTime[1], 10);
+
+     if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) return;
+
+    const startDate = new Date(2000, 0, 1, startHour, startMinute); // Date arbitraire
+    const endDate = new Date(2000, 0, 1, endHour, endMinute);
+
+     // Gérer le cas où la fin est le jour suivant (ex: 23:00 - 01:00)
+     if (endDate < startDate) {
+         endDate.setDate(endDate.getDate() + 1);
+     }
+
+    const durationMinutes = Math.round((endDate - startDate) / 60000);
+
+    const buttons = quickDurationBtnsContainer.querySelectorAll('.duration-button');
+    let foundMatch = false;
+    buttons.forEach(btn => {
+        if (parseInt(btn.dataset.minutes, 10) === durationMinutes) {
+            btn.classList.add('active');
+            foundMatch = true;
         } else {
-          console.error("La fonction fetchMeetings n'est pas disponible");
-          // Tenter de rafraîchir la page si la fonction n'est pas disponible
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+            btn.classList.remove('active');
         }
-      }, 1500);
-      
-    } catch (error) {
-      console.error("Erreur lors de la création de la réunion:", error);
-      this.showError(`Erreur: ${error.message || "Impossible de créer la réunion"}`);
-      this.showLoading(false);
-    }
-  },
-  
-  /**
-   * Affiche un message d'erreur dans le modal
-   */
-  showError(message) {
-    const availabilityDiv = document.getElementById('room-availability');
-    if (availabilityDiv) {
-      availabilityDiv.innerHTML = `
-        <div class="occupied">
-          <i class="fas fa-exclamation-circle"></i> 
-          ${message}
-        </div>
-      `;
-      
-      // Faire défiler jusqu'au message
-      availabilityDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-      alert(message);
-    }
-  },
-  
-  /**
-   * Affiche un message de succès dans le modal
-   */
-  showSuccess(message) {
-    const availabilityDiv = document.getElementById('room-availability');
-    if (availabilityDiv) {
-      availabilityDiv.innerHTML = `
-        <div class="available">
-          <i class="fas fa-check-circle"></i> 
-          ${message}
-        </div>
-      `;
-    }
-  },
-  
-  /**
-   * Affiche ou masque l'indicateur de chargement
-   */
-  showLoading(show) {
-    this.isLoading = show;
-    
-    const createButton = document.getElementById('createTeamsMeetingBtn');
-    if (createButton) {
-      if (show) {
-        createButton.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Création en cours...';
-        createButton.disabled = true;
-      } else {
-        createButton.innerHTML = '<i class="fas fa-check"></i> Créer la réunion';
-        createButton.disabled = false;
-      }
-    }
-  },
-  
-  /**
-   * Initialise les événements du modal de réservation
-   */
-  initializeEvents() {
-    // Gestionnaire pour les boutons de durée
-    const durationButtons = document.querySelectorAll('.duration-button');
-    durationButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        // Retirer la classe active des autres boutons
-        durationButtons.forEach(btn => btn.classList.remove('active'));
-        // Ajouter la classe active au bouton cliqué
-        button.classList.add('active');
-        
-        // Mettre à jour l'heure de fin en fonction de la durée
-        const durationMinutes = parseInt(button.dataset.minutes);
-        this.updateEndTimeFromDuration(durationMinutes);
-      });
     });
-    
-    // Événements pour vérifier la disponibilité en cas de changements
-    const roomSelect = document.getElementById('booking-room');
-    const dateInput = document.getElementById('booking-date');
-    const startTimeInput = document.getElementById('booking-start');
-    const endTimeInput = document.getElementById('booking-end');
-    
-    if (roomSelect) {
-      roomSelect.addEventListener('change', () => this.checkRoomAvailability());
-    }
-    
-    if (dateInput) {
-      dateInput.addEventListener('change', () => this.checkRoomAvailability());
-    }
-    
-    if (startTimeInput) {
-      startTimeInput.addEventListener('change', () => {
-        this.startTime = startTimeInput.value;
-        
-        // Mettre à jour l'heure de fin si un bouton de durée est actif
-        const activeButton = document.querySelector('.duration-button.active');
-        if (activeButton) {
-          const durationMinutes = parseInt(activeButton.dataset.minutes);
-          this.updateEndTimeFromDuration(durationMinutes);
-        } else {
-          this.checkRoomAvailability();
-        }
-      });
-    }
-    
-    if (endTimeInput) {
-      endTimeInput.addEventListener('change', () => {
-        this.endTime = endTimeInput.value;
-        this.checkRoomAvailability();
-      });
-    }
-    
-    // Soumettre le formulaire via la touche Enter
-    const form = document.getElementById('bookingForm');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (!this.isLoading) {
-          this.createTeamsMeeting();
-        }
-      });
-    }
-  }
-};
 
-// Initialisation
-document.addEventListener('DOMContentLoaded', () => {
-  BookingSystem.init();
-});
+     if (!foundMatch) {
+        // Si aucune durée exacte ne correspond, désactiver tous les boutons
+        buttons.forEach(btn => btn.classList.remove('active'));
+    }
+}
 
-// Exporter le système pour utilisation dans d'autres modules
-window.BookingSystem = BookingSystem;
+
+// Gérer la soumission du formulaire
+async function handleBookingSubmit(event) {
+    event.preventDefault(); // Empêcher la soumission HTML standard
+    const form = event.target;
+    const submitButton = document.getElementById('submitBookingBtn');
+    const statusDiv = document.getElementById('bookingStatus');
+
+    if (!submitButton || !statusDiv) return;
+
+    // Afficher un état de chargement
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création...';
+    statusDiv.textContent = '';
+    statusDiv.className = 'form-status';
+
+    // Récupérer les données du formulaire
+    const bookingData = {
+        title: document.getElementById('bookingTitle').value.trim(),
+        room: document.getElementById('bookingRoomSelect').value,
+        date: document.getElementById('bookingDate').value,
+        startTime: document.getElementById('bookingStartTime').value,
+        endTime: document.getElementById('bookingEndTime').value,
+        // Participants nettoyés (emails séparés par des points-virgules)
+        participants: document.getElementById('bookingParticipants').value
+                        .split(/[,;]+/) // Séparer par virgule ou point-virgule
+                        .map(email => email.trim())
+                        .filter(email => email.length > 0 && email.includes('@')), // Garder emails valides
+        // Ajouter d'autres champs si nécessaire (ex: createTeamsMeeting)
+        createTeamsMeeting: true // Par défaut pour une réunion Teams
+    };
+
+     // Validation simple (ajouter plus si nécessaire)
+     if (!bookingData.title || !bookingData.room || !bookingData.date || !bookingData.startTime || !bookingData.endTime) {
+         showBookingStatus("Veuillez remplir tous les champs obligatoires.", 'error');
+         submitButton.disabled = false;
+         submitButton.innerHTML = '<i class="fas fa-check"></i> Créer la réunion';
+         return;
+     }
+
+     // Construire les dates/heures complètes pour l'API
+     // Attention aux fuseaux horaires ici ! Supposons que l'API attend UTC ou gère la conversion.
+     const startDateTime = `${bookingData.date}T${bookingData.startTime}:00`; // Format ISO simplifié
+     const endDateTime = `${bookingData.date}T${bookingData.endTime}:00`;
+
+     // Vérifier si l'heure de fin est après l'heure de début
+     if (new Date(endDateTime) <= new Date(startDateTime)) {
+        showBookingStatus("L'heure de fin doit être après l'heure de début.", 'error');
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-check"></i> Créer la réunion';
+        return;
+     }
+
+
+    console.log("Envoi de la réservation:", {
+        subject: bookingData.title,
+        start: startDateTime, // Envoyer au format attendu par l'API
+        end: endDateTime,     // Envoyer au format attendu par l'API
+        location: bookingData.room, // Ou l'email de la salle si nécessaire
+        attendees: bookingData.participants,
+        // body: "Réunion réservée via l'application.", // Optionnel
+        isOnlineMeeting: bookingData.createTeamsMeeting
+    });
+
+
+    try {
+        // ***** SIMULATION D'APPEL API *****
+        // Remplacer par votre appel fetch réel à window.API_URLS.CREATE_MEETING
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simuler délai réseau
+        const success = Math.random() > 0.2; // Simuler succès/échec aléatoire
+        if (!success) throw new Error("Erreur simulée du serveur.");
+        // ***** FIN SIMULATION *****
+
+        /* Exemple d'appel fetch réel (à adapter) :
+        const response = await fetch(window.API_URLS.CREATE_MEETING, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Ajouter l'authentification si nécessaire (ex: Bearer token)
+                // 'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({
+                subject: bookingData.title,
+                start: startDateTime,
+                end: endDateTime,
+                location: bookingData.room, // ou window.SALLES[bookingData.room] si l'API attend l'email
+                attendees: bookingData.participants,
+                isOnlineMeeting: bookingData.createTeamsMeeting
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            throw new Error(errorData.message || `Erreur ${response.status}`);
+        }
+        const result = await response.json();
+        console.log("Réponse API:", result);
+        */
+
+        showBookingStatus("Réunion créée avec succès !", 'success');
+        // Fermer le modal après un court délai
+        setTimeout(() => {
+            document.getElementById('bookingModalOverlay').classList.remove('visible');
+            fetchMeetings(true); // Rafraîchir la liste des réunions
+        }, 2000);
+
+    } catch (error) {
+        console.error("Erreur lors de la création de la réunion:", error);
+        showBookingStatus(`Erreur: ${error.message}`, 'error');
+    } finally {
+        // Réactiver le bouton
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-check"></i> Créer la réunion';
+    }
+}
+
+// Afficher les messages de statut dans le modal
+function showBookingStatus(message, type = 'info') { // type: 'info', 'success', 'error'
+    const statusDiv = document.getElementById('bookingStatus');
+    if (statusDiv) {
+        statusDiv.textContent = message;
+        statusDiv.className = `form-status ${type}`; // Appliquer la classe de style
+    }
+}
+
+
+// Initialisation gérée par app.js
+console.log("booking.js chargé.");
