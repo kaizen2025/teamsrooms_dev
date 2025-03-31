@@ -1,16 +1,25 @@
 // static/js/app.js
 
+/**
+ * Script principal de l'application Teams Rooms Dashboard
+ * Gère l'initialisation, les interactions UI, et l'orchestration des modules.
+ * Version 2.0.1 - Complète et Consolidée
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 DOM Chargé. Initialisation de l'application v2.0...");
+    console.log("🚀 DOM Chargé. Initialisation de l'application v2.0.1...");
     try {
+        // Vérifier que les objets de configuration sont présents
+        if (typeof window.SALLES === 'undefined' || typeof window.REFRESH_INTERVALS === 'undefined' || typeof window.API_URLS === 'undefined') {
+            throw new Error("Fichier config.js manquant ou non chargé avant app.js.");
+        }
         initApp();
         console.log("✅ Application initialisée avec succès.");
     } catch (error) {
         console.error("❌ Erreur critique lors de l'initialisation:", error);
-        // Afficher un message d'erreur à l'utilisateur si l'app ne peut pas démarrer
         document.body.innerHTML = `<div style="padding: 20px; text-align: center; color: white; background-color: #dc3545;">
             <h1>Erreur d'initialisation</h1>
-            <p>L'application n'a pas pu démarrer correctement. Veuillez réessayer plus tard.</p>
+            <p>L'application n'a pas pu démarrer correctement. Vérifiez la console (F12) pour les détails.</p>
             <p><small>${error.message}</small></p>
             </div>`;
     }
@@ -18,8 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Fonction d'initialisation principale
 function initApp() {
-    // 0. Initialiser le contexte (salle/ressource actuelle)
-    initializeResourceContext(); // Fonction de config.js
+    // 0. Initialiser le contexte (depuis config.js)
+    if (typeof initializeResourceContext !== 'function') throw new Error("initializeResourceContext (config.js) non trouvée.");
+    initializeResourceContext();
 
     // 1. Initialiser l'affichage Date/Heure
     initDateTime();
@@ -27,10 +37,10 @@ function initApp() {
     // 2. Initialiser l'arrière-plan dynamique
     initBackground();
 
-    // 3. Initialiser le menu latéral
+    // 3. Initialiser le menu latéral (doit être appelé avant d'autres éléments qui en dépendent)
     initSideMenu();
 
-    // 4. Initialiser le panneau des salles (affichage/masquage)
+    // 4. Initialiser le panneau des salles (création, affichage/masquage)
     initRoomsPanel();
 
     // 5. Initialiser les modals (Réservation, Connexion, Aide)
@@ -40,13 +50,21 @@ function initApp() {
     initControlsBar();
 
     // 7. Initialiser le chargement et l'affichage des réunions
+    // Vérifier que la fonction fetchMeetings est définie (depuis meetings.js)
+    if (typeof fetchMeetings !== 'function') throw new Error("fetchMeetings (meetings.js) non trouvée.");
     initMeetings();
 
      // 8. Initialiser le chargement et l'affichage des salles
+     // Vérifier que la fonction fetchAndDisplayRooms est définie (depuis rooms.js)
+    if (typeof fetchAndDisplayRooms !== 'function') throw new Error("fetchAndDisplayRooms (rooms.js) non trouvée.");
     initRooms();
 
-    // 9. Initialiser le système d'authentification (si nécessaire)
-    initAuth(); // Fonction d'auth.js
+    // 9. Initialiser le système d'authentification (depuis auth.js)
+    if (typeof initAuth !== 'function') {
+        console.warn("initAuth (auth.js) non trouvée. Le module d'authentification ne sera pas actif.");
+    } else {
+        initAuth();
+    }
 
     // 10. Appliquer les optimisations visuelles finales
     applyVisualOptimizations();
@@ -54,8 +72,13 @@ function initApp() {
     // 11. Ajouter des écouteurs d'événements globaux (délégation)
     addGlobalEventListeners();
 
-     // 12. Mettre à jour le titre de la page
-     updatePageDisplayTitle();
+    // 12. Mettre à jour le titre H1 et le titre de l'onglet
+    updatePageDisplayTitle();
+
+     // 13. Démarrer les timers pour les réunions en cours (depuis meetings.js)
+     if (typeof startMeetingTimers === 'function') {
+        startMeetingTimers();
+    }
 }
 
 // --- Modules d'Initialisation ---
@@ -63,19 +86,25 @@ function initApp() {
 function initDateTime() {
     const timeElement = document.getElementById('time-display');
     const dateElement = document.getElementById('date-display');
-
-    function updateClock() {
-        const now = new Date();
-        if (timeElement) {
-            timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-        if (dateElement) {
-            let formattedDate = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            dateElement.textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-        }
+    if (!timeElement || !dateElement) {
+        console.warn("Éléments date/heure non trouvés.");
+        return;
     }
 
-    updateClock(); // Appel initial
+    function updateClock() {
+        try {
+            const now = new Date();
+            timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let formattedDate = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            dateElement.textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+        } catch (e) {
+            console.error("Erreur mise à jour horloge:", e);
+            timeElement.textContent = "--:--:--";
+            dateElement.textContent = "Erreur chargement date";
+             // Arrêter l'intervalle en cas d'erreur répétée ?
+        }
+    }
+    updateClock();
     setInterval(updateClock, window.REFRESH_INTERVALS.CLOCK || 1000);
     console.log("Date/Heure initialisé.");
 }
@@ -83,8 +112,8 @@ function initDateTime() {
 function initBackground() {
     const bgContainer = document.getElementById('background-container');
     if (!bgContainer || !window.BACKGROUNDS || window.BACKGROUNDS.length === 0) {
-         console.warn("Conteneur d'arrière-plan ou liste d'images manquante.");
-         if (bgContainer) bgContainer.style.backgroundColor = '#333'; // Fond par défaut
+        console.warn("Arrière-plan: Conteneur ou images manquantes. Utilisation couleur par défaut.");
+        if (bgContainer) bgContainer.style.backgroundColor = '#202025';
         return;
     }
 
@@ -92,21 +121,29 @@ function initBackground() {
 
     function changeBackground() {
         currentBgIndex = (currentBgIndex + 1) % window.BACKGROUNDS.length;
-        // Précharger l'image suivante pour une transition plus douce
+        const nextImageUrl = window.BACKGROUNDS[currentBgIndex];
+        console.log(`Tentative chargement arrière-plan: ${nextImageUrl}`);
+
         const img = new Image();
         img.onload = () => {
-             bgContainer.style.backgroundImage = `url('${window.BACKGROUNDS[currentBgIndex]}')`;
-             console.log(`Arrière-plan changé: ${window.BACKGROUNDS[currentBgIndex]}`);
-        }
+            bgContainer.style.backgroundImage = `url('${nextImageUrl}')`;
+            console.log(`Arrière-plan changé: ${nextImageUrl}`);
+        };
         img.onerror = () => {
-            console.error(`Impossible de charger l'arrière-plan: ${window.BACKGROUNDS[currentBgIndex]}`);
-            // Essayer le suivant
-            setTimeout(changeBackground, 500);
-        }
-        img.src = window.BACKGROUNDS[currentBgIndex];
+            console.error(`Impossible de charger l'arrière-plan: ${nextImageUrl}. Essai suivant.`);
+            // Peut-être retirer l'image de la liste ou réessayer plus tard
+            setTimeout(changeBackground, 5000); // Réessayer après 5s en cas d'erreur
+        };
+        img.src = nextImageUrl;
     }
 
-    changeBackground(); // Premier changement
+    // Charger immédiatement le premier arrière-plan
+     const initialImageUrl = window.BACKGROUNDS[currentBgIndex];
+     const initialImg = new Image();
+     initialImg.onload = () => { bgContainer.style.backgroundImage = `url('${initialImageUrl}')`; };
+     initialImg.onerror = () => { console.error(`Impossible de charger l'arrière-plan initial: ${initialImageUrl}`); };
+     initialImg.src = initialImageUrl;
+
     setInterval(changeBackground, window.REFRESH_INTERVALS.BACKGROUND || 3600000);
     console.log("Arrière-plan dynamique initialisé.");
 }
@@ -115,172 +152,195 @@ function initSideMenu() {
     const menuToggleBtn = document.getElementById('menuToggleVisible');
     const sideMenu = document.getElementById('sideMenu');
     const mainContainer = document.querySelector('.main-container');
-    const overlay = document.getElementById('pageOverlay'); // Overlay global
+    const overlay = document.getElementById('pageOverlay');
 
     if (!menuToggleBtn || !sideMenu || !mainContainer || !overlay) {
-        console.error("Éléments du menu latéral manquants.");
+        console.error("Éléments DOM clés pour le menu latéral manquants.");
         return;
     }
 
     const isMobile = () => window.innerWidth <= 768;
 
     const toggleMenu = (forceOpen = null) => {
-        const isOpen = sideMenu.classList.contains('expanded');
-        const shouldOpen = forceOpen !== null ? forceOpen : !isOpen;
+        const shouldBeOpen = forceOpen !== null ? forceOpen : !sideMenu.classList.contains('expanded');
 
-        if (shouldOpen) {
-            sideMenu.classList.add('expanded');
-            mainContainer.classList.add('menu-expanded');
-            if (isMobile()) {
-                overlay.classList.add('visible');
-            }
+        sideMenu.classList.toggle('expanded', shouldBeOpen);
+        mainContainer.classList.toggle('menu-expanded', shouldBeOpen);
+
+        // Gérer l'overlay seulement sur mobile
+        if (isMobile()) {
+            overlay.classList.toggle('visible', shouldBeOpen && !document.querySelector('.rooms-section.visible')); // N'active l'overlay que si le panel rooms n'est pas visible
         } else {
-            sideMenu.classList.remove('expanded');
-            mainContainer.classList.remove('menu-expanded');
-             if (isMobile()) {
-                 overlay.classList.remove('visible');
-             }
+             overlay.classList.remove('visible'); // Assurer que l'overlay n'est pas actif sur desktop
         }
-         // Recalculer centrage titre après transition
-         setTimeout(updatePageDisplayTitle, 350);
+
+        console.log(`Menu latéral ${shouldBeOpen ? 'ouvert' : 'fermé'}`);
+        // Recalculer centrage titre après transition CSS
+        setTimeout(updatePageDisplayTitle, 350);
     };
 
-    menuToggleBtn.addEventListener('click', () => toggleMenu());
+    menuToggleBtn.addEventListener('click', (e) => {
+         e.stopPropagation(); // Eviter que le clic ne ferme le menu via le listener document
+         toggleMenu();
+    });
 
-    // Fermer menu au clic sur l'overlay (mobile) ou sur un item
+    // Fermer menu au clic sur l'overlay (mobile uniquement)
     overlay.addEventListener('click', () => {
         if (isMobile() && sideMenu.classList.contains('expanded')) {
             toggleMenu(false);
         }
     });
 
-    sideMenu.addEventListener('click', (e) => {
-        // Fermer si clic sur un lien direct (pas un groupe ou autre)
-        const menuItem = e.target.closest('a.menu-item');
-        if (menuItem && !menuItem.href.endsWith('#')) { // Ne pas fermer pour les liens #
-             if (isMobile()) {
+    // Fermer le menu si on clique en dehors sur desktop/mobile, ou sur un item
+    document.addEventListener('click', (e) => {
+        // Ne pas fermer si on clique sur le bouton toggle lui-même
+        if (menuToggleBtn.contains(e.target)) return;
+
+        const clickedInsideMenu = sideMenu.contains(e.target);
+        const menuItemLink = e.target.closest('a.menu-item');
+
+        // Si le menu est ouvert ET (clic en dehors OU clic sur un lien interne non-#)
+        if (sideMenu.classList.contains('expanded') && (!clickedInsideMenu || (menuItemLink && !menuItemLink.href.endsWith('#')))) {
+             if (isMobile() || !clickedInsideMenu) { // Fermer si mobile OU clic en dehors sur desktop
                 toggleMenu(false);
+             }
+            if (menuItemLink) {
+                // Gérer l'état actif
+                 sideMenu.querySelectorAll('.menu-item.active').forEach(item => item.classList.remove('active'));
+                 menuItemLink.classList.add('active');
             }
-             // Mettre à jour l'état actif
-             sideMenu.querySelectorAll('.menu-item.active').forEach(item => item.classList.remove('active'));
-             menuItem.classList.add('active');
         }
     });
 
     console.log("Menu latéral initialisé.");
 }
 
-
 function initRoomsPanel() {
     const roomsSection = document.getElementById('roomsSection');
-    const openButtons = document.querySelectorAll('#toggleRoomsBtn, #menuToggleRoomsBtn'); // Boutons pour ouvrir
+    const openButtons = document.querySelectorAll('#toggleRoomsBtn, #menuToggleRoomsBtn');
     const closeButton = document.getElementById('closeRoomsSectionBtn');
-    const overlay = document.getElementById('pageOverlay'); // Overlay global
+    const overlay = document.getElementById('pageOverlay');
+    const roomsListContainer = document.getElementById('roomsList'); // Container pour les cartes
 
-    if (!roomsSection || !closeButton || !overlay || openButtons.length === 0) {
-        console.error("Éléments du panneau des salles manquants.");
+    if (!roomsSection || !closeButton || !overlay || openButtons.length === 0 || !roomsListContainer) {
+        console.error("Éléments DOM clés pour le panneau des salles manquants.");
         return;
     }
 
     const toggleRoomsPanel = (show) => {
         if (show) {
-            fetchAndDisplayRooms(); // Charger les salles avant d'afficher
+            // S'assurer que le menu latéral est fermé sur mobile avant d'ouvrir le panel
+            if (window.innerWidth <= 768 && document.getElementById('sideMenu')?.classList.contains('expanded')) {
+                 document.getElementById('menuToggleVisible')?.click(); // Simuler clic pour fermer menu
+            }
+            fetchAndDisplayRooms(); // Recharger les salles à chaque ouverture
             roomsSection.classList.add('visible');
-            overlay.classList.add('visible'); // Utiliser l'overlay global
+            overlay.classList.add('visible');
             updateRoomsButtonText(true);
+            console.log("Panneau des salles ouvert");
         } else {
             roomsSection.classList.remove('visible');
-            overlay.classList.remove('visible');
+            // Ne masquer l'overlay que si le menu mobile n'est pas ouvert non plus
+             if (!document.getElementById('sideMenu')?.classList.contains('expanded') || window.innerWidth > 768) {
+                overlay.classList.remove('visible');
+            }
             updateRoomsButtonText(false);
+            console.log("Panneau des salles fermé");
         }
     };
 
     openButtons.forEach(btn => {
-        btn.addEventListener('click', () => toggleRoomsPanel(true));
+        btn.addEventListener('click', (e) => {
+             e.stopPropagation(); // Eviter propagation au document
+             toggleRoomsPanel(!roomsSection.classList.contains('visible')); // Toggle state
+        });
     });
 
     closeButton.addEventListener('click', () => toggleRoomsPanel(false));
 
+    // Fermer si clic sur l'overlay (et que le panel est visible)
     overlay.addEventListener('click', () => {
         if (roomsSection.classList.contains('visible')) {
             toggleRoomsPanel(false);
         }
     });
 
-     // Gérer clic sur une carte de salle (délégation)
-     roomsSection.addEventListener('click', (e) => {
+     // Gérer clic sur une carte de salle (délégation sur le conteneur)
+     roomsListContainer.addEventListener('click', (e) => {
         const roomCard = e.target.closest('.room-card');
         if (roomCard) {
             const roomName = roomCard.dataset.roomName;
             if (roomName) {
                 console.log(`Clic sur salle: ${roomName}`);
-                // Option 1: Filtrer les réunions (si fonction existe)
-                // filterMeetingsByRoom(roomName);
-                // Option 2: Naviguer vers la page de la salle
-                // window.location.href = `/${roomName}`;
-                // Pour l'instant, on ferme le panel et met à jour le titre (comme si on naviguait)
-                window.history.pushState({}, roomName, `/${roomName}`); // Change URL sans recharger
-                initializeResourceContext(); // Met à jour APP_CONTEXT
-                updatePageDisplayTitle(); // Met à jour le titre H1
-                displayMeetings(); // Refiltre les réunions affichées
-                toggleRoomsPanel(false); // Ferme le panel
+                // Changer l'URL et le contexte sans recharger la page
+                window.history.pushState({ resource: roomName }, roomName, `/${roomName}`);
+                initializeResourceContext(); // Met à jour APP_CONTEXT basé sur la nouvelle URL
+                updatePageDisplayTitle(); // Met à jour le titre H1 et document.title
+                displayMeetings(); // Rafraîchit l'affichage des réunions pour la salle sélectionnée
+                toggleRoomsPanel(false); // Ferme le panel des salles
             }
         }
     });
 
-
     console.log("Panneau des salles initialisé.");
 }
 
-// Met à jour le texte des boutons Afficher/Masquer Salles
-function updateRoomsButtonText(isVisible) {
-    const openButtons = document.querySelectorAll('#toggleRoomsBtn, #menuToggleRoomsBtn');
-    const iconClass = isVisible ? 'fa-door-closed' : 'fa-door-open';
-    const text = isVisible ? 'Masquer les salles' : 'Afficher les salles';
-
-    openButtons.forEach(btn => {
-        const textSpan = btn.querySelector('.btn-text, .button-text'); // Chercher span texte
-        if (textSpan) {
-            btn.innerHTML = `<i class="fas ${iconClass}"></i> <span class="${textSpan.className}">${text}</span>`;
-        } else {
-             // Si pas de span (ex: bouton menu réduit ou mobile)
-             btn.innerHTML = `<i class="fas ${iconClass}"></i>`;
-             btn.title = text; // Mettre en tooltip
-        }
-    });
-}
 
 function initModals() {
-    // Initialisation spécifique à chaque modal
-    initBookingModal(); // Fonction de booking.js
-    // initLoginModal(); // Fonction d'auth.js (si elle existe)
-    initHelpModal();
+    // Initialisation Modal Réservation (depuis booking.js)
+    if (typeof initBookingModal === 'function') {
+        initBookingModal();
+    } else {
+        console.error("initBookingModal (booking.js) non trouvée.");
+    }
+
+    // Initialisation Modal Connexion (depuis auth.js)
+    // La logique d'ouverture/fermeture est déjà dans initAuth()
+
+    // Initialisation Modal Aide
+    initHelpModal(); // La fonction est définie dans ce fichier app.js
 
     console.log("Modals initialisés.");
 }
 
 function initHelpModal() {
     const helpBtn = document.getElementById('helpBtn');
-    const overlay = document.getElementById('helpModalOverlay');
+    const overlay = document.getElementById('helpModalOverlay'); // Assurez-vous que cet ID existe dans le HTML
     const modal = document.getElementById('helpModal');
     const closeBtn = document.getElementById('closeHelpModalBtn');
     const body = document.getElementById('helpModalBody');
 
     if (!helpBtn || !overlay || !modal || !closeBtn || !body) {
-        console.warn("Éléments du modal d'aide manquants.");
+        console.warn("Éléments du modal d'aide manquants. Le bouton Aide ne fonctionnera pas.");
         return;
     }
 
+    // Créer l'overlay s'il n'existe pas (sécurité)
+    if (!overlay) {
+        console.warn("Création dynamique de l'overlay pour le modal d'aide.");
+        overlay = document.createElement('div');
+        overlay.id = 'helpModalOverlay';
+        overlay.className = 'modal-overlay'; // Utiliser la classe CSS standard
+        document.body.appendChild(overlay);
+        overlay.appendChild(modal); // Mettre le modal dans l'overlay
+    }
+
+
     helpBtn.addEventListener('click', () => {
-        // Charger le contenu de l'aide (peut être statique ou dynamique)
+        // Contenu de l'aide
         body.innerHTML = `
-            <h4 style="margin-top:0;">Gestion des Salles</h4>
-            <p>Cliquez sur "Afficher les salles" pour voir leur disponibilité. Cliquez sur une salle pour voir ses réunions.</p>
-            <h4>Réservation</h4>
-            <p>Utilisez le bouton "Créer une réunion" (en haut à droite ou en bas) ou le menu latéral pour ouvrir le formulaire de réservation.</p>
-            <h4>Rejoindre une Réunion</h4>
-            <p>Cliquez sur "Rejoindre" à côté d'une réunion, ou entrez son ID en bas à droite et cliquez sur le bouton flèche.</p>
-            <hr>
+            <h4 style="margin-top:0; color: var(--primary-color-light);">Gestion des Salles</h4>
+            <p>Cliquez sur <strong>"Afficher les salles"</strong> (en bas ou dans le menu) pour voir leur disponibilité. Cliquez sur une carte de salle pour filtrer les réunions de cette salle spécifique.</p>
+            <h4 style="color: var(--primary-color-light);">Réservation de Réunion</h4>
+            <p>Utilisez le bouton <strong>"Créer une réunion Teams"</strong> (en haut à droite) ou <strong>"Créer une réunion"</strong> (en bas) ou l'option <strong>"Salle de réunion"</strong> dans le menu latéral pour ouvrir le formulaire.</p>
+            <h4 style="color: var(--primary-color-light);">Rejoindre une Réunion</h4>
+            <p>Cliquez sur le bouton <span class="btn btn-sm btn-primary" style="pointer-events:none;"><i class="fas fa-video"></i> Rejoindre</span> à côté d'une réunion listée.</p>
+            <p>Ou entrez l'ID complet de la réunion dans le champ en bas du panneau de droite et cliquez sur <span class="btn btn-sm btn-success" style="pointer-events:none;"><i class="fas fa-arrow-right"></i> Rejoindre</span>.</p>
+             <h4 style="color: var(--primary-color-light);">Participants</h4>
+             <p>Cliquez sur les points de suspension <button class="show-more-participants" style="pointer-events:none; background:transparent; border:none; color: var(--primary-color-light); cursor:default;">...</button> à côté des participants pour afficher la liste complète.</p>
+             <h4 style="color: var(--primary-color-light);">Rafraîchissement</h4>
+            <p>Les données se rafraîchissent automatiquement. Cliquez sur <span class="btn btn-sm"><i class="fas fa-sync-alt"></i> Rafraîchir</span> pour forcer une mise à jour immédiate.</p>
+            <hr style="border-color: var(--border-color); margin: var(--spacing-md) 0;">
             <p><small>Version ${window.APP_CONFIG?.VERSION || 'N/A'}</small></p>
         `;
         overlay.classList.add('visible');
@@ -289,29 +349,28 @@ function initHelpModal() {
     const closeHelp = () => overlay.classList.remove('visible');
     closeBtn.addEventListener('click', closeHelp);
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeHelp();
+        if (e.target === overlay) closeHelp(); // Ferme si clic sur l'arrière-plan
     });
+    console.log("Modal d'aide initialisé.");
 }
-
 
 function initControlsBar() {
     const refreshBtn = document.getElementById('refreshBtn');
     const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const createMeetingBtnFooter = document.getElementById('createMeetingBtnFooter'); // Bouton spécifique du footer
+
+    if (!refreshBtn || !fullscreenBtn || !createMeetingBtnFooter) {
+        console.warn("Certains boutons de la barre de contrôle sont manquants.");
+    }
 
     // Bouton Rafraîchir
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
             console.log("Rafraîchissement manuel demandé.");
-             // Animer l'icône
             const icon = refreshBtn.querySelector('i');
-            if (icon) {
-                icon.classList.add('fa-spin');
-                setTimeout(() => icon.classList.remove('fa-spin'), 1000);
-            }
-            fetchMeetings(true); // Force refresh réunions
-            if (typeof fetchAndDisplayRooms === 'function') { // Si rooms.js est chargé
-                fetchAndDisplayRooms(); // Force refresh salles
-            }
+            if (icon) { icon.classList.add('fa-spin'); setTimeout(() => icon.classList.remove('fa-spin'), 1000); }
+            if (typeof fetchMeetings === 'function') fetchMeetings(true);
+            if (typeof fetchAndDisplayRooms === 'function') fetchAndDisplayRooms();
         });
     }
 
@@ -319,209 +378,168 @@ function initControlsBar() {
     if (fullscreenBtn) {
         fullscreenBtn.addEventListener('click', toggleFullScreen);
         document.addEventListener('fullscreenchange', updateFullscreenButton);
+        updateFullscreenButton(); // Mettre à jour l'état initial
+    }
+
+     // Bouton Créer Réunion (Footer) - Ouvre le modal de réservation
+     if (createMeetingBtnFooter) {
+        createMeetingBtnFooter.addEventListener('click', () => {
+            document.getElementById('bookingModalOverlay')?.classList.add('visible');
+             // Tenter de focus le premier champ
+             setTimeout(() => document.getElementById('bookingTitle')?.focus(), 100);
+        });
     }
 
     console.log("Barre de contrôles initialisée.");
 }
 
+// --- Fonctions Utilitaires ---
+
+// Basculer le mode plein écran
 function toggleFullScreen() {
-    const btn = document.getElementById('fullscreenBtn');
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
             console.error(`Erreur passage plein écran: ${err.message} (${err.name})`);
+            alert("Impossible de passer en mode plein écran.");
         });
-        if(btn) btn.innerHTML = '<i class="fas fa-compress"></i> <span class="btn-text">Quitter Plein Écran</span>';
     } else {
         if (document.exitFullscreen) {
             document.exitFullscreen();
         }
-        if(btn) btn.innerHTML = '<i class="fas fa-expand"></i> <span class="btn-text">Plein Écran</span>';
     }
+    // L'état du bouton est mis à jour par l'event listener 'fullscreenchange'
 }
 
+// Mettre à jour l'icône et le texte du bouton plein écran
 function updateFullscreenButton() {
      const btn = document.getElementById('fullscreenBtn');
      if (!btn) return;
      const textSpan = btn.querySelector('.btn-text');
-     const textClass = textSpan ? textSpan.className : 'btn-text'; // Conserver la classe si elle existe
+     const textClass = textSpan ? textSpan.className : 'btn-text';
 
     if (document.fullscreenElement) {
         btn.innerHTML = `<i class="fas fa-compress"></i> <span class="${textClass}">Quitter</span>`;
-         btn.title = "Quitter le mode plein écran";
+        btn.title = "Quitter le mode plein écran";
     } else {
         btn.innerHTML = `<i class="fas fa-expand"></i> <span class="${textClass}">Plein Écran</span>`;
-         btn.title = "Passer en mode plein écran";
+        btn.title = "Passer en mode plein écran";
     }
 }
 
-function initMeetings() {
-    // Assurer que fetchMeetings est défini
-    if (typeof fetchMeetings !== 'function') {
-        console.error("La fonction fetchMeetings n'est pas définie !");
-        return;
-    }
-
-    fetchMeetings(true); // Premier chargement forcé
-
-    // Démarrer le rafraîchissement automatique si configuré
-    if (window.APP_CONFIG.AUTO_REFRESH_MEETINGS) {
-        setInterval(() => fetchMeetings(false), window.REFRESH_INTERVALS.MEETINGS || 30000);
-        console.log("Rafraîchissement automatique des réunions démarré.");
-    }
-
-     // Démarrer les timers de progression
-     if (typeof startMeetingTimers === 'function') {
-         startMeetingTimers();
-     }
-
-    // Initialiser le bouton de jointure par ID
-    const joinByIdBtn = document.getElementById('joinMeetingByIdBtn');
-    const meetingIdInput = document.getElementById('meetingIdInput');
-    if (joinByIdBtn && meetingIdInput) {
-        joinByIdBtn.addEventListener('click', () => {
-            const meetingId = meetingIdInput.value.trim();
-             if (meetingId) {
-                 joinMeetingWithId(meetingId); // Utilise la fonction globale définie (potentiellement dans join.js ou ici)
-             } else {
-                 alert("Veuillez entrer un ID de réunion.");
-                 meetingIdInput.focus();
-            }
-        });
-         // Permettre de rejoindre avec Entrée
-         meetingIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                joinByIdBtn.click();
-            }
-        });
-    }
-
-
-    console.log("Module réunions initialisé.");
-}
-
-function initRooms() {
-     // Assurer que la fonction est définie
-     if (typeof fetchAndDisplayRooms !== 'function') {
-        console.error("La fonction fetchAndDisplayRooms n'est pas définie !");
-        return;
-    }
-     // Démarrer le chargement/rafraîchissement des salles
-     if (typeof startRoomStatusUpdates === 'function') {
-        startRoomStatusUpdates();
-    } else {
-         fetchAndDisplayRooms(); // Chargement unique si pas de refresh auto
-     }
-     console.log("Module salles initialisé.");
-}
-
-
-function applyVisualOptimizations() {
-    // Masquer les informations de synchronisation (méthode propre via CSS)
-    const syncInfoElement = document.getElementById('syncInfo');
-    if (syncInfoElement) {
-        // syncInfoElement.classList.add('sync-info-hidden'); // Masquer via CSS
-         syncInfoElement.style.display = 'none'; // Ou masquer directement
-    }
-
-    // S'assurer que les styles de largeur réduite de la barre de contrôle sont appliqués (normalement géré par CSS)
-    const controlsBar = document.getElementById('controlsBar');
-    if (controlsBar) {
-        // Le CSS devrait déjà le faire avec position:fixed et width/transform.
-        // On pourrait forcer ici si le CSS ne s'applique pas correctement.
-        console.log("Styles de la barre de contrôle gérés par CSS.");
-    }
-
-    console.log("Optimisations visuelles appliquées.");
-}
-
-
-// Fonction globale pour rejoindre une réunion (utilisée par meetings.js et le bouton ID)
+// Fonction globale pour rejoindre une réunion via ID ou URL
+// S'assure qu'elle est définie pour être appelée depuis meetings.js ou les listeners
 function joinMeetingWithId(meetingId) {
-    if (!meetingId) {
-        alert("ID de réunion invalide.");
+    if (!meetingId || typeof meetingId !== 'string' ) {
+        console.error("Tentative de rejoindre avec ID invalide:", meetingId);
+        alert("ID de réunion invalide fourni.");
         return;
     }
-    meetingId = meetingId.replace(/\s+/g, ''); // Nettoyer l'ID
+    meetingId = meetingId.replace(/\s+/g, '').trim(); // Nettoyer l'ID
 
-    // Construire l'URL Teams directe (format standard)
-    // Note: Le format exact peut varier légèrement. Celui-ci est courant.
-    // Le `19:` indique un chat/canal, `%3A` est `:`, `meeting_` préfixe, `%40` est `@`
+    // Logique pour construire l'URL Teams (peut nécessiter ajustement selon format ID réel)
+    // Format standard: 19:meeting_GENERATED_ID@thread.v2
+    // Si l'ID fourni n'a pas ce format, l'URL pourrait ne pas fonctionner.
     const teamsUrl = `https://teams.microsoft.com/l/meetup-join/19%3ameeting_${meetingId}%40thread.v2/0`;
 
-    console.log(`Tentative de rejoindre Teams via URL: ${teamsUrl}`);
-    window.open(teamsUrl, "_blank"); // Ouvre dans un nouvel onglet
+    console.log(`Tentative de rejoindre Teams (${meetingId}) via URL: ${teamsUrl}`);
+    // Ouvrir dans un nouvel onglet
+    const newWindow = window.open(teamsUrl, "_blank");
+     if (!newWindow || newWindow.closed || typeof newWindow.closed=='undefined') {
+        // Le popup blocker a peut-être interféré
+         alert("Impossible d'ouvrir le lien Teams. Veuillez vérifier votre bloqueur de popups.");
+    }
 }
 
-// Mettre à jour le titre H1 et le titre de la page
+// Mettre à jour le titre H1 et le titre de l'onglet
 function updatePageDisplayTitle() {
     const salleTitleSpan = document.getElementById('salle-title');
-    const pageTitleElement = document.getElementById('pageTitle'); // Le H1 complet
+    const pageTitleElement = document.getElementById('pageTitle'); // Le H1
 
-    if (!salleTitleSpan || !pageTitleElement || !window.APP_CONTEXT) return;
+    if (!salleTitleSpan || !pageTitleElement || !window.APP_CONTEXT) {
+         console.warn("Impossible de mettre à jour le titre, éléments manquants.");
+         return;
+     }
 
     const type = window.APP_CONTEXT.resourceType;
-    const name = window.APP_CONTEXT.resourceName;
+    let name = window.APP_CONTEXT.resourceName;
     let displayTitle = '';
+    let mainTitle = 'Salles de Réunion'; // Titre H1 par défaut
+
+    // Formater le nom pour affichage (Majuscule initiale)
+    const formatName = (n) => n === 'toutes les salles' ? 'Toutes les salles' : n.charAt(0).toUpperCase() + n.slice(1);
 
     if (type === 'room') {
-        if (name === 'toutes les salles') {
-            displayTitle = 'Toutes les salles';
-            pageTitleElement.textContent = `Salles de Réunion`; // Titre principal simplifié
-        } else {
-            displayTitle = name.charAt(0).toUpperCase() + name.slice(1);
-             pageTitleElement.textContent = `Salle de Réunion`;
+        displayTitle = formatName(name);
+        if (name !== 'toutes les salles') {
+            mainTitle = `Salle de Réunion`; // Garder le H1 générique
         }
     } else {
-        // Gérer autres types si nécessaire
-        displayTitle = name.charAt(0).toUpperCase() + name.slice(1);
-        pageTitleElement.textContent = `Réservation ${type}`;
+        // Adapter pour d'autres types si nécessaire
+        displayTitle = formatName(name);
+        mainTitle = `Réservation ${type}`;
     }
 
-    salleTitleSpan.textContent = displayTitle;
-    document.title = `${displayTitle} | Anecoop France`; // Mettre à jour le titre de l'onglet
+    pageTitleElement.firstChild.textContent = `${mainTitle} `; // Met à jour la partie fixe du H1
+    salleTitleSpan.textContent = displayTitle; // Met à jour le span dynamique
+    document.title = `${displayTitle} | Anecoop France`;
 
-    // Ajuster le centrage du titre après mise à jour
-    // La logique de centrage dans le CSS via transform est généralement suffisante.
+    console.log(`Titre mis à jour: ${mainTitle} ${displayTitle}`);
 }
 
+// Optimisations Visuelles (Ex: Masquer Sync Info)
+function applyVisualOptimizations() {
+    const syncInfoElement = document.getElementById('syncInfo');
+    if (syncInfoElement) {
+         // Masquer l'info de synchro par défaut
+         syncInfoElement.style.display = 'none';
+         console.log("Info de synchronisation masquée.");
+    }
+    // Ajouter d'autres optimisations si nécessaire
+}
 
-// Ajouter des écouteurs globaux pour la délégation
+// --- Gestion des Événements Globaux (Délégation) ---
+
 function addGlobalEventListeners() {
     const meetingsListContainer = document.getElementById('meetingsList');
+    const roomsListContainer = document.getElementById('roomsList'); // Ajouté pour les cartes salle
 
+    // Délégation pour les éléments dans la liste des réunions
     if (meetingsListContainer) {
         meetingsListContainer.addEventListener('click', (e) => {
-            // Clic sur bouton "Rejoindre"
             const joinButton = e.target.closest('.meeting-join-btn');
-            if (joinButton) {
-                e.preventDefault(); // Empêcher comportement par défaut si c'est un lien
-                handleJoinButtonClick(joinButton);
-                return; // Arrêter la propagation pour ne pas déclencher d'autres clics
-            }
-
-            // Clic sur bouton "..." (Afficher plus de participants)
             const showMoreBtn = e.target.closest('.show-more-participants');
-            if (showMoreBtn) {
+
+            if (joinButton) {
+                e.preventDefault();
+                handleJoinButtonClick(joinButton);
+            } else if (showMoreBtn) {
                  e.preventDefault();
                  handleShowMoreParticipants(showMoreBtn);
-                 return;
             }
-
-             // Clic sur une réunion entière (pour détails futurs ?)
-             const meetingItem = e.target.closest('.meeting-item');
-             if (meetingItem && !joinButton && !showMoreBtn) { // S'assurer qu'on ne clique pas sur un bouton interne
-                 console.log("Clic sur l'item de réunion:", meetingItem.dataset.id);
-                 // Ajouter ici la logique pour afficher les détails de la réunion si nécessaire
-             }
-
+             // Ajouter d'autres actions si nécessaire (clic sur l'item entier?)
         });
+    } else {
+        console.warn("Conteneur #meetingsList non trouvé pour la délégation d'événements.");
     }
-     // Gérer les clics sur les cartes de salle a été déplacé dans initRoomsPanel
+
+    // La délégation pour les cartes de salle est gérée dans initRoomsPanel() car elle a besoin de fermer le panel.
+
+    // Gérer le changement d'URL via Précédent/Suivant du navigateur
+    window.addEventListener('popstate', (event) => {
+        console.log("Popstate event:", event.state);
+        initializeResourceContext(); // Réinitialiser le contexte basé sur la nouvelle URL
+        updatePageDisplayTitle();
+        displayMeetings(); // Re-filtrer les réunions
+        // Mettre à jour l'état actif du menu si nécessaire
+    });
+
+    console.log("Écouteurs d'événements globaux ajoutés.");
 }
 
-// Gérer le clic sur un bouton Rejoindre (appelé par délégation)
+// --- Fonctions Handler pour la Délégation ---
+
 function handleJoinButtonClick(button) {
-    if (button.disabled) return; // Empêcher double clic
+    if (button.disabled) return;
 
     const originalHtml = button.innerHTML;
     button.disabled = true;
@@ -530,46 +548,59 @@ function handleJoinButtonClick(button) {
     const joinUrl = button.dataset.url;
     const meetingId = button.dataset.meetingId;
 
-    if (joinUrl) {
-        console.log(`Ouverture URL directe: ${joinUrl}`);
-        window.open(joinUrl, "_blank");
-         // Réactiver après délai
-         setTimeout(() => {
-            button.disabled = false;
-            button.innerHTML = originalHtml;
-        }, 1500);
-    } else if (meetingId) {
-        console.log(`Jointure par ID: ${meetingId}`);
-        joinMeetingWithId(meetingId); // Utilise la fonction globale
-         // Réactiver après délai
+    const restoreButton = () => {
         setTimeout(() => {
             button.disabled = false;
             button.innerHTML = originalHtml;
-        }, 1500);
+        }, 1500); // Délai pour que l'utilisateur voie le spinner
+    };
+
+    if (joinUrl) {
+        console.log(`Ouverture URL directe: ${joinUrl}`);
+        window.open(joinUrl, "_blank");
+        restoreButton();
+    } else if (meetingId) {
+        console.log(`Jointure par ID: ${meetingId}`);
+        joinMeetingWithId(meetingId); // Utilise la fonction globale
+        restoreButton();
     } else {
         console.error("Aucune URL ou ID trouvé sur le bouton rejoindre.");
         alert("Impossible de rejoindre cette réunion (données manquantes).");
-        button.disabled = false;
-        button.innerHTML = originalHtml;
+        restoreButton(); // Restaurer même en cas d'erreur
     }
 }
 
-// Gérer le clic sur "..." pour afficher plus de participants
 function handleShowMoreParticipants(button) {
-     const meetingId = button.dataset.meetingId;
      const meetingItem = button.closest('.meeting-item');
+     const meetingId = meetingItem?.dataset.id; // Utiliser l'ID stocké sur l'item
      const participantsContainer = meetingItem?.querySelector('.meeting-participants');
 
-     if (!meetingId || !meetingItem || !participantsContainer) return;
+     if (!meetingId || !participantsContainer) {
+         console.error("Impossible de trouver l'ID de réunion ou le conteneur de participants.");
+         return;
+     }
 
-     // Trouver la réunion correspondante dans les données
-     const meeting = meetingsData.find(m => (m.id || m.title) === meetingId);
-     if (!meeting || !meeting.participants) return;
+     // Trouver la réunion correspondante dans les données globales `meetingsData` (définies dans meetings.js)
+     if (typeof meetingsData === 'undefined') {
+          console.error("Variable globale meetingsData non trouvée.");
+          return;
+     }
+     const meeting = meetingsData.find(m => (m.id || m.title) === meetingId); // Comparer ID ou titre
+
+     if (!meeting || !Array.isArray(meeting.participants)) {
+         console.warn(`Aucune donnée de participants trouvée pour la réunion ${meetingId}.`);
+         // Optionnel: Masquer le bouton si pas de participants à afficher
+         button.style.display = 'none';
+         return;
+     }
 
      // Reconstruire la liste complète des participants
      let fullParticipantsHtml = '<i class="fas fa-users" title="Participants"></i>';
      meeting.participants.forEach(p => {
-        fullParticipantsHtml += `<span class="participant-email" title="${p}">${p.split('@')[0]}</span>`;
+        // Afficher l'email complet dans le title, et une version courte comme texte
+        const displayName = typeof p === 'string' ? p.split('@')[0] : 'Participant';
+        const emailTitle = typeof p === 'string' ? p : 'Email inconnu';
+        fullParticipantsHtml += `<span class="participant-email" title="${emailTitle}">${displayName}</span>`;
      });
 
      // Remplacer le contenu et supprimer le bouton "..."
@@ -578,4 +609,5 @@ function handleShowMoreParticipants(button) {
 }
 
 
+// --- FIN ---
 console.log("app.js chargé et prêt.");
