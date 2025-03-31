@@ -5,8 +5,15 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. FIX JOIN BUTTON FUNCTIONALITY - MOST CRITICAL
-    fixJoinButtonsFunctionality();
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Masquer les informations de synchronisation */
+        .controls-container > div:not(.control-buttons):not([id]) {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+});
     
     // 2. REORGANIZE MENU STRUCTURE 
     reorganizeMenu();
