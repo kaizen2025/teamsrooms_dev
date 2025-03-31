@@ -13,29 +13,52 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("Initialisation de la solution complète finale v8.0 - Interface harmonieuse");
     
     // Appliquer toutes les corrections visuelles et fonctionnelles
+    initializeUI();
+});
+
+/**
+ * Initialise l'interface utilisateur avec toutes les améliorations
+ */
+function initializeUI() {
+    // Appliquer les corrections avec un léger délai pour s'assurer que le DOM est prêt
     setTimeout(() => {
-        // 1. Connexion Teams directe
-        implementDirectTeamsJoin();
-        
-        // 2. Correction des espaces et superpositions
-        fixSpacingAndOverlaps();
-        
-        // 3. Disposition des salles en grille
-        implementRoomsGrid();
-        
-        // 4. Transparence optimale
-        applyOptimalTransparency();
-        
-        // 5. Correction du premier clic du menu
-        fixMenuFirstClick();
-        
-        // 6. Suppression de la bannière du haut et réduction de celle du bas
-        removeHeaderAndShrinkFooter();
+        try {
+            // 1. Suppression de la bannière du haut et réduction de celle du bas (en premier pour éviter les flashs)
+            removeHeaderAndShrinkFooter();
+            
+            // 2. Correction des espaces et superpositions
+            fixSpacingAndOverlaps();
+            
+            // 3. Transparence optimale
+            applyOptimalTransparency();
+            
+            // 4. Disposition des salles en grille
+            implementRoomsGrid();
+            
+            // 5. Correction du premier clic du menu
+            fixMenuFirstClick();
+            
+            // 6. Connexion Teams directe
+            implementDirectTeamsJoin();
+            
+            console.log("✅ Interface harmonieuse initialisée avec succès");
+        } catch (error) {
+            console.error("❌ Erreur lors de l'initialisation de l'interface:", error);
+            
+            // Réessayer après un délai plus long en cas d'erreur
+            setTimeout(() => {
+                initializeUI();
+            }, 500);
+        }
     }, 100);
 });
 
 /**
  * Supprime la bannière du haut et réduit la largeur de la bannière du bas
+ */
+/**
+ * Supprime la bannière du haut et réduit la largeur de la bannière du bas
+ * pour une interface plus propre et harmonieuse
  */
 function removeHeaderAndShrinkFooter() {
     // Styles pour masquer le header et réduire la largeur du footer
@@ -62,6 +85,9 @@ function removeHeaderAndShrinkFooter() {
             left: 50% !important;
             transform: translateX(-50%) !important;
             border-radius: 15px 15px 0 0 !important;
+            box-sizing: border-box !important;
+            background-color: rgba(30, 30, 30, 0.7) !important;
+            backdrop-filter: blur(10px) !important;
         }
         
         /* Ajustement de l'espace sous le bloc d'ID de réunion */
@@ -557,7 +583,7 @@ function fixSpacingAndOverlaps() {
         }
         
         /* Position fixe de la barre du bas */
-        .controls-container {
+        .controls-container, .bottom-controls, .footer-controls, div[id*="footer-control"] {
             position: fixed !important;
             bottom: 0 !important;
             left: 50% !important;
@@ -565,8 +591,11 @@ function fixSpacingAndOverlaps() {
             width: 80% !important;
             max-width: 900px !important;
             z-index: 100 !important;
-            padding: 10px 0 !important;
+            padding: 10px 15px !important;
             border-bottom: none !important;
+            display: flex !important;
+            justify-content: center !important;
+            gap: 15px !important;
         }
         
         /* Assez d'espace en bas du conteneur principal */
@@ -602,7 +631,7 @@ function fixSpacingAndOverlaps() {
         }
         
         /* Styles pour la section ID */
-        .meeting-id-entry {
+        .meeting-id-entry, #reunion-id-form, .id-entry-zone {
             padding: 15px !important;
             position: relative !important;
             z-index: 1 !important;
@@ -610,6 +639,7 @@ function fixSpacingAndOverlaps() {
             border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
             border-bottom-left-radius: 15px !important;
             border-bottom-right-radius: 15px !important;
+            background-color: rgba(40, 40, 40, 0.7) !important;
         }
         
         /* Espace vide sous le bloc d'ID */
