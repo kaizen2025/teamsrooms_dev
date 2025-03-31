@@ -430,13 +430,7 @@ function removeHeaderAndShrinkFooter() {
         }
         
         /* Masquer AGGRESSIVEMENT toutes les informations de synchronisation */
-        [id*="synchro"], [class*="synchro"], .sync-info, .last-sync, 
-        div:contains("Dernière"), div:contains("dernière"), div:contains("synchro"),
-        span:contains("Dernière"), span:contains("dernière"), span:contains("synchro"),
-        div:contains("mise à jour"), span:contains("mise à jour"),
-        div:contains("12:"), div:contains("11:"), 
-        div:has(> span:contains("Dernière")), div:has(> span:contains("dernière")),
-        div:has(> div:contains("Dernière")), div:has(> div:contains("dernière")) {
+        [id*="synchro"], [class*="synchro"], .sync-info, .last-sync {
             display: none !important;
             visibility: hidden !important;
             height: 0 !important;
@@ -500,27 +494,23 @@ function removeHeaderAndShrinkFooter() {
         }
     `, 'header-footer-adjustment-enhanced-styles');
     
-    // Application directe et agressive pour masquer les infos de synchro
-    const syncElements = document.querySelectorAll('[id*="synchro"], [class*="synchro"], .sync-info, .last-sync, div:contains("Dernière"), div:contains("dernière"), div:contains("synchro"), span:contains("Dernière"), span:contains("dernière")');
-    syncElements.forEach(element => {
-        if (element) {
-            console.log("📌 Masquage d'un élément de synchronisation:", element);
-            element.style.display = 'none';
-            element.style.visibility = 'hidden';
-            element.style.height = '0';
-            element.style.width = '0';
-            element.style.overflow = 'hidden';
-            element.style.opacity = '0';
-            element.style.position = 'absolute';
-            element.style.pointerEvents = 'none';
-            element.setAttribute('aria-hidden', 'true');
-            
-            // Masquer également tous les enfants
-            const children = element.querySelectorAll('*');
-            children.forEach(child => {
-                child.style.display = 'none';
-                child.style.visibility = 'hidden';
-            });
+    // Recherche manuelle des informations de synchronisation (sans utiliser :contains)
+    const allTextElements = document.querySelectorAll('div, span, p');
+    allTextElements.forEach(element => {
+        if (element && element.textContent) {
+            const text = element.textContent.toLowerCase();
+            if (text.includes('dernière') || text.includes('synchro') || text.includes('mise à jour')) {
+                console.log("📌 Masquage d'un élément de synchronisation par texte:", element);
+                element.style.display = 'none';
+                element.style.visibility = 'hidden';
+                element.style.height = '0';
+                element.style.width = '0';
+                element.style.overflow = 'hidden';
+                element.style.opacity = '0';
+                element.style.position = 'absolute';
+                element.style.pointerEvents = 'none';
+                element.setAttribute('aria-hidden', 'true');
+            }
         }
     });
     
@@ -711,6 +701,18 @@ function fixSpacingAndOverlaps() {
         .side-menu, .menu-sidebar {
             max-width: 280px !important;
             overscroll-behavior: contain !important;
+        }
+        
+        /* Responsive pour mobile */
+        @media (max-width: 768px) {
+            .controls-container {
+                width: 90% !important;
+                min-width: unset !important;
+            }
+            
+            .meetings-container {
+                width: 95% !important;
+            }
         }
     `, 'spacing-fix-enhanced-styles');
     
@@ -982,6 +984,17 @@ function implementRoomsGrid() {
             display: block !important;
             opacity: 1 !important;
         }
+        
+        /* Responsive pour mobile */
+        @media (max-width: 768px) {
+            .rooms-section {
+                width: 90% !important;
+            }
+            
+            .rooms {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+            }
+        }
     `, 'rooms-grid-enhanced-styles');
     
     // Ajouter un overlay pour gérer les clics en dehors
@@ -1082,7 +1095,7 @@ function implementRoomsGrid() {
      * Configure les boutons pour afficher les salles
      */
     function setupRoomsButtons() {
-        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating, button[id*="salle"], [id*="Afficher"], [title*="salle"], button:contains("salles"), button:contains("Salles"), #showRooms, [id*="afficher"]');
+        const toggleButtons = document.querySelectorAll('.toggle-rooms-button, #toggleRoomsBtn, #showRoomsBtn, [id*="Room"], .rooms-toggle-button-floating, button[id*="salle"], [id*="Afficher"], [title*="salle"], button[id*="afficher"]');
         
         toggleButtons.forEach(button => {
             if (button && !button.hasAttribute('data-rooms-grid-handler')) {
