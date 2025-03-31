@@ -39,8 +39,133 @@ document.addEventListener('DOMContentLoaded', function() {
     // 11. ENHANCE UI PERFORMANCE
     enhanceUIPerformance();
     
+    // 12. MASQUER TOUTES LES INFOS DE SYNCHRONISATION
+    hideAllSynchronizationInfo();
+    
     console.log('Comprehensive interface improvements initialized');
+    
+    // Appliquer à nouveau le masquage des informations de synchronisation après un délai
+    // pour être sûr de capturer tous les éléments ajoutés dynamiquement
+    setTimeout(hideAllSynchronizationInfo, 2000);
 });
+
+/**
+ * Masque aggressivement TOUTES les informations de synchronisation
+ */
+function hideAllSynchronizationInfo() {
+    // 1. Ajouter des styles CSS pour masquer tous les éléments de synchronisation
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Masquer tous les éléments liés à la synchronisation */
+        [id*="synchro"], [class*="synchro"], .sync-info, .last-sync,
+        [id*="derniere"], [class*="derniere"], 
+        [id*="mise-a-jour"], [class*="mise-a-jour"],
+        
+        /* Cibler spécifiquement l'élément de dernière synchro dans le pied de page */
+        div[class*="Dernière"], span[class*="Dernière"],
+        div[class*="dernière"], span[class*="dernière"],
+        div[class*="synchro"], span[class*="synchro"],
+        div[class*="Synchro"], span[class*="Synchro"],
+        
+        /* Ciblage spécifique pour les éléments de synchronisation en bas de page */
+        .derniere-synchro, .derniere-sync, .last-update, .update-info,
+        .sync-timestamp, .update-timestamp,
+        
+        /* Éléments de synchronisation spécifiques */
+        div:has(> span:contains("Dernière")),
+        div:has(> span:contains("dernière")),
+        div:has(> span:contains("synchro")) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            position: absolute !important;
+            pointer-events: none !important;
+            z-index: -9999 !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // 2. Approche JavaScript pour masquer les éléments de manière dynamique
+    function masquerElementsSynchro() {
+        // Liste des termes à rechercher dans le texte
+        const termes = [
+            'dernière synchro', 'derniere synchro', 
+            'dernière mise à jour', 'derniere mise a jour',
+            'synchronisation', 'mise à jour', 'mise a jour',
+            'Dernière synchro', 'Derniere synchro',
+            'Dernière mise à jour', 'Derniere mise a jour'
+        ];
+        
+        // Rechercher tous les éléments qui contiennent ces termes
+        document.querySelectorAll('*').forEach(el => {
+            if (el.textContent && el.nodeType === 1) { // Élément HTML
+                // Vérifier si le texte de l'élément contient l'un des termes
+                const texte = el.textContent.toLowerCase();
+                const contientTerme = termes.some(terme => texte.includes(terme.toLowerCase()));
+                
+                // Si l'élément contient un terme de synchronisation
+                if (contientTerme) {
+                    masquerElement(el);
+                }
+                
+                // Vérifier si l'élément contient une horodatage (format HH:MM:SS)
+                if (el.textContent.match(/\d{1,2}:\d{2}(:\d{2})?/) && 
+                    (texte.includes('dernière') || texte.includes('synchro'))) {
+                    masquerElement(el);
+                }
+            }
+        });
+        
+        // Cibler spécifiquement l'élément près des boutons de contrôle
+        document.querySelectorAll('.controls-container > *').forEach(el => {
+            if (el.textContent.match(/\d{1,2}:\d{2}:\d{2}/) || 
+                el.textContent.toLowerCase().includes('synchro') || 
+                el.textContent.toLowerCase().includes('dernière')) {
+                masquerElement(el);
+            }
+        });
+    }
+    
+    // Fonction pour masquer complètement un élément
+    function masquerElement(el) {
+        el.style.display = 'none';
+        el.style.visibility = 'hidden';
+        el.style.opacity = '0';
+        el.style.height = '0';
+        el.style.width = '0';
+        el.style.overflow = 'hidden';
+        el.style.position = 'absolute';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '-9999';
+        el.setAttribute('aria-hidden', 'true');
+    }
+    
+    // Exécuter immédiatement
+    masquerElementsSynchro();
+    
+    // Masquer spécifiquement l'élément contenant "Dernière synchro"
+    document.querySelectorAll('div, span').forEach(el => {
+        if (el.textContent.includes('Dernière synchro') || 
+            el.textContent.includes('dernière synchro') ||
+            el.textContent.includes('dernière mise à jour')) {
+            masquerElement(el);
+        }
+    });
+    
+    // Cibler l'élément qui contient la date/heure de mise à jour
+    document.querySelectorAll('[id*="synchro"], [class*="synchro"]').forEach(masquerElement);
+    
+    // Configurez une observation des changements du DOM pour masquer les nouveaux éléments
+    const observer = new MutationObserver(masquerElementsSynchro);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    console.log("Toutes les informations de synchronisation ont été masquées");
+}
 
 /**
  * Ensure that meetings are loading properly
@@ -90,6 +215,9 @@ function ensureMeetingsLoading() {
             `;
         }
     }
+    
+    // Masquer les informations de synchronisation après le chargement des réunions
+    setTimeout(hideAllSynchronizationInfo, 1000);
 }
 
 /**
@@ -630,6 +758,7 @@ function updateButtonsAndLayout() {
 
 /**
  * Initialize and fix the left menu functionality
+ * avec fermeture en cliquant n'importe où en dehors du menu
  */
 function initializeMenu() {
     const menuToggleBtn = document.querySelector('.menu-toggle-visible');
@@ -644,11 +773,62 @@ function initializeMenu() {
         mainContainer.classList.remove('menu-expanded');
     }
     
+    // Créer un overlay global pour détecter les clics en dehors si nécessaire
+    let globalOverlay = document.querySelector('.global-click-overlay');
+    if (!globalOverlay) {
+        globalOverlay = document.createElement('div');
+        globalOverlay.className = 'global-click-overlay';
+        globalOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: 9000;
+            display: none;
+        `;
+        document.body.appendChild(globalOverlay);
+        
+        // Fermeture du menu et des salles au clic sur l'overlay global
+        globalOverlay.addEventListener('click', function() {
+            // Fermer le menu latéral
+            if (sideMenu && sideMenu.classList.contains('expanded')) {
+                sideMenu.classList.remove('expanded');
+                if (mainContainer) mainContainer.classList.remove('menu-expanded');
+            }
+            
+            // Fermer la liste des salles si elle est ouverte
+            const roomsSection = document.querySelector('.rooms-section');
+            if (roomsSection && roomsSection.classList.contains('visible')) {
+                roomsSection.classList.remove('visible');
+                setTimeout(() => {
+                    roomsSection.style.display = 'none';
+                }, 300);
+                
+                // Mise à jour du texte des boutons
+                updateRoomsButtonText(false);
+            }
+            
+            // Cacher l'overlay global
+            this.style.display = 'none';
+            
+            // Update title centering
+            setTimeout(fixTitleCentering, 50);
+        });
+    }
+    
     // Menu toggle button functionality
     if (menuToggleBtn && sideMenu && mainContainer) {
-        menuToggleBtn.addEventListener('click', function() {
+        menuToggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
             sideMenu.classList.toggle('expanded');
             mainContainer.classList.toggle('menu-expanded');
+            
+            // Activer l'overlay global si le menu est ouvert
+            if (globalOverlay) {
+                globalOverlay.style.display = sideMenu.classList.contains('expanded') ? 'block' : 'none';
+            }
             
             // Activate overlay on mobile
             if (window.innerWidth <= 768 && menuOverlay) {
@@ -661,6 +841,13 @@ function initializeMenu() {
             
             // Update title centering
             setTimeout(fixTitleCentering, 50);
+        });
+    }
+    
+    // Empêcher la propagation des clics depuis le menu
+    if (sideMenu) {
+        sideMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
         });
     }
     
@@ -923,6 +1110,7 @@ function enhanceMeetingsDisplay() {
 
 /**
  * Initialize and fix the rooms display
+ * avec fermeture en cliquant n'importe où en dehors de la liste des salles
  */
 function initializeRoomsDisplay() {
   // Supprimer le bouton flottant (en double)
@@ -961,13 +1149,62 @@ function initializeRoomsDisplay() {
               }
           </style>
       `);
+      
+      // Empêcher la propagation des clics depuis la liste des salles
+      roomsSection.addEventListener('click', function(e) {
+          e.stopPropagation();
+      });
   }
   
   // Define the toggle function
-  const toggleRooms = function() {
+  const toggleRooms = function(e) {
+      if (e) e.stopPropagation();
       if (!roomsSection) return;
       
       const isVisible = roomsSection.classList.contains('visible');
+      
+      // Obtenir ou créer l'overlay global
+      let globalOverlay = document.querySelector('.global-click-overlay');
+      if (!globalOverlay) {
+          globalOverlay = document.createElement('div');
+          globalOverlay.className = 'global-click-overlay';
+          globalOverlay.style.cssText = `
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: transparent;
+              z-index: 9000;
+              display: none;
+          `;
+          document.body.appendChild(globalOverlay);
+          
+          // Gestionnaire d'événements pour l'overlay
+          globalOverlay.addEventListener('click', function() {
+              // Fermer la liste des salles
+              if (roomsSection && roomsSection.classList.contains('visible')) {
+                  roomsSection.classList.remove('visible');
+                  setTimeout(() => {
+                      roomsSection.style.display = 'none';
+                  }, 300);
+                  
+                  // Mise à jour du texte des boutons
+                  updateRoomsButtonText(false);
+              }
+              
+              // Fermer le menu latéral s'il est ouvert
+              const sideMenu = document.querySelector('.side-menu');
+              const mainContainer = document.querySelector('.main-container');
+              if (sideMenu && sideMenu.classList.contains('expanded')) {
+                  sideMenu.classList.remove('expanded');
+                  if (mainContainer) mainContainer.classList.remove('menu-expanded');
+              }
+              
+              // Cacher l'overlay
+              this.style.display = 'none';
+          });
+      }
       
       if (isVisible) {
           roomsSection.classList.remove('visible');
@@ -977,6 +1214,9 @@ function initializeRoomsDisplay() {
           
           // Update button text
           updateRoomsButtonText(false);
+          
+          // Cacher l'overlay global
+          if (globalOverlay) globalOverlay.style.display = 'none';
       } else {
           roomsSection.style.display = 'block';
           // Force reflow
@@ -985,6 +1225,9 @@ function initializeRoomsDisplay() {
           
           // Update button text
           updateRoomsButtonText(true);
+          
+          // Afficher l'overlay global
+          if (globalOverlay) globalOverlay.style.display = 'block';
       }
   };
   
@@ -1016,7 +1259,8 @@ function initializeRoomsDisplay() {
       });
       
       // Make sure room cards are clickable
-      card.addEventListener('click', function() {
+      card.addEventListener('click', function(e) {
+          e.stopPropagation(); // Empêcher la fermeture immédiate
           const roomName = this.getAttribute('data-room');
           if (roomName) {
               window.location.href = '/' + roomName.toLowerCase();
