@@ -11,7 +11,7 @@
     <!-- Fontawesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Base Stylesheets - Garder tous les originaux -->
+    <!-- Base Stylesheets -->
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/layout.css">
     <link rel="stylesheet" href="/static/css/menu.css">
@@ -21,37 +21,8 @@
     <link rel="stylesheet" href="/static/css/auth.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     
-    <!-- Nouvelle feuille de style unifiée (uniquement pour ajouts, sans remplacer) -->
-    <style>
-        /* Style critique pour corriger problèmes d'affichage */
-        .meetings-container {
-            background-color: rgba(30, 30, 30, 0.5) !important;
-            backdrop-filter: blur(10px) !important;
-        }
-        
-        .side-menu {
-            background-color: rgba(25, 25, 25, 0.85) !important;
-            backdrop-filter: blur(15px) !important;
-        }
-        
-        /* Amélioration pour affichage des salles */
-        .rooms-section.visible {
-            display: block !important;
-        }
-        
-        /* Assurer la visibilité des boutons */
-        .control-buttons button {
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-        
-        /* Compatibilité Safari */
-        @supports (-webkit-backdrop-filter: blur(1px)) {
-            .meetings-container, .side-menu {
-                -webkit-backdrop-filter: blur(10px) !important;
-            }
-        }
-    </style>
+    <!-- Interface Improvements CSS -->
+    <link rel="stylesheet" href="/static/css/interface-improvements.css">
 </head>
 <body>
     <!-- Background Container -->
@@ -140,8 +111,8 @@
             
             <!-- Date & Time -->
             <div class="datetime">
-                <p id="current-date">Lundi 31 mars 2025</p>
-                <p id="current-time">10:30:52</p>
+                <p>Lundi 17 mars 2025</p>
+                <p>10:30:52</p>
             </div>
             
             <!-- Title -->
@@ -460,10 +431,10 @@
     <script>
         // Global configuration object for debugging and features
         window.APP_CONFIG = {
-            DEBUG: true,                 // Activer les logs de debugging
-            REFRESH_INTERVAL: 10000,     // 10 secondes pour meetings refresh
-            AUTO_REFRESH: true,          // Auto-refresh meetings
-            VERSION: '1.0.5'             // Version tracking
+            DEBUG: true,
+            REFRESH_INTERVAL: 10000, // 10 seconds for meetings refresh
+            AUTO_REFRESH: true,      // Auto-refresh meetings
+            VERSION: '1.0.5'         // Version tracking
         };
     </script>
 
@@ -471,17 +442,19 @@
     <script src="/static/js/config.js"></script>
     <script src="/static/js/datetime.js"></script>
     <script src="/static/js/background.js"></script>
-    
-    <!-- Scripts de base - MAINTENIR TOUS LES ORIGINAUX -->
+
+    <!-- Core Functionality -->
     <script src="/static/js/meetings.js"></script>
     <script src="/static/js/join.js"></script>
-    <script src="/static/js/rooms.js"></script>
     <script src="/static/js/booking.js"></script>
+    <script src="/static/js/rooms.js"></script>
+
+    <!-- Secondary Features -->
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/ui.js"></script>
-    <script src="static/js/interface-enhanced.js"></script>
-    <script src="static/js/interface-fix.js"></script>
-    
+
+    <!-- Enhanced Interface -->
+    <script src="/static/js/interface-improvements.js"></script>
 
     <script>
         // Initialize room name from URL or config
@@ -525,113 +498,6 @@
                     window.fetchMeetings(true);
                 }, 500);
             }
-            
-            // Code de secours pour corriger les problèmes connus
-            setTimeout(function() {
-                // 1. Forcer le chargement des réunions si bloqué
-                if (document.querySelector('.loading-indicator') && 
-                    typeof window.fetchMeetings === 'function') {
-                    console.log("Forçage du chargement des réunions...");
-                    window.fetchMeetings(true);
-                }
-                
-                // 2. S'assurer que les boutons de salles fonctionnent
-                const roomsButtons = document.querySelectorAll('.toggle-rooms-button, #showRoomsBtn, .rooms-toggle-button-floating');
-                roomsButtons.forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const roomsSection = document.querySelector('.rooms-section');
-                        if (roomsSection) {
-                            const isVisible = roomsSection.classList.contains('visible');
-                            roomsSection.classList.toggle('visible');
-                            roomsSection.style.display = isVisible ? 'none' : 'block';
-                            
-                            // Mise à jour du texte des boutons
-                            const showText = '<i class="fas fa-door-open"></i> Afficher les salles';
-                            const hideText = '<i class="fas fa-times"></i> Masquer les salles';
-                            roomsButtons.forEach(button => {
-                                button.innerHTML = isVisible ? showText : hideText;
-                            });
-                        }
-                    });
-                });
-                
-                // 3. S'assurer que le bouton plein écran fonctionne
-                const fullscreenBtn = document.getElementById('fullscreenBtn');
-                if (fullscreenBtn) {
-                    fullscreenBtn.addEventListener('click', function() {
-                        if (!document.fullscreenElement) {
-                            document.documentElement.requestFullscreen().catch(err => {
-                                console.error(`Erreur: ${err.message}`);
-                            });
-                        } else {
-                            if (document.exitFullscreen) {
-                                document.exitFullscreen();
-                            }
-                        }
-                    });
-                }
-                
-                // 4. S'assurer que le bouton d'aide fonctionne
-                const helpBtn = document.getElementById('helpBtn');
-                if (helpBtn) {
-                    helpBtn.addEventListener('click', function() {
-                        // Créer une modal d'aide simple
-                        const helpModal = document.createElement('div');
-                        helpModal.style.cssText = `
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: rgba(0, 0, 0, 0.6);
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            z-index: 9999;
-                        `;
-                        
-                        helpModal.innerHTML = `
-                            <div style="background: #2c2c2c; max-width: 800px; width: 80%; border-radius: 15px; padding: 20px; box-shadow: 0 5px 30px rgba(0,0,0,0.3);">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                                    <h2 style="color: white; margin: 0;"><i class="fas fa-question-circle"></i> Guide d'utilisation</h2>
-                                    <button id="closeHelpModalBtn" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
-                                </div>
-                                <div style="color: #ddd; line-height: 1.6;">
-                                    <p><strong>Consulter les salles</strong> : Cliquez sur "Afficher les salles" pour voir les salles disponibles.</p>
-                                    <p><strong>Créer une réunion</strong> : Utilisez le bouton "Créer une réunion" en haut du panneau.</p>
-                                    <p><strong>Rejoindre une réunion</strong> : Cliquez sur le bouton "Rejoindre" à côté d'une réunion en cours.</p>
-                                </div>
-                            </div>
-                        `;
-                        
-                        document.body.appendChild(helpModal);
-                        
-                        document.getElementById('closeHelpModalBtn').addEventListener('click', function() {
-                            document.body.removeChild(helpModal);
-                        });
-                        
-                        helpModal.addEventListener('click', function(e) {
-                            if (e.target === helpModal) {
-                                document.body.removeChild(helpModal);
-                            }
-                        });
-                    });
-                }
-                
-                // 5. S'assurer que le menu fonctionne
-                const menuToggleBtn = document.querySelector('.menu-toggle-visible');
-                const sideMenu = document.querySelector('.side-menu');
-                const mainContainer = document.querySelector('.main-container');
-                if (menuToggleBtn && sideMenu && mainContainer) {
-                    menuToggleBtn.addEventListener('click', function() {
-                        sideMenu.classList.toggle('expanded');
-                        mainContainer.classList.toggle('menu-expanded');
-                    });
-                }
-                
-                console.log("Corrections d'urgence appliquées");
-            }, 1000);
         });
     </script>
 </body>
