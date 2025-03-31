@@ -2,7 +2,41 @@
  * TeamsRooms Interface Improvements - Enhanced JavaScript
  * Comprehensive update addressing all feedback including join button functionality,
  * menu organization, UI alignment, and animation improvements
+ * Version 10.0
  */
+
+// Solution simple pour masquer l'élément "Dernière synchro" - appliquée immédiatement
+(function() {
+    // Créer et appliquer le style CSS immédiatement
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Masquer spécifiquement l'élément de dernière synchro dans la barre inférieure */
+        .controls-container > div:not(.control-buttons):not(#showRoomsBtn):not(#refreshBtn):not(#createMeetingBtn):not(#fullscreenBtn):not(#helpBtn),
+        [title*="synchro"], [title*="Dernière"], 
+        .controls-container div:empty,
+        div:has(> span:contains("synchro")),
+        div:has(> span:contains("Dernière")) {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Vérifier et masquer l'élément après un court délai pour s'assurer que le DOM est chargé
+    setTimeout(function() {
+        // Cibler directement les éléments dans la barre de contrôle
+        document.querySelectorAll('.controls-container > div').forEach(function(el) {
+            if (el.className !== 'control-buttons' && !el.id) {
+                el.style.display = 'none';
+            }
+        });
+    }, 100);
+})();
 
 document.addEventListener('DOMContentLoaded', function() {
     // 1. FIX JOIN BUTTON FUNCTIONALITY - MOST CRITICAL
@@ -45,77 +79,250 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Comprehensive interface improvements initialized');
     
     // Appliquer à nouveau le masquage des informations de synchronisation après un délai
-    // pour être sûr de capturer tous les éléments ajoutés dynamiquement
-    setTimeout(hideAllSynchronizationInfo, 2000);
+    // et répéter toutes les 5 secondes pour assurer la persistance
+    setInterval(hideAllSynchronizationInfo, 5000);
+    
+    // Appliquer le masquage directement à l'élément qui apparaît dans la barre inférieure
+    setTimeout(() => {
+        // Ciblage direct et agressif
+        const footerSyncElements = document.querySelectorAll('.controls-container > div');
+        footerSyncElements.forEach(el => {
+            if (el && el.textContent && 
+                (el.textContent.includes('synchro') || 
+                 el.textContent.includes('Dernière') ||
+                 el.textContent.match(/\d{2}:\d{2}:\d{2}/))) {
+                
+                // Supprimer complètement l'élément
+                el.remove();
+                console.log("Élément de synchronisation supprimé de la barre de contrôle");
+            }
+        });
+    }, 1000);
 });
 
 /**
- * Masque les informations de synchronisation (version simplifiée et robuste)
+ * Masque spécifiquement les informations de synchronisation de la barre inférieure
+ * Version améliorée pour cibler très précisément l'élément récalcitrant
  */
 function hideAllSynchronizationInfo() {
     try {
-        // 1. Ajouter des styles CSS pour masquer tous les éléments de synchronisation
+        // Créer un style global pour masquer tous les éléments contenant "synchro"
         const style = document.createElement('style');
         style.textContent = `
-            /* Masquer les éléments liés à la synchronisation par ID ou classe */
+            /* Masquer les éléments de synchronisation - priorité maximale !important */
             [id*="synchro"], [class*="synchro"], .sync-info, .last-sync,
             [id*="derniere"], [class*="derniere"], 
-            [id*="mise-a-jour"], [class*="mise-a-jour"],
+            *[id*="mise-a-jour"], *[class*="mise-a-jour"],
             
-            /* Cibler spécifiquement l'élément dans le pied de page */
-            div[class*="derniere"], span[class*="derniere"],
-            div[class*="synchro"], span[class*="synchro"] {
+            /* Ciblage spécifique pour l'élément dans la barre inférieure */
+            .controls-container *:contains("synchro"),
+            .controls-container *:contains("Dernière"),
+            .controls-container *:contains("dernière"),
+            
+            /* Cibler également par le format de l'horodatage */
+            *:has(> span:contains("23:")),
+            *:has(> div:contains("23:")),
+            *:has(> span:contains("Dernière")),
+            *:has(> div:contains("Dernière")) {
                 display: none !important;
                 visibility: hidden !important;
                 height: 0 !important;
+                width: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 overflow: hidden !important;
+                opacity: 0 !important;
+                position: absolute !important;
+                pointer-events: none !important;
+                z-index: -9999 !important;
+            }
+            
+            /* Ciblage ultra-précis pour l'élément de la barre de synchro */
+            div:has(> *:contains("synchro")),
+            div:has(> *:contains("Dernière")),
+            div:has(> *:contains("dernière")),
+            div[class*="refresh"], div[id*="refresh"],
+            div[class*="synchro"], div[id*="synchro"],
+            div[class*="update"], div[id*="update"] {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                opacity: 0 !important;
             }
         `;
         document.head.appendChild(style);
         
-        // 2. Masquer spécifiquement l'élément de "Dernière synchro" par son texte
-        const synchroTerms = ['dernière synchro', 'derniere synchro', 'mise à jour', 'mise a jour'];
-        const timePattern = /\d{1,2}:\d{2}:\d{2}/;
-        
-        // Sélecteur simple pour éviter de parcourir tous les éléments
-        const elements = document.querySelectorAll('.controls-container div, .controls-container span, .footer div, .footer span');
-        elements.forEach(el => {
-            try {
-                // Vérifier si l'élément existe et a du texte
-                if (el && el.textContent) {
-                    const lowerText = el.textContent.toLowerCase();
-                    
-                    // Si l'élément contient un terme de synchronisation ou un horodatage
-                    if (synchroTerms.some(term => lowerText.includes(term)) || 
-                        timePattern.test(el.textContent)) {
+        // Approche directe et ciblée pour trouver l'élément exact et le masquer
+        function masquerElementsSynchroSpecifiques() {
+            // 1. Cibler l'élément de la barre inférieure par son contenu
+            document.querySelectorAll('div, span').forEach(el => {
+                if (!el) return;
+                
+                try {
+                    const texte = el.textContent || '';
+                    // Vérifier si le texte contient les termes de synchronisation ou un format d'heure
+                    if (texte.includes('Dernière synchro') || 
+                        texte.includes('dernière synchro') ||
+                        texte.includes('synchro') ||
+                        texte.match(/\d{2}:\d{2}:\d{2}/)) {
+                        
+                        // Masquer l'élément
                         el.style.display = 'none';
                         el.style.visibility = 'hidden';
+                        el.style.opacity = '0';
+                        el.style.height = '0';
+                        el.style.width = '0';
+                        el.style.overflow = 'hidden';
+                        el.style.position = 'absolute';
+                        el.style.zIndex = '-9999';
+                        
+                        // Masquer aussi le parent si c'est probablement un conteneur
+                        if (el.parentElement && !el.parentElement.classList.contains('controls-container')) {
+                            el.parentElement.style.display = 'none';
+                        }
+                        
+                        console.log("Élément masqué:", texte);
                     }
-                }
-            } catch (error) {
-                // Ignorer les erreurs sur des éléments individuels
-            }
-        });
-        
-        // 3. Cibler l'élément "Dernière synchro" dans la barre inférieure spécifiquement
-        try {
-            const footerElements = document.querySelectorAll('.controls-container > *');
-            footerElements.forEach(el => {
-                if (el && el.textContent) {
-                    const text = el.textContent.toLowerCase();
-                    if (text.includes('synchro') || 
-                        text.includes('dernière') || 
-                        timePattern.test(el.textContent)) {
-                        el.style.display = 'none';
-                    }
+                } catch (err) {
+                    // Ignorer les erreurs individuelles
                 }
             });
-        } catch (error) {
-            // Ignorer les erreurs
-            console.log("Erreur lors du masquage des éléments spécifiques:", error);
+            
+            // 2. Ciblage ultra-spécifique pour la barre de contrôle en bas
+            const controlsContainer = document.querySelector('.controls-container');
+            if (controlsContainer) {
+                // Parcourir tous les enfants de la barre de contrôle
+                Array.from(controlsContainer.children).forEach(enfant => {
+                    try {
+                        const texte = enfant.textContent || '';
+                        if (texte.includes('synchro') || 
+                            texte.includes('Dernière') || 
+                            texte.includes('dernière') ||
+                            texte.match(/\d{2}:\d{2}:\d{2}/)) {
+                            
+                            // Supprimer complètement l'élément de la barre
+                            enfant.remove();
+                            console.log("Élément supprimé de la barre de contrôle:", texte);
+                        }
+                    } catch (err) {
+                        // Ignorer les erreurs individuelles
+                    }
+                });
+            }
+            
+            // 3. Ciblage par attribut style et classes partielles
+            document.querySelectorAll('[style*="display: inline-block"]').forEach(el => {
+                try {
+                    const texte = el.textContent || '';
+                    if (texte.includes('synchro') || texte.includes('Dernière') || texte.match(/\d{2}:\d{2}/)) {
+                        el.style.display = 'none !important';
+                        el.style.visibility = 'hidden !important';
+                    }
+                } catch (err) {
+                    // Ignorer les erreurs individuelles
+                }
+            });
+            
+            // 4. Ciblage direct de l'élément contenant l'heure de synchronisation
+            const syncElements = document.querySelectorAll('[class*="sync"], [class*="refresh"], [id*="sync"], [id*="refresh"]');
+            syncElements.forEach(el => el.remove());
         }
         
-        console.log("Informations de synchronisation masquées avec succès");
+        // Exécuter immédiatement
+        masquerElementsSynchroSpecifiques();
+        
+        // Configurer un MutationObserver pour continuer à masquer les éléments dynamiques
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    setTimeout(masquerElementsSynchroSpecifiques, 10);
+                }
+            });
+        });
+        
+        // Observer tout le document
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // Masquer également les éléments après un délai
+        setTimeout(masquerElementsSynchroSpecifiques, 500);
+        setTimeout(masquerElementsSynchroSpecifiques, 1000);
+        setTimeout(masquerElementsSynchroSpecifiques, 2000);
+        
+        // Masquer spécifiquement l'élément "Dernière synchro: HH:MM:SS"
+        setTimeout(() => {
+            // Approche brutale - supprimer tous les éléments contenant "synchro"
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(el => {
+                try {
+                    if (el && el.textContent && 
+                        (el.textContent.includes('synchro') || 
+                         el.textContent.includes('Dernière') ||
+                         el.textContent.match(/\d{2}:\d{2}:\d{2}/))) {
+                        
+                        if (el.parentElement && !isElementVital(el.parentElement)) {
+                            el.parentElement.style.display = 'none';
+                        } else {
+                            el.style.display = 'none';
+                        }
+                    }
+                } catch (err) {}
+            });
+            
+            // Tenter aussi de sélectionner directement par XPath pour plus de précision
+            try {
+                const xpath = "//div[contains(text(), 'Dernière synchro')]";
+                const xpathResult = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null);
+                let node = xpathResult.iterateNext();
+                while (node) {
+                    node.style.display = 'none';
+                    node.style.visibility = 'hidden';
+                    node = xpathResult.iterateNext();
+                }
+            } catch (err) {}
+            
+        }, 1500);
+        
+        // Fonction pour vérifier si un élément est vital (à ne pas cacher)
+        function isElementVital(el) {
+            const vitalSelectors = [
+                '.controls-container', 
+                '.control-buttons',
+                '#showRoomsBtn',
+                '#refreshBtn',
+                '#createMeetingBtn',
+                '#fullscreenBtn',
+                '#helpBtn'
+            ];
+            
+            return vitalSelectors.some(selector => {
+                try {
+                    return el.matches(selector) || el.querySelector(selector);
+                } catch (err) {
+                    return false;
+                }
+            });
+        }
+        
+        // Ajouter un gestionnaire d'événements pour le bouton de rafraîchissement
+        const refreshButton = document.querySelector('#refreshBtn, button[id*="refresh"], button:has(i.fa-sync-alt)');
+        if (refreshButton) {
+            const oldHandler = refreshButton.onclick;
+            refreshButton.onclick = function(e) {
+                // Appeler le gestionnaire d'origine
+                if (oldHandler) oldHandler.call(this, e);
+                
+                // Masquer à nouveau les éléments après le rafraîchissement
+                setTimeout(masquerElementsSynchroSpecifiques, 300);
+                setTimeout(masquerElementsSynchroSpecifiques, 600);
+                setTimeout(masquerElementsSynchroSpecifiques, 1000);
+            };
+        }
+        
+        console.log("Masquage agressif des informations de synchronisation appliqué");
     } catch (error) {
         console.log("Erreur lors du masquage des infos de synchronisation:", error);
     }
