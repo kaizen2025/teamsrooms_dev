@@ -5,12 +5,6 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Vérifier si les améliorations avancées sont déjà initialisées
-    if (window._interfaceInitialized) {
-        console.log("Les améliorations avancées sont déjà initialisées");
-        return;
-    }
-    
     // 1. FIX JOIN BUTTON FUNCTIONALITY - MOST CRITICAL
     fixJoinButtonsFunctionality();
     
@@ -23,22 +17,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4. UPDATE BUTTONS TEXT AND REMOVE DUPLICATES
     updateButtonsAndLayout();
     
-    // 5. IMPROVE MEETINGS DISPLAY FOR BETTER VISIBILITY
+    // 5. IMPROVE TITLE CENTERING AND HEADER
+    fixTitleCentering();
+    improveDateTimeDisplay();
+    
+    // 6. IMPROVE MEETINGS DISPLAY FOR BETTER VISIBILITY
     enhanceMeetingsDisplay();
     
-    // 6. INITIALIZE HELP FUNCTION
+    // 7. FIX ROOM DISPLAY ANIMATION
+    initializeRoomsDisplay();
+    
+    // 8. FIX BUTTON OVERLAP ISSUES
+    fixButtonOverlap();
+
+    // 9. ENSURE CONSISTENT MEETING DATA LOADING
+    ensureMeetingsLoading();
+    
+    // 10. INITIALIZE HELP FUNCTION
     initializeHelpFunction();
     
-    // 7. ENHANCE UI PERFORMANCE
+    // 11. ENHANCE UI PERFORMANCE
     enhanceUIPerformance();
     
-    // 8. SETUP OBSERVER FOR FUTURE ELEMENTS
-    setupMeetingsObserver();
-    
-    console.log('Interface improvements initialized');
-    
-    // Signaler que les améliorations de base sont prêtes
-    document.dispatchEvent(new CustomEvent('interface-improvements-ready'));
+    console.log('Comprehensive interface improvements initialized');
 });
 
 /**
@@ -259,267 +260,671 @@ function setupMeetingsObserver() {
 }
 
 /**
+ * Function to update the text on the rooms buttons
+ */
+function updateRoomsButtonText(isVisible) {
+    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
+    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    
+    const newText = isVisible ? 
+        '<i class="fas fa-door-closed"></i> Masquer les salles disponibles' : 
+        '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
+    
+    const newTextShort = isVisible ? 
+        '<i class="fas fa-door-closed"></i>' : 
+        '<i class="fas fa-door-open"></i>';
+    
+    if (toggleRoomsButton) {
+        if (window.innerWidth <= 768) {
+            toggleRoomsButton.innerHTML = newTextShort;
+        } else {
+            toggleRoomsButton.innerHTML = newText;
+        }
+    }
+    
+    if (controlRoomsBtn) {
+        controlRoomsBtn.innerHTML = newText;
+    }
+    
+    if (floatingButton) {
+        floatingButton.innerHTML = newText;
+    }
+}
+
+/**
  * Reorganize the menu with submenu structure
  * Create "Réservation" submenu and move "Prêt matériel" under it
  */
 function reorganizeMenu() {
-  // Éviter de réorganiser si le fichier performance-optimizations s'en occupe
-  if (window._interfaceInitialized) return;
-  
   // Get the menu items container
   const menuItems = document.querySelector('.menu-items');
   if (!menuItems) return;
   
-  // Vérifier si la réorganisation a déjà été effectuée
-  if (menuItems.getAttribute('data-reorganized') === 'true') return;
-  
-  console.log("Reorganizing menu structure");
-  
-  // Ne pas réorganiser si le menu est déjà bien structuré
-  if (menuItems.querySelectorAll('.menu-group-title').length >= 3) {
-    menuItems.setAttribute('data-reorganized', 'true');
-    return;
-  }
-  
-  // Enregistrer les anciennes entrées de menu pour les restaurer si nécessaire
-  const oldMenuHTML = menuItems.innerHTML;
-  
-  try {
-    // Réorganiser le menu selon l'image fournie
-    menuItems.innerHTML = `
-      <div class="menu-group">
-        <div class="menu-group-title">TABLEAU DE BORD</div>
-        <a href="/" class="menu-item">
-          <i class="fas fa-home menu-item-icon"></i>
-          <span class="menu-item-text">Accueil</span>
-        </a>
-      </div>
-      
-      <div class="menu-group">
-        <div class="menu-group-title">RÉSERVATIONS</div>
-        <a href="#" class="menu-item" id="menu-reservation-salle">
-          <i class="fas fa-calendar-alt menu-item-icon"></i>
-          <span class="menu-item-text">Salle de réunion</span>
-        </a>
-        <a href="/reservation-voiture" class="menu-item">
-          <i class="fas fa-car menu-item-icon"></i>
-          <span class="menu-item-text">Réservation voiture</span>
-        </a>
-        <a href="/prets" class="menu-item">
-          <i class="fas fa-laptop menu-item-icon"></i>
-          <span class="menu-item-text">Prêt de matériel</span>
-        </a>
-      </div>
-      
-      <div class="menu-group">
-        <div class="menu-group-title">APPLICATIONS</div>
-        <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
-          <i class="fas fa-users menu-item-icon"></i>
-          <span class="menu-item-text">Teams</span>
-        </a>
-        <a href="https://sage.anecoop-france.com" target="_blank" class="menu-item">
-          <i class="fas fa-calculator menu-item-icon"></i>
-          <span class="menu-item-text">SAGE</span>
-        </a>
-        <a href="tel:3cx" class="menu-item">
-          <i class="fas fa-phone menu-item-icon"></i>
-          <span class="menu-item-text">3CX</span>
-        </a>
-        <a href="/pulse" class="menu-item">
-          <i class="fas fa-chart-line menu-item-icon"></i>
-          <span class="menu-item-text">AnecoopPulse</span>
-        </a>
-      </div>
-      
-      <div class="menu-group" data-role="administrator,manager">
-        <div class="menu-group-title">ADMINISTRATION</div>
-        <a href="/admin" class="menu-item">
-          <i class="fas fa-cog menu-item-icon"></i>
-          <span class="menu-item-text">Paramètres</span>
-        </a>
-        <a href="/admin/users" class="menu-item">
-          <i class="fas fa-user-cog menu-item-icon"></i>
-          <span class="menu-item-text">Utilisateurs</span>
-        </a>
-      </div>
-    `;
+  // Réorganiser le menu selon l'image fournie
+  menuItems.innerHTML = `
+    <div class="menu-group">
+      <div class="menu-group-title">TABLEAU DE BORD</div>
+      <a href="/" class="menu-item">
+        <i class="fas fa-home menu-item-icon"></i>
+        <span class="menu-item-text">Accueil</span>
+      </a>
+    </div>
     
-    // Marquer comme réorganisé
-    menuItems.setAttribute('data-reorganized', 'true');
+    <div class="menu-group">
+      <div class="menu-group-title">RÉSERVATIONS</div>
+      <a href="#" class="menu-item" id="menu-reservation-salle">
+        <i class="fas fa-calendar-alt menu-item-icon"></i>
+        <span class="menu-item-text">Salle de réunion</span>
+      </a>
+      <a href="/reservation-voiture" class="menu-item">
+        <i class="fas fa-car menu-item-icon"></i>
+        <span class="menu-item-text">Réservation voiture</span>
+      </a>
+      <a href="/prets" class="menu-item">
+        <i class="fas fa-laptop menu-item-icon"></i>
+        <span class="menu-item-text">Prêt de matériel</span>
+      </a>
+    </div>
     
-    // Associer la fonction de création de réunion à l'élément "Salle de réunion"
-    const salleMenuItem = document.getElementById('menu-reservation-salle');
-    if (salleMenuItem) {
-      salleMenuItem.addEventListener('click', function(e) {
-        e.preventDefault();
-        // Utiliser le système de réservation s'il est disponible
-        if (window.BookingSystem) {
-          window.BookingSystem.openModal();
-        } else {
-          // Fallback vers le modal standard
-          const modal = document.getElementById('bookingModal');
-          if (modal) modal.style.display = 'flex';
-        }
-      });
-    }
-  } catch (error) {
-    console.error("Erreur lors de la réorganisation du menu:", error);
-    // Restaurer l'ancien menu en cas d'erreur
-    menuItems.innerHTML = oldMenuHTML;
+    <div class="menu-group">
+      <div class="menu-group-title">APPLICATIONS</div>
+      <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
+        <i class="fas fa-users menu-item-icon"></i>
+        <span class="menu-item-text">Teams</span>
+      </a>
+      <a href="https://sage.anecoop-france.com" target="_blank" class="menu-item">
+        <i class="fas fa-calculator menu-item-icon"></i>
+        <span class="menu-item-text">SAGE</span>
+      </a>
+      <a href="tel:3cx" class="menu-item">
+        <i class="fas fa-phone menu-item-icon"></i>
+        <span class="menu-item-text">3CX</span>
+      </a>
+      <a href="/pulse" class="menu-item">
+        <i class="fas fa-chart-line menu-item-icon"></i>
+        <span class="menu-item-text">AnecoopPulse</span>
+      </a>
+    </div>
+    
+    <div class="menu-group" data-role="administrator,manager">
+      <div class="menu-group-title">ADMINISTRATION</div>
+      <a href="/admin" class="menu-item">
+        <i class="fas fa-cog menu-item-icon"></i>
+        <span class="menu-item-text">Paramètres</span>
+      </a>
+      <a href="/admin/users" class="menu-item">
+        <i class="fas fa-user-cog menu-item-icon"></i>
+        <span class="menu-item-text">Utilisateurs</span>
+      </a>
+    </div>
+  `;
+  
+  // Associer la fonction de création de réunion à l'élément "Salle de réunion"
+  const salleMenuItem = document.getElementById('menu-reservation-salle');
+  if (salleMenuItem) {
+    salleMenuItem.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Utiliser le système de réservation s'il est disponible
+      if (window.BookingSystem) {
+        window.BookingSystem.openModal();
+      } else {
+        // Fallback vers le modal standard
+        const modal = document.getElementById('bookingModal');
+        if (modal) modal.style.display = 'flex';
+      }
+    });
   }
 }
 
 /**
- * Initialize and fix the left menu functionality
+ * Add CSS styles for submenu functionality
  */
-function initializeMenu() {
-  // Skip if the advanced optimizations handle this
-  if (window._interfaceInitialized) return;
-  
-  const menuToggleBtn = document.querySelector('.menu-toggle-visible');
-  const sideMenu = document.querySelector('.side-menu');
-  const mainContainer = document.querySelector('.main-container');
-  const menuOverlay = document.querySelector('.menu-overlay');
-  
-  // Ensure menu starts collapsed by default
-  if (sideMenu && mainContainer) {
-    // Ensure menu starts collapsed
-    sideMenu.classList.remove('expanded');
-    mainContainer.classList.remove('menu-expanded');
-  }
-  
-  // Menu toggle button functionality
-  if (menuToggleBtn && sideMenu && mainContainer) {
-    // Remove existing event listeners
-    const newMenuToggleBtn = menuToggleBtn.cloneNode(true);
-    if (menuToggleBtn.parentNode) {
-      menuToggleBtn.parentNode.replaceChild(newMenuToggleBtn, menuToggleBtn);
-    }
-    
-    newMenuToggleBtn.addEventListener('click', function() {
-      sideMenu.classList.toggle('expanded');
-      mainContainer.classList.toggle('menu-expanded');
-      
-      // Activate overlay on mobile
-      if (window.innerWidth <= 768 && menuOverlay) {
-        if (sideMenu.classList.contains('expanded')) {
-          menuOverlay.classList.add('active');
-        } else {
-          menuOverlay.classList.remove('active');
+function addSubmenuStyles() {
+    // Create a style element
+    const style = document.createElement('style');
+    style.textContent = `
+        .menu-item-with-submenu {
+            position: relative;
         }
-      }
-    });
-  }
-  
-  // Close menu when clicking overlay
-  if (menuOverlay) {
-    // Remove existing event listeners
-    const newMenuOverlay = menuOverlay.cloneNode(true);
-    if (menuOverlay.parentNode) {
-      menuOverlay.parentNode.replaceChild(newMenuOverlay, menuOverlay);
+        
+        .menu-submenu {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+            padding-left: 25px;
+        }
+        
+        .menu-submenu.expanded {
+            max-height: 200px; /* Adjust based on content */
+        }
+        
+        .menu-subitem {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: 8px 16px;
+            margin-bottom: 1px;
+            margin-top: 2px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            color: #e0e0e0;
+            text-decoration: none;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+        
+        .menu-subitem:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        
+        .menu-dropdown-icon {
+            font-size: 0.7rem;
+            margin-left: 5px;
+            transition: transform 0.3s ease;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/**
+ * Fix overlapping buttons issue
+ */
+function fixButtonOverlap() {
+    // Get all room toggle buttons
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
+    const controlButton = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    
+    // Make sure we don't have duplicate buttons in the bottom menu
+    const controlsContainer = document.querySelector('.controls-container');
+    if (controlsContainer) {
+        const roomsButtons = controlsContainer.querySelectorAll('button[id*="Room"]');
+        if (roomsButtons.length > 1) {
+            // Keep only the first one
+            for (let i = 1; i < roomsButtons.length; i++) {
+                roomsButtons[i].style.display = 'none';
+            }
+        }
     }
     
-    newMenuOverlay.addEventListener('click', function() {
-      sideMenu.classList.remove('expanded');
-      mainContainer.classList.remove('menu-expanded');
-      newMenuOverlay.classList.remove('active');
+    // Fix floating button position to avoid overlap
+    if (floatingButton) {
+        floatingButton.style.bottom = '80px'; // Move up above the controls
+        floatingButton.style.zIndex = '100'; // Ensure it's above other elements
+    }
+    
+    // Remove any hidden duplicate buttons from the DOM
+    document.querySelectorAll('.toggle-rooms-button.hidden, .toggle-rooms-button[style*="display: none"]').forEach(btn => {
+        if (btn.parentNode) {
+            btn.parentNode.removeChild(btn);
+        }
     });
-  }
 }
 
 /**
  * Update buttons text and remove duplicates
  */
 function updateButtonsAndLayout() {
-  // Skip if the advanced optimizations handle this
-  if (window._interfaceInitialized) return;
-  
-  // Update floating button text
-  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
-  if (floatingButton) {
-    floatingButton.innerHTML = '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
-    // Add more padding for better appearance
-    floatingButton.style.padding = '10px 15px';
-    floatingButton.style.borderRadius = '10px';
-  }
-  
-  // Update side menu button text
-  const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
-  if (sideMenuButton) {
-    sideMenuButton.innerHTML = '<i class="fas fa-door-open"></i> <span class="button-text">Afficher les salles disponibles</span>';
-  }
-  
-  // Update text for control button
-  const controlButton = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
-  if (controlButton) {
-    controlButton.innerHTML = '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
-  }
+    // Update floating button text
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    if (floatingButton) {
+        floatingButton.innerHTML = '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
+        // Add more padding for better appearance
+        floatingButton.style.padding = '10px 15px';
+        floatingButton.style.borderRadius = '10px';
+    }
+    
+    // Update side menu button text
+    const sideMenuButton = document.querySelector('.side-menu .toggle-rooms-button');
+    if (sideMenuButton) {
+        sideMenuButton.innerHTML = '<i class="fas fa-door-open"></i> <span class="button-text">Afficher les salles disponibles</span>';
+    }
+    
+    // Update text for control button
+    const controlButton = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    if (controlButton) {
+        controlButton.innerHTML = '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
+    }
+    
+    // Remove the logo
+    const menuLogo = document.querySelector('.menu-logo');
+    if (menuLogo) {
+        menuLogo.style.display = 'none';
+    }
+    
+    // Improve the header banner - remove black blur
+    const header = document.querySelector('.header');
+    if (header) {
+        header.style.background = 'rgba(50, 50, 50, 0.6)';
+        header.style.backdropFilter = 'blur(5px)';
+        header.style.borderRadius = '0 0 15px 15px';
+        header.style.margin = '0 10px';
+        header.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    }
+    
+    // Add spacing to the main container
+    const mainContainer = document.querySelector('.main-container');
+    if (mainContainer) {
+        mainContainer.style.padding = '0 10px';
+    }
+    
+    // Make controls bar more rounded and spaced
+    const controlsContainer = document.querySelector('.controls-container');
+    if (controlsContainer) {
+        controlsContainer.style.borderRadius = '15px';
+        controlsContainer.style.margin = '10px';
+        controlsContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    }
+    
+    // Improve meetings container
+    const meetingsContainer = document.querySelector('.meetings-container');
+    if (meetingsContainer) {
+        meetingsContainer.style.borderRadius = '15px';
+        meetingsContainer.style.margin = '5px 10px';
+        meetingsContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    }
 }
 
 /**
- * Improve the meetings display section
+ * Initialize and fix the left menu functionality
+ */
+function initializeMenu() {
+    const menuToggleBtn = document.querySelector('.menu-toggle-visible');
+    const sideMenu = document.querySelector('.side-menu');
+    const mainContainer = document.querySelector('.main-container');
+    const menuOverlay = document.querySelector('.menu-overlay');
+    
+    // Ensure menu starts collapsed by default
+    if (sideMenu && mainContainer) {
+        // Ensure menu starts collapsed
+        sideMenu.classList.remove('expanded');
+        mainContainer.classList.remove('menu-expanded');
+    }
+    
+    // Menu toggle button functionality
+    if (menuToggleBtn && sideMenu && mainContainer) {
+        menuToggleBtn.addEventListener('click', function() {
+            sideMenu.classList.toggle('expanded');
+            mainContainer.classList.toggle('menu-expanded');
+            
+            // Activate overlay on mobile
+            if (window.innerWidth <= 768 && menuOverlay) {
+                if (sideMenu.classList.contains('expanded')) {
+                    menuOverlay.classList.add('active');
+                } else {
+                    menuOverlay.classList.remove('active');
+                }
+            }
+            
+            // Update title centering
+            setTimeout(fixTitleCentering, 50);
+        });
+    }
+    
+    // Close menu when clicking overlay
+    if (menuOverlay) {
+        menuOverlay.addEventListener('click', function() {
+            sideMenu.classList.remove('expanded');
+            mainContainer.classList.remove('menu-expanded');
+            menuOverlay.classList.remove('active');
+            
+            // Update title centering
+            setTimeout(fixTitleCentering, 50);
+        });
+    }
+    
+    // Ensure menu items are interactive and close menu on mobile
+    const menuItems = document.querySelectorAll('.menu-item:not(.menu-item-with-submenu .menu-item)');
+    menuItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            // Only handle clicks for items that don't have submenus
+            if (!this.querySelector('.menu-dropdown-icon')) {
+                // Remove active class from all menu items
+                menuItems.forEach(i => i.classList.remove('active'));
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // On mobile, close the menu after selection
+                if (window.innerWidth <= 768) {
+                    sideMenu.classList.remove('expanded');
+                    mainContainer.classList.remove('menu-expanded');
+                    if (menuOverlay) menuOverlay.classList.remove('active');
+                    
+                    // Update title centering
+                    setTimeout(fixTitleCentering, 50);
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Fix title centering for both menu states (open/closed)
+ */
+function fixTitleCentering() {
+    const mainContainer = document.querySelector('.main-container');
+    const titleContainer = document.querySelector('.title-container');
+    const title = document.querySelector('.title');
+    
+    if (!mainContainer || !titleContainer || !title) return;
+    
+    // Improve title appearance
+    title.style.background = 'rgba(40, 40, 40, 0.7)';
+    title.style.padding = '8px 20px';
+    title.style.borderRadius = '12px';
+    title.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+    
+    // Check if on mobile
+    if (window.innerWidth <= 768) {
+        titleContainer.style.width = '100%';
+        titleContainer.style.left = '0';
+        titleContainer.style.position = 'relative';
+        titleContainer.style.display = 'flex';
+        titleContainer.style.justifyContent = 'center';
+        titleContainer.style.margin = '10px 0';
+        return;
+    }
+    
+    // On desktop, adjust based on menu state
+    if (mainContainer.classList.contains('menu-expanded')) {
+        // Menu is open
+        titleContainer.style.width = 'calc(100% - 250px)';
+        titleContainer.style.left = '250px';
+    } else {
+        // Menu is closed
+        titleContainer.style.width = '100%';
+        titleContainer.style.left = '0';
+    }
+}
+
+/**
+ * Improve date and time display in the header
+ */
+function improveDateTimeDisplay() {
+    const datetimeElement = document.querySelector('.datetime');
+    if (!datetimeElement) return;
+    
+    // Improve styling
+    datetimeElement.style.background = 'rgba(40, 40, 40, 0.7)';
+    datetimeElement.style.borderRadius = '12px';
+    datetimeElement.style.padding = '8px 15px';
+    datetimeElement.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+    datetimeElement.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    datetimeElement.style.margin = '0 10px';
+    
+    // Ensure proper capitalization of date
+    updateDateTimeDisplay();
+    
+    // Set interval to keep updating
+    setInterval(updateDateTimeDisplay, 1000);
+}
+
+/**
+ * Updates the datetime display with proper capitalization
+ */
+function updateDateTimeDisplay() {
+    const datetimeElement = document.querySelector('.datetime');
+    if (!datetimeElement) return;
+    
+    const now = new Date();
+    
+    // Format the date in French locale with proper capitalization
+    const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    let formattedDate = now.toLocaleDateString('fr-FR', dateOptions);
+    // Capitalize first letter
+    formattedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+    
+    // Format the time with leading zeros
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const formattedTime = `${hours}:${minutes}:${seconds}`;
+    
+    // Update the display
+    const dateElement = datetimeElement.querySelector('p:first-child');
+    const timeElement = datetimeElement.querySelector('p:last-child');
+    
+    if (dateElement) dateElement.textContent = formattedDate;
+    if (timeElement) timeElement.textContent = formattedTime;
+}
+
+/**
+ * Enhance the meetings display section
  */
 function enhanceMeetingsDisplay() {
-  // Skip if the advanced optimizations handle this
-  if (window._interfaceInitialized) return;
-  
-  // Check if meetings container exists
-  const meetingsContainer = document.querySelector('.meetings-container');
-  if (!meetingsContainer) return;
-  
-  // Make sure the meetings section is visible
-  meetingsContainer.style.display = 'flex';
-  
-  // Add refresh button to meetings header if it doesn't exist
-  const meetingsTitle = document.querySelector('.meetings-title-bar');
-  if (meetingsTitle && !meetingsTitle.querySelector('.refresh-meetings-btn')) {
-    const refreshButton = document.createElement('button');
-    refreshButton.className = 'refresh-meetings-btn';
-    refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
-    refreshButton.title = "Rafraîchir les réunions";
-    refreshButton.style.cssText = `
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    `;
+    // Check if meetings container exists
+    const meetingsContainer = document.querySelector('.meetings-container');
+    if (!meetingsContainer) return;
     
-    refreshButton.addEventListener('mouseover', function() {
-      this.style.background = 'rgba(255, 255, 255, 0.2)';
-      this.style.transform = 'rotate(30deg)';
-    });
+    // Make sure the meetings section is visible and properly styled
+    meetingsContainer.style.display = 'flex';
     
-    refreshButton.addEventListener('mouseout', function() {
-      this.style.background = 'rgba(255, 255, 255, 0.1)';
-      this.style.transform = 'rotate(0)';
-    });
+    // Improve the title bar
+    const titleBar = document.querySelector('.meetings-title-bar');
+    if (titleBar) {
+        titleBar.style.background = 'rgba(50, 50, 50, 0.7)';
+        titleBar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+        titleBar.style.borderRadius = '15px 15px 0 0';
+    }
     
-    refreshButton.addEventListener('click', function() {
-      this.style.transform = 'rotate(360deg)';
-      this.querySelector('i').classList.add('fa-spin');
-      
-      if (typeof window.fetchMeetings === 'function') {
-        window.fetchMeetings(true);
+    // Improve meetings list
+    const meetingsList = document.querySelector('.meetings-list');
+    if (meetingsList) {
+        meetingsList.style.padding = '10px 15px';
+    }
+    
+    // Optimize meeting items for more compact display
+    const meetingItems = document.querySelectorAll('.meeting-item');
+    meetingItems.forEach(item => {
+        // Reduce margins and padding for more compact display
+        item.style.margin = '8px 0';
+        item.style.padding = '10px 12px';
+        item.style.borderRadius = '10px';
+        item.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+        item.style.border = '1px solid rgba(255, 255, 255, 0.1)';
         
-        setTimeout(() => {
-          this.querySelector('i').classList.remove('fa-spin');
-        }, 2000);
-      }
+        // Add hover effect
+        item.addEventListener('mouseover', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        });
+        
+        item.addEventListener('mouseout', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+        });
     });
     
-    meetingsTitle.style.position = 'relative';
-    meetingsTitle.appendChild(refreshButton);
+    // Improve ID input area
+    const idEntry = document.querySelector('.meeting-id-entry');
+    if (idEntry) {
+        idEntry.style.padding = '12px 15px';
+        idEntry.style.background = 'rgba(40, 40, 40, 0.7)';
+        idEntry.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
+        idEntry.style.borderRadius = '0 0 15px 15px';
+        
+        const input = idEntry.querySelector('input');
+        const button = idEntry.querySelector('button');
+        
+        if (input) {
+            input.style.padding = '8px 12px';
+            input.style.borderRadius = '8px 0 0 8px';
+            input.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+            input.id = 'meeting-id'; // Ensure ID consistency for the join system
+        }
+        
+        if (button) {
+            button.style.padding = '8px 15px';
+            button.style.borderRadius = '0 8px 8px 0';
+            button.style.background = 'linear-gradient(to right, var(--success-color), var(--success-color-light))';
+        }
+    }
+    
+    // Add refresh button to meetings header
+    const createMeetingButton = document.querySelector('.create-meeting-integrated');
+    if (createMeetingButton && meetingsContainer) {
+        const refreshButton = document.createElement('button');
+        refreshButton.className = 'refresh-meetings-btn';
+        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        refreshButton.title = "Rafraîchir les réunions";
+        refreshButton.style.cssText = `
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        `;
+        
+        refreshButton.addEventListener('mouseover', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.2)';
+            this.style.transform = 'rotate(30deg)';
+        });
+        
+        refreshButton.addEventListener('mouseout', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.1)';
+            this.style.transform = 'rotate(0)';
+        });
+        
+        refreshButton.addEventListener('click', function() {
+            this.style.transform = 'rotate(360deg)';
+            // Add a spinning animation
+            this.querySelector('i').classList.add('fa-spin');
+            
+            // Force refresh of meetings
+            if (typeof window.fetchMeetings === 'function') {
+                window.fetchMeetings(true);
+                
+                // Remove spinning after 2 seconds
+                setTimeout(() => {
+                    this.querySelector('i').classList.remove('fa-spin');
+                }, 2000);
+            }
+        });
+        
+        const titleBar = document.querySelector('.meetings-title-bar');
+        if (titleBar) {
+            titleBar.style.position = 'relative';
+            titleBar.appendChild(refreshButton);
+        }
+    }
+}
+
+/**
+ * Initialize and fix the rooms display
+ */
+function initializeRoomsDisplay() {
+  // Supprimer le bouton flottant (en double)
+  const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+  if (floatingButton) {
+    floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
   }
+  
+  // Make sure the rooms toggle buttons work properly
+  const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
+  const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+  const roomsSection = document.querySelector('.rooms-section');
+  
+  // Improve room section styling for smoother animations
+  if (roomsSection) {
+      roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
+      roomsSection.style.backdropFilter = 'blur(10px)';
+      roomsSection.style.borderRadius = '15px';
+      roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
+      roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      roomsSection.style.padding = '15px';
+      
+      // Add styles for animation
+      document.head.insertAdjacentHTML('beforeend', `
+          <style>
+              .rooms-section {
+                  opacity: 0;
+                  transform: translateY(10px);
+                  display: none;
+              }
+              .rooms-section.visible {
+                  opacity: 1;
+                  transform: translateY(0);
+                  display: block;
+              }
+          </style>
+      `);
+  }
+  
+  // Define the toggle function
+  const toggleRooms = function() {
+      if (!roomsSection) return;
+      
+      const isVisible = roomsSection.classList.contains('visible');
+      
+      if (isVisible) {
+          roomsSection.classList.remove('visible');
+          setTimeout(() => {
+              roomsSection.style.display = 'none';
+          }, 300);
+          
+          // Update button text
+          updateRoomsButtonText(false);
+      } else {
+          roomsSection.style.display = 'block';
+          // Force reflow
+          roomsSection.offsetHeight;
+          roomsSection.classList.add('visible');
+          
+          // Update button text
+          updateRoomsButtonText(true);
+      }
+  };
+  
+  
+  if (toggleRoomsButton) {
+      toggleRoomsButton.addEventListener('click', toggleRooms);
+  }
+  
+  if (controlRoomsBtn) {
+      controlRoomsBtn.addEventListener('click', toggleRooms);
+  }
+  
+  // Fix room cards if they exist
+  const roomCards = document.querySelectorAll('.room-card');
+  roomCards.forEach(card => {
+      card.style.borderRadius = '10px';
+      card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+      
+      card.addEventListener('mouseover', function() {
+          this.style.transform = 'translateY(-3px)';
+          this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
+      });
+      
+      card.addEventListener('mouseout', function() {
+          this.style.transform = '';
+          this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      });
+      
+      // Make sure room cards are clickable
+      card.addEventListener('click', function() {
+          const roomName = this.getAttribute('data-room');
+          if (roomName) {
+              window.location.href = '/' + roomName.toLowerCase();
+          }
+      });
+  });
 }
 
 /**
@@ -530,27 +935,17 @@ function initializeHelpFunction() {
   
   // Vérifier si le bouton existe ET s'il n'a pas déjà un gestionnaire d'événements
   if (helpBtn && !helpBtn._hasHelpHandler) {
-    // Supprimer les gestionnaires existants
-    const newHelpBtn = helpBtn.cloneNode(true);
-    if (helpBtn.parentNode) {
-      helpBtn.parentNode.replaceChild(newHelpBtn, helpBtn);
-    }
-    
-    newHelpBtn.addEventListener('click', showHelpModal);
+    helpBtn.addEventListener('click', showHelpModal);
     // Marquer le bouton comme ayant un gestionnaire
-    newHelpBtn._hasHelpHandler = true;
+    helpBtn._hasHelpHandler = true;
   }
+  // Ne PAS créer de nouveau bouton d'aide flottant
 }
 
 /**
  * Affiche un modal d'aide synthétique
  */
 function showHelpModal() {
-  // Vérifier si le modal existe déjà
-  if (document.querySelector('.help-modal')) {
-    return;
-  }
-  
   // Création du modal d'aide
   const helpModal = document.createElement('div');
   helpModal.className = 'help-modal';
@@ -620,6 +1015,13 @@ function showHelpModal() {
         </p>
         <p>
           <strong>Méthode 2</strong> : Entrez l'ID de la réunion dans le champ en bas de la liste des réunions et cliquez sur <strong>"Rejoindre"</strong>.
+        </p>
+        
+        <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
+          <i class="fas fa-users"></i> Gestion des participants
+        </h3>
+        <p>
+          Pour voir tous les participants d'une réunion, cliquez sur les <strong>trois points</strong> (...) à côté de la liste des participants.
         </p>
         
         <h3 style="color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 10px;">
