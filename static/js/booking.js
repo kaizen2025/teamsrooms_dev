@@ -62,6 +62,13 @@ const BookingSystem = {
       return;
     }
     
+    // *** AJOUT : Réinitialiser explicitement l'état de chargement ***
+    this.isLoading = false; // Assurer que le flag est false
+    this.showLoading(false); // Forcer la réinitialisation visuelle du bouton
+    // *** FIN AJOUT ***
+    
+    if (this.debug) console.log("BOOKING: Ouverture modal.");
+    
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Empêche le défilement en arrière-plan
     
@@ -450,45 +457,43 @@ const BookingSystem = {
   async createTeamsMeeting() {
     const title = document.getElementById('booking-title').value;
     const room = document.getElementById('booking-room').value;
-    const dateInput = document.getElementById('booking-date').value;
-    const startTime = document.getElementById('booking-start').value;
-    const endTime = document.getElementById('booking-end').value;
+    const dateInput = document.getElementById('booking-date').value; // Ex: "2025-04-03"
+    const startTime = document.getElementById('booking-start').value; // Ex: "01:45"
+    const endTime = document.getElementById('booking-end').value;   // Ex: "02:15"
     const participantsInput = document.getElementById('booking-participants').value;
     const isOnlineMeeting = document.getElementById('booking-online-meeting')?.checked ?? true;
     
     // Validation de base
-    if (!title) {
-      this.showError("Veuillez entrer un titre pour la réunion.");
+    if (!title || !room || !dateInput || !startTime || !endTime) {
+      this.showError("Veuillez remplir tous les champs obligatoires (*).");
       return;
     }
     
-    if (!room) {
-      this.showError("Veuillez sélectionner une salle.");
-      return;
-    }
-    
-    if (!dateInput) {
-      this.showError("Veuillez sélectionner une date.");
-      return;
-    }
-    
-    if (!startTime) {
-      this.showError("Veuillez spécifier une heure de début.");
-      return;
-    }
-    
-    if (!endTime) {
-      this.showError("Veuillez spécifier une heure de fin.");
-      return;
-    }
-    
-    // Construire les dates de début et de fin
+    // Vérifier que l'heure de fin est après l'heure de début
     const startDateTime = new Date(`${dateInput}T${startTime}`);
     const endDateTime = new Date(`${dateInput}T${endTime}`);
     
-    // Vérifier que l'heure de fin est après l'heure de début
     if (endDateTime <= startDateTime) {
       this.showError("L'heure de fin doit être après l'heure de début.");
+      return;
+    }
+    
+    // Vérification des formats de date et heure
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      this.showError("Format de date invalide. Utilisez YYYY-MM-DD.");
+      return;
+    }
+    
+    if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) {
+      this.showError("Format d'heure invalide. Utilisez HH:MM.");
+      return;
+    }
+    
+    // Récupérer l'adresse email de la salle depuis la configuration
+    const roomEmail = window.SALLES?.[room] || '';
+    
+    if (!roomEmail) {
+      this.showError("Erreur: impossible de trouver l'email de la salle sélectionnée.");
       return;
     }
     
@@ -498,26 +503,19 @@ const BookingSystem = {
       .map(email => email.trim())
       .filter(email => email.length > 0 && email.includes('@'));
     
-    // Obtenir l'adresse email de la salle depuis la configuration
-    const roomEmail = window.SALLES?.[room] || '';
-    
-    if (!roomEmail) {
-      this.showError("Erreur: impossible de trouver l'email de la salle sélectionnée.");
-      return;
-    }
-    
     // Préparation des données pour la création de la réunion
     const meetingData = {
       title,
       room,
       roomEmail,
-      start: startDateTime.toISOString(),
-      end: endDateTime.toISOString(),
-      participants,
-      isOnlineMeeting
+      date: dateInput,
+      startTime: startTime,
+      endTime: endTime,
+      participants
+      // isOnlineMeeting n'est plus nécessaire si le backend le force à true
     };
     
-    if (this.debug) console.log("Données de réunion à créer:", meetingData);
+    if (this.debug) console.log("BOOKING: Données envoyées à /api/create-meeting:", meetingData);
     
     // Afficher un indicateur de chargement
     this.showLoading(true);
@@ -541,7 +539,7 @@ const BookingSystem = {
       const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(result.error || "Erreur lors de la création de la réunion");
+        throw new Error(result.error || `Erreur serveur (${response.status})`);
       }
       
       // Afficher un message de succès

@@ -1,3 +1,5 @@
+/* static/css/main.css */
+
 /* =============================
    Variables CSS et styles de base
    ============================= */
@@ -19,12 +21,12 @@
   --light-color: #f8f9fa;
   --dark-color: #212529;
 
-  /* Couleurs d'interface - PLUS transparentes */
-  --bg-darkest: rgba(30, 30, 30, 0.55);  /* Plus transparent */
-  --bg-dark: rgba(40, 40, 40, 0.6);     /* Plus transparent */
-  --bg-medium: rgba(50, 50, 50, 0.6);    /* Plus transparent */
-  --bg-light: rgba(255, 255, 255, 0.1); /* Très transparent */
-  --bg-overlay: rgba(0, 0, 0, 0.3);    /* Overlay légèrement plus léger */
+  /* --- MODIFIÉ : Couleurs d'interface transparentes --- */
+  --bg-darkest: rgba(30, 30, 30, 0.5);
+  --bg-dark: rgba(40, 40, 40, 0.55);
+  --bg-medium: rgba(50, 50, 50, 0.55);
+  --bg-light: rgba(255, 255, 255, 0.08);
+  --bg-overlay: rgba(0, 0, 0, 0.25);
 
   /* Couleurs de texte */
   --text-primary: #ffffff;
@@ -37,6 +39,9 @@
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.25);
   --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.3);
+
+  /* --- AJOUTÉ : Blur --- */
+  --blur-intensity: 18px; /* Increased blur */
 
   /* Espacements */
   --spacing-xs: 4px;
@@ -79,9 +84,6 @@
   --font-size-xl: 1.25rem;
   --font-size-xxl: 1.5rem;
 
-  /* Amélioration Blur - Augmenté */
-  --blur-intensity: 16px;
-
   /* Couleurs spécifiques pour les badges de statut */
   --status-current-bg: rgba(23, 162, 184, 0.2); /* Bleu clair */
   --status-current-border: #17a2b8;
@@ -103,8 +105,7 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* CORRECTION ARRIERE-PLAN: Assurer la transparence */
-  background-color: transparent !important;
+  background-color: transparent !important; /* Ensure transparency */
 }
 
 *, *::before, *::after {
@@ -115,42 +116,40 @@ html, body {
 #background-container {
   position: fixed !important; top: 0 !important; left: 0 !important;
   width: 100% !important; height: 100% !important;
-  z-index: -1 !important; /* Derrière tout le reste */
+  z-index: -1 !important; /* Behind everything */
   background-size: cover !important; background-position: center center !important;
   background-repeat: no-repeat !important;
   animation: zoomBackground 30s infinite alternate ease-in-out !important;
-  filter: brightness(1.0) !important; /* Légèrement moins lumineux pour contraste */
-  opacity: 1 !important; /* Doit être visible */
+  /* --- MODIFIÉ : Luminosité --- */
+  filter: brightness(1.15) !important; /* Increased brightness */
+  opacity: 1 !important; /* Must be visible */
   transition: background-image 1s ease-in-out !important;
 }
 
 @keyframes zoomBackground {
-  0%   { transform: scale(1); filter: brightness(1.0); }
-  50%  { transform: scale(1.05); filter: brightness(1.1); }
-  100% { transform: scale(1); filter: brightness(1.0); }
+  0%   { transform: scale(1); filter: brightness(1.15); }
+  50%  { transform: scale(1.05); filter: brightness(1.25); } /* Slightly more brightness mid-animation */
+  100% { transform: scale(1); filter: brightness(1.15); }
 }
 
 #background-container::after {
   content: '' !important; position: absolute !important; top: 0 !important; left: 0 !important;
   width: 100% !important; height: 100% !important;
-  background: linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.35) 100%) !important; /* Overlay un peu plus sombre */
+  /* --- MODIFIÉ : Overlay --- */
+  background: linear-gradient(135deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.25) 100%) !important; /* Slightly lighter overlay */
   z-index: 0 !important;
 }
 
 .background-loaded {
-  /* Cette classe est ajoutée au body par JS quand l'image est chargée. */
-  /* On peut l'utiliser pour des animations d'apparition si besoin. */
+  /* Class added by JS when background is loaded */
 }
 
 /* Layout Principal */
 .main-container {
-  /* Les styles de grid sont probablement dans layout.css ou interface-improvements.css */
-  /* Assurer la transparence pour voir l'arrière-plan */
-  /* CORRECTION ARRIERE-PLAN: Assurer la transparence */
-  background-color: transparent !important;
-  height: 100vh; /* Assurer qu'il prend toute la hauteur */
-  display: grid; /* S'assurer que c'est bien une grid */
-   /* Le padding est géré par interface-improvements.js ou layout.css */
+  background-color: transparent !important; /* Ensure transparency */
+  height: 100vh;
+  display: grid;
+   /* Grid definitions likely in layout.css */
 }
 
 
@@ -169,12 +168,14 @@ button, .btn {
   transition: var(--transition-fast); display: inline-flex; align-items: center;
   justify-content: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--border-radius-sm); color: var(--text-primary);
-  background: var(--bg-medium); border: 1px solid rgba(255, 255, 255, 0.1);
+  /* --- MODIFIÉ: Plus transparent --- */
+  background: rgba(70, 70, 70, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow-sm); font-size: var(--font-size-md);
 }
-button:hover, .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); background: rgba(70, 70, 70, 0.7); }
+button:hover, .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); background: rgba(85, 85, 85, 0.7); }
 button:focus, .btn:focus { outline: none; box-shadow: 0 0 0 3px var(--primary-color-very-light); }
-button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; background: rgba(80, 80, 80, 0.5); }
+button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; background: rgba(80, 80, 80, 0.4); }
 
 /* Variantes de boutons */
 .btn-primary { background: linear-gradient(to right, var(--primary-color), var(--primary-color-light)); border: none;}
@@ -188,24 +189,33 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: n
 
 /* Elements de formulaire communs */
 input, select, textarea {
-  font-family: var(--font-family); font-size: var(--font-size-md); color: var(--dark-color);
-  border: 1px solid rgba(0, 0, 0, 0.2); border-radius: var(--border-radius-sm);
-  padding: var(--spacing-sm) var(--spacing-md); background-color: white;
+  font-family: var(--font-family); font-size: var(--font-size-md);
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Lighter border */
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  /* --- MODIFIÉ: Plus transparent --- */
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary); /* Text must be white/light */
   transition: var(--transition-fast);
+  outline: none;
 }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-very-light); }
-input::placeholder, textarea::placeholder { color: #aaa; }
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color-very-light);
+  background-color: rgba(255, 255, 255, 0.15); /* Slightly less transparent on focus */
+}
+input::placeholder, textarea::placeholder { color: #bbb; } /* Lighter placeholder */
 
-/* Classes utilitaires (inchangées) */
-.text-center { text-align: center; } /* ... autres classes utilitaires ... */
-.d-flex { display: flex; } .align-center { align-items: center; } .justify-between { justify-content: space-between; } /* ... */
+/* Classes utilitaires */
+.text-center { text-align: center; }
+.d-flex { display: flex; } .align-center { align-items: center; } .justify-between { justify-content: space-between; }
 
 /* Conteneurs avec glassmorphism - PLUS transparents et blur augmenté */
 .glass-container, .glass-container-light {
   backdrop-filter: blur(var(--blur-intensity));
   border-radius: var(--border-radius-md);
   padding: var(--spacing-lg);
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Bordure très subtile */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Bordure très subtile */
   box-shadow: var(--shadow-md);
 }
 .glass-container { background: var(--bg-dark); } /* Utilise la variable */
@@ -213,17 +223,19 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 
 /* Header PLUS transparent */
 .header {
-  background-color: rgba(35, 35, 35, 0.6) !important; /* Encore plus transparent */
+  /* --- MODIFIÉ : Transparence --- */
+  background-color: rgba(35, 35, 35, 0.45) !important;
   backdrop-filter: blur(var(--blur-intensity)) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   /* Les styles d'arrondi/marge ajoutés par JS sont prioritaires */
 }
 
 /* Side Menu PLUS transparent */
 .side-menu {
-    background-color: rgba(30, 30, 30, 0.65) !important; /* Plus transparent */
-    backdrop-filter: blur(var(--blur-intensity)) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    /* --- OPTIMISÉ : Transparence accrue et Blur --- */
+    background: linear-gradient(180deg, rgba(35, 35, 35, 0.88) 0%, rgba(40, 40, 40, 0.88) 100%) !important; /* Alpha réduit à 0.88 */
+    backdrop-filter: blur(14px) !important; /* Blur légèrement augmenté */
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important; /* Bordure plus subtile */
     z-index: var(--z-index-menu); /* Assurer qu'il est au-dessus */
 }
 
@@ -254,34 +266,75 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 
 /* ===== PANNEAU DES RÉUNIONS - PLUS transparent ===== */
 .meetings-container {
-  background-color: rgba(40, 40, 40, 0.6) !important; /* Plus transparent */
-  backdrop-filter: blur(var(--blur-intensity)) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  /* --- MODIFIÉ : Transparence --- */
+  background-color: rgba(40, 40, 40, 0.7) !important;
+  backdrop-filter: blur(10px) !important; /* Blur spécifique si besoin */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Ajuster bordure */
   border-radius: var(--border-radius-md); /* Assurer l'arrondi */
   margin: 5px 10px; /* Conserver marge */
   display: flex; /* Assurer flex */
   flex-direction: column; /* Structure verticale */
   grid-area: meetings; /* Important pour le layout grid */
+  overflow: hidden; /* Pour que l'arrondi s'applique aux enfants */
 }
 
 .meetings-title-bar {
-  background: rgba(50, 50, 50, 0.65) !important; /* Plus transparent */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* --- MODIFIÉ : Transparence --- */
+  background: rgba(50, 50, 50, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--border-radius-md) var(--border-radius-md) 0 0; /* Arrondi en haut */
   padding: var(--spacing-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative; /* Pour positionner le bouton refresh absolu */
+  flex-shrink: 0; /* Empêcher le rétrécissement */
 }
 .meetings-title-bar h2 { font-size: 1rem; margin: 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-.meetings { flex-grow: 1; display: flex; flex-direction: column; } /* Prendre l'espace restant */
+
+/* --- AJOUTÉ : Styles pour le bouton refresh dans l'en-tête --- */
+.refresh-meetings-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.refresh-meetings-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    transform: rotate(90deg);
+}
+.refresh-meetings-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.refresh-meetings-btn i.fa-spin {
+    animation: spin 1s infinite linear;
+}
+/* --- FIN AJOUT --- */
+
+
+.meetings { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; } /* Prendre l'espace restant */
 .meetings-list { flex-grow: 1; overflow-y: auto; padding: var(--spacing-sm) var(--spacing-md); }
 
 /* Style des items de réunion */
 .meeting-item {
-  background-color: rgba(55, 55, 55, 0.6); /* Fond item */
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* --- MODIFIÉ : Transparence --- */
+  background-color: rgba(55, 55, 55, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--border-radius-sm); /* Coins arrondis */
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
@@ -290,7 +343,8 @@ input::placeholder, textarea::placeholder { color: #aaa; }
   overflow: hidden; /* Pour la barre de statut latérale */
 }
 .meeting-item:hover {
-   background-color: rgba(65, 65, 65, 0.7);
+   /* --- MODIFIÉ : Transparence --- */
+   background-color: rgba(65, 65, 65, 0.75) !important;
    transform: translateY(-2px);
    box-shadow: var(--shadow-sm);
 }
@@ -364,25 +418,41 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 
 /* Zone de saisie ID Réunion (dans panneau meetings) */
 .meeting-id-entry {
-    background-color: rgba(30, 30, 30, 0.65); /* Cohérent et transparent */
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    /* --- MODIFIÉ : Transparence --- */
+    background-color: rgba(30, 30, 30, 0.6) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     padding: var(--spacing-md); margin: 0;
     border-radius: 0 0 var(--border-radius-md) var(--border-radius-md); /* Arrondi en bas */
+    flex-shrink: 0; /* Empêcher le rétrécissement */
+    display: flex; /* Utiliser flex pour aligner input/button */
+    gap: var(--spacing-sm);
 }
-.meeting-id-entry input { /* ... styles existants ... */ }
-.meeting-id-entry button { /* ... styles existants ... */ }
+.meeting-id-entry input {
+    flex-grow: 1; /* Prend l'espace restant */
+    background-color: rgba(255, 255, 255, 0.15) !important; /* Fond plus clair */
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.meeting-id-entry input::placeholder {
+    color: #bbb;
+}
+.meeting-id-entry button {
+    white-space: nowrap; /* Empêcher le texte de passer à la ligne */
+    flex-shrink: 0;
+}
 
 
 /* ===== SECTION DES SALLES - PLUS transparente ===== */
 .rooms-section {
   display: none; position: fixed; bottom: 65px; left: var(--spacing-lg);
   z-index: var(--z-index-rooms);
-  background: rgba(35, 35, 35, 0.75); /* Légèrement moins transparent pour focus */
-  backdrop-filter: blur(calc(var(--blur-intensity) - 4px));
+  /* --- MODIFIÉ : Transparence --- */
+  background: rgba(35, 35, 35, 0.8) !important;
+  backdrop-filter: blur(12px);
   padding: var(--spacing-md); border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg); width: auto; max-width: calc(100vw - 2 * var(--spacing-lg));
   transition: opacity 0.3s ease, transform 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   opacity: 0; transform: translateY(10px); /* Styles initiaux pour animation */
 }
 .rooms-section.visible { opacity: 1; transform: translateY(0); display: block !important; }
@@ -391,13 +461,20 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 
 /* Cartes de salles */
 .room-card {
-  flex: 0 0 110px; height: 65px; background: rgba(50, 50, 50, 0.65); /* Cohérent */
+  flex: 0 0 110px; height: 65px;
+  /* --- MODIFIÉ : Transparence --- */
+  background: rgba(50, 50, 50, 0.75) !important;
   border-radius: var(--border-radius-sm); padding: 8px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; position: relative; overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  cursor: pointer; box-shadow: var(--shadow-xs); border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer; box-shadow: var(--shadow-xs); border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.room-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--primary-color-light); }
+.room-card:hover {
+  /* --- MODIFIÉ : Transparence --- */
+  background: rgba(60, 60, 60, 0.85) !important;
+  transform: translateY(-2px); box-shadow: var(--shadow-sm);
+  border-color: rgba(255, 255, 255, 0.15);
+}
 .room-card::before { /* Indicateur statut */
   content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
 }
@@ -432,16 +509,18 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 /* ===== BARRE DE CONTRÔLE - PLUS transparente ===== */
 .controls-container {
   display: flex; justify-content: center; align-items: center;
-  background-color: rgba(30, 30, 30, 0.65) !important; /* Plus transparent */
-  backdrop-filter: blur(var(--blur-intensity)) !important;
+  /* --- MODIFIÉ : Transparence --- */
+  background-color: rgba(30, 30, 30, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
   padding: var(--spacing-xs) var(--spacing-md) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  position: fixed; bottom: 0; left: 0; width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative; /* Changed from fixed to relative for grid */
+  /* bottom: 0; left: 0; width: 100%; */ /* Removed fixed positioning */
   z-index: var(--z-index-controls);
   height: 50px; /* Hauteur fixe réduite */
-  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0; /* Léger arrondi en haut */
-  margin: 0 10px; /* Conserver marge */
-  width: calc(100% - 20px); /* Ajuster largeur avec marge */
+  border-radius: 0; /* No radius needed if part of grid */
+  /* margin: 0 10px; */ /* Removed margin, handled by grid gap */
+  /* width: calc(100% - 20px); */ /* Removed width calc */
   grid-area: controls; /* Important pour le layout grid */
 }
 .control-buttons { display: flex; gap: var(--spacing-sm); }
@@ -449,23 +528,32 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 /* Boutons compacts */
 .compact-btn {
   padding: 6px 10px; font-size: 0.9rem; font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--border-radius-sm);
-  background: rgba(65, 65, 65, 0.55); color: var(--text-secondary);
+  /* --- MODIFIÉ : Transparence --- */
+  background: rgba(65, 65, 65, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   gap: 5px; box-shadow: none; transition: var(--transition-fast);
   min-width: 40px; height: 36px;
 }
 .compact-btn i { font-size: 1rem; margin: 0; }
-.compact-btn:hover { background: rgba(85, 85, 85, 0.65); color: var(--text-primary); transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.15); }
+.compact-btn:hover {
+  /* --- MODIFIÉ : Transparence --- */
+  background: rgba(85, 85, 85, 0.7) !important;
+  color: var(--text-primary); transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
 .compact-btn:active { transform: translateY(0px); background: rgba(55, 55, 55, 0.7); }
 
 
 /* Modal de création de réunion - PLUS transparent */
 .booking-modal { z-index: var(--z-index-modal); /* Assurer z-index */ }
 .booking-modal-content {
-  background-color: rgba(35, 35, 35, 0.85) !important; /* Moins transparent pour lisibilité formulaire */
-  backdrop-filter: blur(calc(var(--blur-intensity) - 6px));
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  /* --- MODIFIÉ : Transparence --- */
+  background-color: rgba(35, 35, 35, 0.88) !important; /* Moins transparent pour lisibilité formulaire */
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   max-width: 600px !important; max-height: 90vh !important; overflow-y: auto !important;
   border-radius: var(--border-radius-lg); /* Arrondi modal */
 }
@@ -487,8 +575,9 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 /* Modal Connexion */
 .auth-modal { z-index: var(--z-index-modal); }
 .auth-modal-content {
-   background-color: rgba(40, 40, 40, 0.9) !important;
-   backdrop-filter: blur(calc(var(--blur-intensity) - 4px));
+   /* --- MODIFIÉ : Transparence --- */
+   background-color: rgba(40, 40, 40, 0.92) !important; /* Encore moins transparent */
+   backdrop-filter: blur(6px);
    border: 1px solid rgba(255, 255, 255, 0.15);
    border-radius: var(--border-radius-lg);
 }
@@ -503,7 +592,10 @@ input::placeholder, textarea::placeholder { color: #aaa; }
   max-width: 400px;
 }
 .notification {
-  background-color: var(--bg-medium); color: var(--text-primary);
+  /* --- MODIFIÉ : Transparence --- */
+  background-color: rgba(50, 50, 50, 0.85); /* More transparent notifications */
+  backdrop-filter: blur(5px);
+  color: var(--text-primary);
   padding: 12px 18px; border-radius: var(--border-radius-sm);
   display: flex; align-items: flex-start; /* Aligner icone/texte/bouton */
   gap: 10px; box-shadow: var(--shadow-md);
@@ -511,6 +603,9 @@ input::placeholder, textarea::placeholder { color: #aaa; }
   transition: opacity 0.3s ease, transform 0.3s ease;
   min-width: 250px;
   border-left: 4px solid var(--info-color, #17a2b8); /* Bordure colorée par défaut */
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .notification-success { border-left-color: var(--success-color); }
 .notification-warning { border-left-color: var(--warning-color); }
@@ -525,7 +620,10 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 /* Popup Participants */
 .participants-popup {
     position: fixed; z-index: var(--z-index-popup);
-    background: #333; border-radius: 8px;
+    /* --- MODIFIÉ : Transparence --- */
+    background: rgba(50, 50, 50, 0.92);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 300px; max-height: 400px;
     border: 1px solid rgba(255, 255, 255, 0.2); overflow: hidden;
     display: none; /* Caché par défaut */
@@ -534,7 +632,10 @@ input::placeholder, textarea::placeholder { color: #aaa; }
 .participants-popup-content { display: flex; flex-direction: column; max-height: 400px; }
 .participants-popup-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 15px; background: #444; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    /* --- MODIFIÉ : Transparence --- */
+    background: rgba(65, 65, 65, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .participants-popup-header h4 { margin: 0; font-size: 1rem; color: white; }
 .close-participants { background: none; border: none; color: #ccc; font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0 5px;}

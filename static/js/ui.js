@@ -14,7 +14,7 @@ const UISystem = {
    * Initialise le système d'interface utilisateur
    */
   init() {
-    if (window.APP_CONFIG?.DEBUG) console.log("Initialisation du système d'interface utilisateur (UI System)");
+    if (window.APP_CONFIG?.DEBUG) console.log("UI: Initialisation...");
 
     // Initialiser le menu latéral
     this.initMenu();
@@ -33,58 +33,62 @@ const UISystem = {
   },
 
   /**
-   * Initialise le menu latéral
+   * Initialise le menu latéral avec une approche simplifiée
    */
   initMenu() {
     const menuToggle = document.querySelector('.menu-toggle-visible');
     const sideMenu = document.querySelector('.side-menu');
     const mainContainer = document.querySelector('.main-container');
     const menuOverlay = document.querySelector('.menu-overlay');
-
-    if (menuToggle && sideMenu && mainContainer && menuOverlay) {
-      menuToggle.addEventListener('click', () => {
-        this.menuExpanded = !this.menuExpanded;
-        sideMenu.classList.toggle('expanded', this.menuExpanded);
-        mainContainer.classList.toggle('menu-expanded', this.menuExpanded);
-        menuOverlay.classList.toggle('active', this.menuExpanded);
-        if (window.APP_CONFIG?.DEBUG) console.log(`Menu latéral ${this.menuExpanded ? 'ouvert' : 'fermé'}`);
-      });
-
-      menuOverlay.addEventListener('click', () => {
-        if (this.menuExpanded) {
-          this.menuExpanded = false;
-          sideMenu.classList.remove('expanded');
-          mainContainer.classList.remove('menu-expanded');
-          menuOverlay.classList.remove('active');
-           if (window.APP_CONFIG?.DEBUG) console.log('Menu latéral fermé via overlay');
-        }
-      });
-    } else {
-         console.warn("Composants du menu latéral (toggle, menu, container, overlay) non trouvés.");
+    
+    if (!menuToggle || !sideMenu || !mainContainer) {
+      console.warn("UI: Composants essentiels du menu non trouvés");
+      return;
     }
-
-    // Gestionnaire pour les items du menu (simplifié)
-    document.querySelectorAll('.side-menu .menu-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        // Si c'est un lien externe (target="_blank"), on ne fait rien de spécial ici
-        if (item.getAttribute('target') === '_blank') return;
-
-        // Si c'est un lien interne, on ferme le menu sur mobile après le clic
-        if (window.innerWidth < 768 && this.menuExpanded) {
-           // Ne pas fermer immédiatement si c'est le bouton "Afficher les salles" du menu
-           if (!item.closest('.menu-bottom')) {
-                // Ferme le menu pour la navigation standard
-                // La navigation elle-même est gérée par l'attribut href
-                 setTimeout(() => { // Léger délai pour que la navigation démarre
-                    this.menuExpanded = false;
-                    sideMenu.classList.remove('expanded');
-                    mainContainer.classList.remove('menu-expanded');
-                    if (menuOverlay) menuOverlay.classList.remove('active');
-                 }, 100);
-           }
-        }
-      });
+    
+    // Gestionnaire d'événement pour le bouton de menu
+    menuToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!this.menuExpanded) {
+        // Ouvrir le menu
+        this.menuExpanded = true;
+        sideMenu.classList.add('expanded');
+        mainContainer.classList.add('menu-expanded');
+        if (menuOverlay) menuOverlay.classList.add('active');
+        console.log("UI: Menu ouvert");
+      } else {
+        // Fermer le menu
+        this.menuExpanded = false;
+        sideMenu.classList.remove('expanded');
+        mainContainer.classList.remove('menu-expanded');
+        if (menuOverlay) menuOverlay.classList.remove('active');
+        console.log("UI: Menu fermé");
+      }
     });
+    
+    // Fermeture par clic sur l'overlay (mobile)
+    if (menuOverlay) {
+      menuOverlay.addEventListener('click', () => {
+        this.menuExpanded = false;
+        sideMenu.classList.remove('expanded');
+        mainContainer.classList.remove('menu-expanded');
+        menuOverlay.classList.remove('active');
+      });
+    }
+    
+    // Fermeture par clic extérieur
+    document.addEventListener('click', (e) => {
+      if (this.menuExpanded && !menuToggle.contains(e.target) && !sideMenu.contains(e.target)) {
+        this.menuExpanded = false;
+        sideMenu.classList.remove('expanded');
+        mainContainer.classList.remove('menu-expanded');
+        if (menuOverlay) menuOverlay.classList.remove('active');
+      }
+    });
+    
+    console.log("UI: Initialisation du menu terminée");
   },
 
   /**
@@ -96,11 +100,9 @@ const UISystem = {
 
         if (!userProfileButton || !userDropdown) {
             // Pas d'erreur si l'utilisateur n'est pas connecté
-            // console.warn("Bouton de profil utilisateur ou dropdown non trouvé.");
             return;
         }
         if (window.APP_CONFIG?.DEBUG) console.log("Initialisation du menu profil utilisateur");
-
 
         let hideTimeout;
 
@@ -248,36 +250,75 @@ const UISystem = {
     };
 
     if (fullscreenBtn && fullscreenIcon) {
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.error(`Erreur passage plein écran: ${err.message} (${err.name})`);
-                    this.showNotification("Le mode plein écran n'a pas pu être activé.", "error");
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
+        fullscreenBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            try {
+                if (!document.fullscreenElement) {
+                    const docEl = document.documentElement;
+                    
+                    if (docEl.requestFullscreen) {
+                        docEl.requestFullscreen().catch(err => {
+                            console.warn("Fullscreen API n'a pas pu être activée");
+                        });
+                    } else if (docEl.mozRequestFullScreen) {
+                        docEl.mozRequestFullScreen();
+                    } else if (docEl.webkitRequestFullscreen) {
+                        docEl.webkitRequestFullscreen();
+                    } else if (docEl.msRequestFullscreen) {
+                        docEl.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
                 }
+            } catch (err) {
+                console.warn("Fullscreen API error:", err);
             }
         });
 
+        // Listeners pour tous les types de navigateurs
         document.addEventListener('fullscreenchange', updateFullscreenButton);
+        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+        
         updateFullscreenButton(); // État initial
     }
 
-    // --- Bouton Créer Réunion ---
+    // --- Bouton Créer Réunion (Barre de Contrôle) ---
     const createMeetingBtn = document.getElementById('createMeetingBtn');
     if (createMeetingBtn) {
-        createMeetingBtn.addEventListener('click', () => {
+        // Utiliser cloneNode pour éviter les listeners dupliqués (bonne pratique)
+        const newCreateBtn = createMeetingBtn.cloneNode(true);
+        if (createMeetingBtn.parentNode) {
+            createMeetingBtn.parentNode.replaceChild(newCreateBtn, createMeetingBtn);
+        }
+        newCreateBtn.addEventListener('click', () => {
              if (window.APP_CONFIG?.DEBUG) console.log("Clic sur Créer réunion (barre contrôle)");
-            // Logique pour ouvrir le modal de réservation (probablement dans booking.js)
-            if (window.BookingSystem && typeof window.BookingSystem.openBookingModal === 'function') {
-                window.BookingSystem.openBookingModal();
+            // Logique pour ouvrir le modal de réservation
+            if (window.BookingSystem && typeof window.BookingSystem.openModal === 'function') { // *** CORRECTION ICI ***
+                window.BookingSystem.openModal(); // *** Appel correct ***
             } else {
-                console.warn("BookingSystem.openBookingModal non trouvé.");
+                console.error("ERREUR: BookingSystem ou BookingSystem.openModal introuvable !");
+                 // Optionnel: Afficher une notification utilisateur
+                 if (typeof this.showNotification === 'function') {
+                     this.showNotification("Impossible d'ouvrir le formulaire de réservation.", "error");
+                 } else {
+                     alert("Impossible d'ouvrir le formulaire de réservation.");
+                 }
             }
         });
+    } else {
+         console.warn("UI: Bouton #createMeetingBtn non trouvé.");
     }
+
      // --- Bouton Aide ---
      const helpBtn = document.getElementById('helpBtn');
      if (helpBtn) {
@@ -294,10 +335,10 @@ const UISystem = {
      if (createMeetingIntegratedBtn) {
         createMeetingIntegratedBtn.addEventListener('click', () => {
             if (window.APP_CONFIG?.DEBUG) console.log("Clic sur Créer réunion (panneau meetings)");
-            if (window.BookingSystem && typeof window.BookingSystem.openBookingModal === 'function') {
-                window.BookingSystem.openBookingModal();
+            if (window.BookingSystem && typeof window.BookingSystem.openModal === 'function') {
+                window.BookingSystem.openModal();
             } else {
-                console.warn("BookingSystem.openBookingModal non trouvé.");
+                console.warn("BookingSystem.openModal non trouvé.");
             }
         });
      }
@@ -573,14 +614,32 @@ const UISystem = {
             }
         });
          if (window.APP_CONFIG?.DEBUG) console.log(`Visibilité basée sur le rôle "${userRole}" mise à jour.`);
+    },
+
+    /**
+     * Ferme le menu latéral. Méthode publique pouvant être appelée depuis d'autres scripts.
+     */
+    closeSideMenu() {
+        const sideMenu = document.querySelector('.side-menu');
+        const mainContainer = document.querySelector('.main-container');
+        const menuOverlay = document.querySelector('.menu-overlay');
+        
+        // Simplement fermer le menu sans conditions complexes
+        this.menuExpanded = false;
+        
+        if (sideMenu) {
+            sideMenu.classList.remove('expanded');
+        }
+        
+        if (mainContainer) {
+            mainContainer.classList.remove('menu-expanded');
+        }
+        
+        if (menuOverlay) {
+            menuOverlay.classList.remove('active');
+        }
     }
-
 };
-
-// Initialiser le système d'interface au chargement complet du DOM
-document.addEventListener('DOMContentLoaded', () => {
-  UISystem.init();
-});
 
 // Exposer UISystem globalement pour pouvoir l'appeler depuis d'autres scripts (ex: AuthSystem)
 window.UISystem = UISystem;

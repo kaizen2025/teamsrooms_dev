@@ -1,29 +1,31 @@
+/* static/css/layout.css */
 /* =============================
    Structure de grille principale
    ============================= */
 :root {
-  --header-height: 80px;
-  --footer-height: 60px;
+  /* --header-height: 80px; */ /* Likely defined elsewhere or dynamic */
+  /* --footer-height: 60px; */ /* Likely defined elsewhere or dynamic */
   --sidebar-width-collapsed: 0px;
   --sidebar-width-expanded: 250px;
-  --meetings-panel-width: 480px;
+  --meetings-panel-width: 480px; /* Default, adjust in media queries */
 }
 
 .main-container {
   display: grid;
   height: 100vh;
+  /* Default grid for desktop */
   grid-template-columns: var(--sidebar-width-collapsed) 1fr var(--meetings-panel-width);
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto; /* Header, Content+Meetings, Controls */
   grid-template-areas:
     "menu header header"
     "menu content meetings"
     "menu controls controls";
-  gap: 0;
+  gap: 0; /* No gap between grid areas */
   padding: 0;
   position: relative;
   z-index: var(--z-index-base);
   overflow: hidden;
-  transition: var(--transition-normal);
+  transition: grid-template-columns var(--transition-normal); /* Animate sidebar width change */
 }
 
 /* Quand le menu est étendu */
@@ -35,11 +37,14 @@
 .header {
   grid-area: header;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
+  justify-content: space-between; /* Pousse les éléments aux extrémités */
+  align-items: center; /* *** CENTRER VERTICALEMENT *** */
+  padding: 10px 20px; /* Réduire légèrement le padding vertical */
   z-index: var(--z-index-above);
   position: relative;
+  min-height: 65px; /* Hauteur minimale réduite */
+  /* Background/blur géré dans main.css */
+  padding-left: 70px; /* Espace pour le bouton menu */
   background-color: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -50,60 +55,64 @@
 .datetime {
   display: flex;
   flex-direction: column;
+  /* --- MODIFIÉ : Ajustement padding et line-height --- */
+  padding: var(--spacing-xs) var(--spacing-md); /* Padding réduit */
+  /* --- FIN MODIFICATION --- */
   background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(5px);
   border-radius: var(--border-radius-md);
-  padding: var(--spacing-sm) var(--spacing-md);
   box-shadow: var(--shadow-md);
-  margin-left: 70px;
+  margin-left: 0;
   z-index: 2;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  text-align: center; /* Centrer le texte à l'intérieur */
 }
 
 .datetime p {
-  margin: 3px 0;
-  font-size: 1.3rem;
+  /* --- MODIFIÉ : Marges et line-height réduits --- */
+  margin: 1px 0; /* Marge verticale très faible */
+  line-height: 1.2; /* Rapprocher les lignes */
+  /* --- FIN MODIFICATION --- */
+  font-size: 1.2rem; /* Garder la taille de police ou ajuster si besoin */
   font-weight: bold;
   color: var(--light-color);
+  white-space: nowrap;
 }
 
-/* Titre central */
+/* Title Container - Centered Flexibly */
 .title-container {
-  position: absolute;
-  left: 0;
-  right: 0;
+  flex-grow: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 5;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
   pointer-events: none;
-}
-
-/* Ajustement pour éviter le chevauchement du titre quand le menu est ouvert */
-.main-container.menu-expanded .title-container {
-  width: calc(100% - var(--sidebar-width-expanded));
-  left: var(--sidebar-width-expanded);
+  text-align: center;
+  padding: 0 var(--spacing-sm); /* Moins de padding pour laisser plus de place */
 }
 
 .title {
+  /* --- MODIFIÉ : Taille légèrement réduite si nécessaire --- */
+  font-size: 1.6rem; /* Ajuster si ça dépasse trop */
+  /* --- FIN MODIFICATION --- */
   text-align: center;
-  font-size: 1.7rem;
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   color: white;
-  background: rgba(0, 0, 0, 0.6);
-  padding: var(--spacing-xs) var(--spacing-lg);
-  border-radius: var(--border-radius-md);
+  padding: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   max-width: 95%;
   margin: 0 auto;
   pointer-events: auto;
+  display: inline-block;
+}
+
+/* User Profile (already positioned by margin-left: auto in auth.css) */
+.user-profile {
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 /* Content area (middle) */
@@ -263,124 +272,123 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Adaptations responsives */
+/* --- Responsive Adjustments --- */
+
 @media (max-width: 1200px) {
-  .main-container {
-    grid-template-columns: var(--sidebar-width-collapsed) 1fr var(--meetings-panel-width);
-  }
-  
-  .main-container.menu-expanded {
-    grid-template-columns: var(--sidebar-width-expanded) 1fr var(--meetings-panel-width);
-  }
-  
-  .datetime {
-    margin-left: 60px;
-  }
+  :root { --meetings-panel-width: 420px; }
 }
 
 @media (max-width: 992px) {
-  :root {
-    --meetings-panel-width: 380px;
-  }
-  
-  .title {
-    font-size: 1.5rem;
-  }
+  :root { --meetings-panel-width: 380px; }
+  .title { font-size: 1.4rem; }
+  .datetime p { font-size: 1.1rem; }
 }
 
 @media (max-width: 768px) {
+  /* Mobile layout adjustments */
   .main-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-columns: 1fr; /* Single column */
+    grid-template-rows: auto auto 1fr auto; /* Header, Controls, Content, Meetings */
     grid-template-areas:
       "header"
-      "controls"
+      "controls" /* Controls below header */
       "content"
       "meetings";
+     height: 100vh; /* Ensure full viewport height */
+     overflow-y: auto; /* Allow scrolling if content overflows */
   }
-  
+
   .main-container.menu-expanded {
+    /* No change in grid columns for mobile when menu opens */
     grid-template-columns: 1fr;
   }
-  
-  :root {
-    --meetings-panel-width: 100%;
+
+  .header { 
+    min-height: 55px; 
+    padding: 8px 15px 8px 65px; 
   }
   
+  .datetime { 
+    padding: 2px var(--spacing-sm); 
+  }
+  
+  .datetime p { 
+    font-size: 1rem; 
+  }
+  
+  .title { 
+    font-size: 1.2rem; 
+  }
+
   .title-container {
-    position: relative;
-    width: 100%;
-    left: 0;
-    height: auto;
-    margin: var(--spacing-sm) 0;
+     padding: 0 5px; /* Less padding */
+     justify-content: center; /* Center title */
+     order: -1; /* Try placing title before datetime visually if needed */
+     flex-basis: 100%; /* Allow title to take full width if needed */
+     margin: 5px 0;
   }
-  
-  .main-container.menu-expanded .title-container {
-    width: 100%;
-    left: 0;
+
+  /* Ensure controls are below header */
+  .controls-container {
+     position: relative; /* Make it part of the flow */
+     bottom: auto; left: auto; width: 100%;
+     border-radius: 0;
+     margin: 0;
+     border-top: none; /* Remove top border as it's not at the bottom */
+     border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Add bottom border */
+     height: auto; /* Auto height */
+     padding: var(--spacing-sm) !important;
   }
-  
-  .datetime {
-    margin-left: 60px;
-  }
-  
-  .title {
-    font-size: 1.3rem;
-    width: calc(100% - 130px);
-    margin: 0 auto;
-  }
-  
-  .side-menu {
-    position: fixed;
-    left: -250px;
-    width: 250px;
-    transition: left 0.3s ease;
-    z-index: var(--z-index-overlay);
-    padding: var(--spacing-lg) 0;
-  }
-  
-  .side-menu.expanded {
-    left: 0;
-  }
-  
-  .header {
-    padding-left: 70px;
-  }
-  
-  .control-buttons {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+   .control-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+   }
+
+   .meetings-container {
+        margin: 0; /* Remove margin for mobile */
+        border-radius: 0; /* Remove border-radius */
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+   }
+   .meetings-title-bar, .meeting-id-entry {
+       border-radius: 0; /* Remove radius */
+   }
 }
 
 @media (max-width: 576px) {
   .header {
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    align-items: stretch;
-    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 70px;
+    padding: 10px 10px 10px 60px; /* Further adjust padding */
+    /* Optionally stack items vertically if needed */
+    /* flex-direction: column; align-items: flex-start; */
   }
   
-  .datetime, .title-container {
-    width: 100%;
+  .datetime { 
+    display: none; /* Toujours caché sur très petit */
+  }
+
+  .title-container {
+      margin-left: 0; /* Reset margin if datetime hidden */
+      justify-content: center;
+      flex-basis: auto;
+      order: 0;
   }
   
-  .datetime {
-    margin-left: 0;
+  .title { 
+    font-size: 1.1rem; 
   }
-  
-  .title {
-    font-size: 1.2rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    width: 100%;
+
+  .user-profile {
+      position: absolute; /* Position profile relative to header */
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
   }
-  
-  .control-buttons button {
-    font-size: 0.8rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
-  }
-  
-  #recent-ids {
+   .user-profile .user-info { display: none; } /* Hide text next to initials */
+
+   .control-buttons button { font-size: 0.8rem; }
+   
+   #recent-ids {
     width: calc(100% - 40px);
     right: 20px;
     left: 20px;
@@ -389,21 +397,8 @@
 
 /* Grands écrans */
 @media (min-width: 1601px) {
-  :root {
-    --meetings-panel-width: 550px;
-  }
-  
-  .title {
-    font-size: 2rem;
-    max-width: 800px;
-  }
-  
-  .datetime p {
-    font-size: 1.5rem;
-  }
-  
-  .control-buttons button {
-    font-size: 1.1rem;
-    padding: var(--spacing-md) var(--spacing-lg);
-  }
+  :root { --meetings-panel-width: 550px; }
+  .title { font-size: 2rem; max-width: 800px; }
+  .datetime p { font-size: 1.5rem; }
+  .control-buttons button { font-size: 1.1rem; padding: var(--spacing-md) var(--spacing-lg); }
 }

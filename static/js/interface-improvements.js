@@ -6,39 +6,46 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. FIX JOIN BUTTON FUNCTIONALITY - MOST CRITICAL
-    fixJoinButtonsFunctionality();
+    // Vérifier si déjà initialisé
+    if (window._interfaceImprovementsInitialized) {
+        console.warn("interface-improvements.js: Initialisation déjà effectuée, ignorée.");
+        return;
+    }
+    window._interfaceImprovementsInitialized = true;
+    console.log("interface-improvements.js: Initialisation v3 (Restauration Visuelle)...");
+
+    // Ordre d'initialisation: Structure HTML, puis listeners, puis styles/display
+    reorganizeMenu(); // **CORRIGÉ** (HTML menu)
     
-    // 2. REORGANIZE MENU STRUCTURE 
-    reorganizeMenu();
+    // S'assurer que UISystem est initialisé APRÈS la création du menu
+    if (window.UISystem && typeof window.UISystem.init === 'function' && !window.UISystem._initialized) {
+        console.log("Interface: Appel explicite de UISystem.init()");
+        UISystem.init();
+        window.UISystem._initialized = true; // Marquer comme initialisé
+    } else if (!window.UISystem) {
+        console.error("Interface: UISystem n'est pas chargé/défini !");
+    }
     
-    // 3. ENSURE MENU STARTS COLLAPSED AND IS FUNCTIONAL
-    initializeMenu();
-    
-    // 4. UPDATE BUTTONS TEXT AND REMOVE DUPLICATES
-    updateButtonsAndLayout();
-    
-    // 5. IMPROVE TITLE CENTERING AND HEADER
+    // --- SUPPRIMÉ : enhanceMeetingsDisplay() ne doit plus modifier les styles/positions ---
+    initializeRoomsDisplay(); // **VÉRIFIÉ** (Gestion boutons/overlay)
+    fixJoinButtonsFunctionality(); // Assure le fonctionnement des boutons rejoindre (important)
+    ensureMeetingsLoading(); // Vérifie le chargement initial
+    initializeHelpFunction(); // Bouton d'aide
+    enhanceUIPerformance(); // Optimisations mineures
+    hideFloatingRoomButtonOnDesktop(); // **VÉRIFIÉ**
+    synchronizeRefreshButtons(); // **VÉRIFIÉ et AMÉLIORÉ**
+
+    // Ajustements CSS finaux
     fixTitleCentering();
     improveDateTimeDisplay();
     
-    // 6. IMPROVE MEETINGS DISPLAY FOR BETTER VISIBILITY
-    enhanceMeetingsDisplay();
+    // Initialisation du texte des boutons de salles
+    updateRoomsButtonText(false); // Appel initial pour texte bouton salles
     
-    // 7. FIX ROOM DISPLAY ANIMATION
-    initializeRoomsDisplay();
-    
-    // 8. FIX BUTTON OVERLAP ISSUES
-    fixButtonOverlap();
-
-    // 9. ENSURE CONSISTENT MEETING DATA LOADING
-    ensureMeetingsLoading();
-    
-    // 10. INITIALIZE HELP FUNCTION
-    initializeHelpFunction();
-    
-    // 11. ENHANCE UI PERFORMANCE
-    enhanceUIPerformance();
+    // --- NOUVEAU : Listener pour s'assurer que le bouton refresh est bien positionné ---
+    // Cela peut être nécessaire si le CSS original met du temps à s'appliquer
+    // ou si d'autres scripts interfèrent.
+    setTimeout(ensureRefreshButtonPosition, 500); // Vérifier après un court délai
     
     // 12. MASQUER L'ÉLÉMENT DE SYNCHRONISATION (solution minimaliste)
     try {
@@ -50,8 +57,32 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Erreur lors du masquage de la synchro:", e);
     }
     
-    console.log('Comprehensive interface improvements initialized');
+    console.log('interface-improvements.js: Initialisation complète v5 - Menu Logic.');
 });
+
+/**
+ * --- NOUVEAU : Fonction pour vérifier/corriger position refresh ---
+ * Assure que le bouton refresh est correctement positionné
+ */
+function ensureRefreshButtonPosition() {
+    const titleBar = document.querySelector('.meetings-title-bar');
+    const refreshButton = titleBar ? titleBar.querySelector('.refresh-meetings-btn') : null;
+    if (titleBar && refreshButton) {
+         // Vérifier si le positionnement absolu est appliqué (attendu par CSS original)
+         const style = window.getComputedStyle(refreshButton);
+         if (style.position !== 'absolute') {
+              console.warn("JS: Forçage position:absolute sur bouton refresh.");
+              refreshButton.style.position = 'absolute';
+              refreshButton.style.top = '15px'; // Valeurs par défaut du CSS original
+              refreshButton.style.right = '15px';
+         }
+          // S'assurer que le parent est relatif
+         if (window.getComputedStyle(titleBar).position === 'static') {
+              console.warn("JS: Forçage position:relative sur .meetings-title-bar.");
+              titleBar.style.position = 'relative';
+         }
+    }
+}
 
 /**
  * Ensure that meetings are loading properly
@@ -370,120 +401,176 @@ function setupMeetingsObserver() {
 
 /**
  * Function to update the text on the rooms buttons
+ * **RESTAURÉ : Texte complet pour le bouton de la barre de contrôle**
  */
 function updateRoomsButtonText(isVisible) {
-    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
-    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    const controlRoomsBtn = document.getElementById('showRoomsBtn'); // ID du bouton dans la barre du bas
     const floatingButton = document.querySelector('.rooms-toggle-button-floating');
-    
-    const newText = isVisible ? 
-        '<i class="fas fa-door-closed"></i> Masquer les salles disponibles' : 
-        '<i class="fas fa-door-open"></i> Afficher les salles disponibles';
-    
-    const newTextShort = isVisible ? 
-        '<i class="fas fa-door-closed"></i>' : 
+
+    // Texte pour le bouton de la barre de contrôle (complet)
+    const controlText = isVisible ?
+        '<i class="fas fa-times"></i> Masquer les salles' :
+        '<i class="fas fa-door-open"></i> Afficher les salles disponibles'; // Texte complet ici
+
+    // Texte pour le bouton flottant (icône seule)
+    const floatingText = isVisible ?
+        '<i class="fas fa-times"></i>' :
         '<i class="fas fa-door-open"></i>';
-    
-    if (toggleRoomsButton) {
-        if (window.innerWidth <= 768) {
-            toggleRoomsButton.innerHTML = newTextShort;
+
+    if (controlRoomsBtn) {
+        controlRoomsBtn.innerHTML = controlText; // Appliquer le texte complet
+        controlRoomsBtn.classList.toggle('active', isVisible);
+        controlRoomsBtn.title = isVisible ? "Masquer les salles" : "Afficher les salles disponibles";
+        console.log("DEBUG: Texte bouton contrôle MAJ:", controlRoomsBtn.innerText);
+    } else {
+        // Essayer de trouver via une classe plus générique si l'ID échoue
+        const genericControlBtn = document.querySelector('.controls-container .compact-btn[title*="salles"]');
+        if(genericControlBtn) {
+            genericControlBtn.innerHTML = controlText;
+            genericControlBtn.classList.toggle('active', isVisible);
+            genericControlBtn.title = isVisible ? "Masquer les salles" : "Afficher les salles disponibles";
+            console.warn("DEBUG: Bouton #showRoomsBtn non trouvé, utilisé sélecteur générique.");
         } else {
-            toggleRoomsButton.innerHTML = newText;
+             console.error("ERREUR: Bouton de contrôle des salles non trouvé.");
         }
     }
-    
-    if (controlRoomsBtn) {
-        controlRoomsBtn.innerHTML = newText;
-    }
-    
+
     if (floatingButton) {
-        floatingButton.innerHTML = newText;
+        floatingButton.innerHTML = floatingText;
+        floatingButton.classList.toggle('active', isVisible);
+        floatingButton.title = isVisible ? "Masquer les salles" : "Afficher les salles disponibles";
     }
 }
 
 /**
  * Reorganize the menu with submenu structure
- * Create "Réservation" submenu and move "Prêt matériel" under it
+ * REMOVED the "Afficher les salles" button from the menu bottom
+ * REMOVED the Logo div
+ * ADDED ID to "Salle de réunion" item
  */
 function reorganizeMenu() {
-  // Get the menu items container
-  const menuItems = document.querySelector('.menu-items');
-  if (!menuItems) return;
-  
-  // Réorganiser le menu selon l'image fournie
-  menuItems.innerHTML = `
+  const menuItemsContainer = document.querySelector('.side-menu .menu-items');
+  if (!menuItemsContainer) {
+    console.error("Conteneur '.side-menu .menu-items' non trouvé.");
+    return;
+  }
+  console.log("Interface: Réorganisation du menu...");
+
+  // Générer le HTML du menu (SANS logo, SANS bouton "Afficher Salles" en bas)
+  menuItemsContainer.innerHTML = `
     <div class="menu-group">
       <div class="menu-group-title">TABLEAU DE BORD</div>
-      <a href="/" class="menu-item">
+      <a href="/" class="menu-item" data-nav-type="standard">
         <i class="fas fa-home menu-item-icon"></i>
         <span class="menu-item-text">Accueil</span>
       </a>
     </div>
-    
     <div class="menu-group">
       <div class="menu-group-title">RÉSERVATIONS</div>
-      <a href="#" class="menu-item" id="menu-reservation-salle">
+      <a href="#" class="menu-item" id="menu-reservation-salle" data-nav-type="action">
         <i class="fas fa-calendar-alt menu-item-icon"></i>
         <span class="menu-item-text">Salle de réunion</span>
       </a>
-      <a href="/reservation-voiture" class="menu-item">
+      <a href="/reservation-voiture" class="menu-item" data-nav-type="standard">
         <i class="fas fa-car menu-item-icon"></i>
         <span class="menu-item-text">Réservation voiture</span>
       </a>
-      <a href="/prets" class="menu-item">
+      <a href="/prets" class="menu-item" data-nav-type="standard">
         <i class="fas fa-laptop menu-item-icon"></i>
         <span class="menu-item-text">Prêt de matériel</span>
       </a>
     </div>
-    
     <div class="menu-group">
       <div class="menu-group-title">APPLICATIONS</div>
-      <a href="https://teams.microsoft.com" target="_blank" class="menu-item">
+      <a href="https://teams.microsoft.com" target="_blank" class="menu-item" data-nav-type="external">
         <i class="fas fa-users menu-item-icon"></i>
         <span class="menu-item-text">Teams</span>
       </a>
-      <a href="https://sage.anecoop-france.com" target="_blank" class="menu-item">
+      <a href="https://sage.anecoop-france.com" target="_blank" class="menu-item" data-nav-type="external">
         <i class="fas fa-calculator menu-item-icon"></i>
         <span class="menu-item-text">SAGE</span>
       </a>
-      <a href="tel:3cx" class="menu-item">
+      <a href="tel:3cx" class="menu-item" data-nav-type="external">
         <i class="fas fa-phone menu-item-icon"></i>
         <span class="menu-item-text">3CX</span>
       </a>
-      <a href="/pulse" class="menu-item">
+      <a href="/pulse" class="menu-item" data-nav-type="standard">
         <i class="fas fa-chart-line menu-item-icon"></i>
         <span class="menu-item-text">AnecoopPulse</span>
       </a>
     </div>
-    
     <div class="menu-group" data-role="administrator,manager">
       <div class="menu-group-title">ADMINISTRATION</div>
-      <a href="/admin" class="menu-item">
+      <a href="/admin" class="menu-item" data-nav-type="standard">
         <i class="fas fa-cog menu-item-icon"></i>
         <span class="menu-item-text">Paramètres</span>
       </a>
-      <a href="/admin/users" class="menu-item">
+      <a href="/admin/users" class="menu-item" data-nav-type="standard">
         <i class="fas fa-user-cog menu-item-icon"></i>
         <span class="menu-item-text">Utilisateurs</span>
       </a>
     </div>
   `;
-  
-  // Associer la fonction de création de réunion à l'élément "Salle de réunion"
-  const salleMenuItem = document.getElementById('menu-reservation-salle');
+
+  // --- Listeners Spécifiques aux Items du Menu ---
+
+  // 1. Listener pour le lien "Salle de réunion" (Action spécifique)
+  const salleMenuItem = menuItemsContainer.querySelector('#menu-reservation-salle');
   if (salleMenuItem) {
-    salleMenuItem.addEventListener('click', function(e) {
-      e.preventDefault();
-      // Utiliser le système de réservation s'il est disponible
-      if (window.BookingSystem) {
-        window.BookingSystem.openModal();
+    // Utiliser cloneNode pour être sûr de ne pas avoir de vieux listeners
+    const newSalleMenuItem = salleMenuItem.cloneNode(true);
+    salleMenuItem.parentNode.replaceChild(newSalleMenuItem, salleMenuItem);
+
+    newSalleMenuItem.addEventListener('click', function (e) {
+      e.preventDefault(); // Empêche le href="#"
+      e.stopPropagation(); // ESSENTIEL: Empêche le document listener de fermer le menu
+      console.log("Interface: Clic intercepté sur 'Salle de réunion'");
+
+      if (window.BookingSystem && typeof window.BookingSystem.openModal === 'function') {
+        console.log("Interface: Appel de BookingSystem.openModal()");
+        window.BookingSystem.openModal(); // Ouvre le modal
+
+        // Fermer le menu sur mobile SEULEMENT
+        if (window.innerWidth <= 768 && window.UISystem && typeof window.UISystem.closeSideMenu === 'function') {
+             setTimeout(() => window.UISystem.closeSideMenu("booking_action_mobile"), 50); // Léger délai
+             console.log("Interface: Fermeture menu mobile demandée après action");
+        }
       } else {
-        // Fallback vers le modal standard
-        const modal = document.getElementById('bookingModal');
-        if (modal) modal.style.display = 'flex';
+        console.error("ERREUR: BookingSystem ou BookingSystem.openModal introuvable !");
+        alert("Fonctionnalité de réservation indisponible.");
       }
     });
+    console.log("Interface: Listener ajouté à #menu-reservation-salle");
+  } else {
+    console.error("ERREUR: Élément #menu-reservation-salle non trouvé.");
   }
+
+  // 2. Listener pour les liens de navigation standard (pour fermeture mobile)
+  menuItemsContainer.querySelectorAll('a.menu-item[data-nav-type="standard"]').forEach(link => {
+       // Utiliser cloneNode pour la propreté
+      const newLink = link.cloneNode(true);
+      link.parentNode.replaceChild(newLink, link);
+
+      newLink.addEventListener('click', function(e) {
+           // PAS de preventDefault() ici, on veut que la navigation se fasse
+           // PAS de stopPropagation() ici en général, SAUF si on ferme sur mobile
+           console.log(`Interface: Clic sur lien standard: ${this.href}`);
+
+           if (window.innerWidth <= 768 && window.UISystem && typeof window.UISystem.closeSideMenu === 'function') {
+               // Fermer après un délai pour laisser la navigation commencer
+               console.log("Interface: Fermeture menu mobile différée pour navigation standard.");
+               setTimeout(() => window.UISystem.closeSideMenu("standard_nav_mobile"), 150);
+               // On pourrait stopper la propagation *seulement ici* si ça cause problème, mais normalement pas besoin.
+               // e.stopPropagation();
+           }
+      });
+  });
+
+   // 3. Liens externes (data-nav-type="external") et Action (comme réservation)
+   // n'ont PAS besoin de listener ici car leur comportement est géré
+   // soit par le navigateur (target="_blank"), soit par leur listener spécifique (réservation).
+
+   console.log("Interface: Listeners spécifiques du menu ajoutés.");
 }
 
 /**
@@ -893,311 +980,114 @@ function updateDateTimeDisplay() {
 }
 
 /**
- * Enhance the meetings display section
- */
-function enhanceMeetingsDisplay() {
-    // Check if meetings container exists
-    const meetingsContainer = document.querySelector('.meetings-container');
-    if (!meetingsContainer) return;
-    
-    // Make sure the meetings section is visible and properly styled
-    meetingsContainer.style.display = 'flex';
-    
-    // Improve the title bar
-    const titleBar = document.querySelector('.meetings-title-bar');
-    if (titleBar) {
-        titleBar.style.background = 'rgba(50, 50, 50, 0.7)';
-        titleBar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
-        titleBar.style.borderRadius = '15px 15px 0 0';
-    }
-    
-    // Improve meetings list
-    const meetingsList = document.querySelector('.meetings-list');
-    if (meetingsList) {
-        meetingsList.style.padding = '10px 15px';
-    }
-    
-    // Optimize meeting items for more compact display
-    const meetingItems = document.querySelectorAll('.meeting-item');
-    meetingItems.forEach(item => {
-        // Reduce margins and padding for more compact display
-        item.style.margin = '8px 0';
-        item.style.padding = '10px 12px';
-        item.style.borderRadius = '10px';
-        item.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-        item.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        
-        // Add hover effect
-        item.addEventListener('mouseover', function() {
-            this.style.transform = 'translateY(-2px)';
-            this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-        });
-        
-        item.addEventListener('mouseout', function() {
-            this.style.transform = '';
-            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-        });
-    });
-    
-    // Improve ID input area
-    const idEntry = document.querySelector('.meeting-id-entry');
-    if (idEntry) {
-        idEntry.style.padding = '12px 15px';
-        idEntry.style.background = 'rgba(40, 40, 40, 0.7)';
-        idEntry.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
-        idEntry.style.borderRadius = '0 0 15px 15px';
-        
-        const input = idEntry.querySelector('input');
-        const button = idEntry.querySelector('button');
-        
-        if (input) {
-            input.style.padding = '8px 12px';
-            input.style.borderRadius = '8px 0 0 8px';
-            input.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-            input.id = 'meeting-id'; // Ensure ID consistency for the join system
-        }
-        
-        if (button) {
-            button.style.padding = '8px 15px';
-            button.style.borderRadius = '0 8px 8px 0';
-            button.style.background = 'linear-gradient(to right, var(--success-color), var(--success-color-light))';
-        }
-    }
-    
-    // Add refresh button to meetings header
-    const createMeetingButton = document.querySelector('.create-meeting-integrated');
-    if (createMeetingButton && meetingsContainer) {
-        const refreshButton = document.createElement('button');
-        refreshButton.className = 'refresh-meetings-btn';
-        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
-        refreshButton.title = "Rafraîchir les réunions";
-        refreshButton.style.cssText = `
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        `;
-        
-        refreshButton.addEventListener('mouseover', function() {
-            this.style.background = 'rgba(255, 255, 255, 0.2)';
-            this.style.transform = 'rotate(30deg)';
-        });
-        
-        refreshButton.addEventListener('mouseout', function() {
-            this.style.background = 'rgba(255, 255, 255, 0.1)';
-            this.style.transform = 'rotate(0)';
-        });
-        
-        refreshButton.addEventListener('click', function() {
-            this.style.transform = 'rotate(360deg)';
-            // Add a spinning animation
-            this.querySelector('i').classList.add('fa-spin');
-            
-            // Force refresh of meetings
-            if (typeof window.fetchMeetings === 'function') {
-                window.fetchMeetings(true);
-                
-                // Remove spinning after 2 seconds
-                setTimeout(() => {
-                    this.querySelector('i').classList.remove('fa-spin');
-                }, 2000);
-            }
-        });
-        
-        const titleBar = document.querySelector('.meetings-title-bar');
-        if (titleBar) {
-            titleBar.style.position = 'relative';
-            titleBar.appendChild(refreshButton);
-        }
-    }
-}
-
-/**
- * Initialize and fix the rooms display
- * avec fermeture en cliquant n'importe où en dehors de la liste des salles
+ * Initialize the rooms display
+ * **VÉRIFIÉ** (Gestion boutons/overlay)
  */
 function initializeRoomsDisplay() {
   try {
-    // Supprimer le bouton flottant (en double)
-    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
-    if (floatingButton) {
-      floatingButton.style.display = 'none'; // Cacher plutôt que supprimer pour éviter les erreurs
-    }
-    
-    // Make sure the rooms toggle buttons work properly
-    const toggleRoomsButton = document.querySelector('.toggle-rooms-button');
-    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
     const roomsSection = document.querySelector('.rooms-section');
-    
-    // Improve room section styling for smoother animations
-    if (roomsSection) {
-        roomsSection.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        roomsSection.style.background = 'rgba(40, 40, 40, 0.85)';
-        roomsSection.style.backdropFilter = 'blur(10px)';
-        roomsSection.style.borderRadius = '15px';
-        roomsSection.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.4)';
-        roomsSection.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        roomsSection.style.padding = '15px';
-        
-        // Add styles for animation
-        document.head.insertAdjacentHTML('beforeend', `
-            <style>
-                .rooms-section {
-                    opacity: 0;
-                    transform: translateY(10px);
-                    display: none;
-                }
-                .rooms-section.visible {
-                    opacity: 1;
-                    transform: translateY(0);
-                    display: block;
-                }
-            </style>
-        `);
-        
-        // Empêcher la propagation des clics depuis la liste des salles
-        roomsSection.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
+    const controlRoomsBtn = document.getElementById('showRoomsBtn') || document.getElementById('toggleRoomsBtn');
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating'); // Garder la référence
+
+    if (!roomsSection) {
+         console.warn("Section des salles (.rooms-section) non trouvée pour initialisation.");
+         // Cacher les boutons si la section n'existe pas
+         if(controlRoomsBtn) controlRoomsBtn.style.display = 'none';
+         if(floatingButton) floatingButton.style.display = 'none';
+         return;
     }
-    
-    // Utiliser l'overlay partagé
+
+    // S'assurer que la section est initialement cachée
+    roomsSection.classList.remove('visible');
+    roomsSection.style.display = 'none';
+
+    // Utiliser l'overlay partagé pour fermer au clic extérieur
     let clickOverlay = document.getElementById('click-outside-overlay');
     if (!clickOverlay) {
         clickOverlay = document.createElement('div');
         clickOverlay.id = 'click-outside-overlay';
-        clickOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: transparent;
-            z-index: 500;
-            display: none;
-        `;
+        clickOverlay.className = 'rooms-overlay'; // Utiliser la classe définie en CSS
         document.body.appendChild(clickOverlay);
-        
-        // Gestionnaire pour fermer les menus lors d'un clic sur l'overlay
-        clickOverlay.addEventListener('click', function() {
-            // Fermer la liste des salles si ouverte
-            if (roomsSection && roomsSection.classList.contains('visible')) {
-                roomsSection.classList.remove('visible');
-                setTimeout(() => {
-                    roomsSection.style.display = 'none';
-                }, 300);
-                
-                // Mise à jour du texte des boutons
-                if (typeof updateRoomsButtonText === 'function') {
-                    updateRoomsButtonText(false);
-                }
-            }
-            
-            // Fermer aussi le menu latéral s'il est ouvert
-            const sideMenu = document.querySelector('.side-menu');
-            const mainContainer = document.querySelector('.main-container');
-            if (sideMenu && sideMenu.classList.contains('expanded')) {
-                sideMenu.classList.remove('expanded');
-                if (mainContainer) mainContainer.classList.remove('menu-expanded');
-            }
-            
-            // Cacher l'overlay
-            this.style.display = 'none';
-        });
     }
-    
-    // Define the toggle function
-    function toggleRooms(e) {
-        if (e) e.preventDefault();
-        if (!roomsSection) return;
-        
-        const isVisible = roomsSection.classList.contains('visible');
-        
-        if (isVisible) {
-            roomsSection.classList.remove('visible');
-            setTimeout(() => {
-                roomsSection.style.display = 'none';
-            }, 300);
-            
-            // Update button text
-            if (typeof updateRoomsButtonText === 'function') {
-                updateRoomsButtonText(false);
-            }
-            
-            // Cacher l'overlay
-            if (clickOverlay) clickOverlay.style.display = 'none';
-        } else {
+
+    // Fonction pour basculer la visibilité
+    const toggleRoomsVisibility = (show) => {
+        const currentlyVisible = roomsSection.classList.contains('visible');
+        const newState = (typeof show === 'boolean') ? show : !currentlyVisible; // Si show n'est pas défini, inverser
+
+        if (newState === currentlyVisible) return; // Pas de changement
+
+        if (newState) {
+            console.log("DEBUG: Affichage des salles demandé");
             roomsSection.style.display = 'block';
-            // Force reflow
+            clickOverlay.style.display = 'block'; // Afficher l'overlay
+            // Forcer reflow
             roomsSection.offsetHeight;
+            // Ajouter classe pour animation
             roomsSection.classList.add('visible');
-            
-            // Update button text
-            if (typeof updateRoomsButtonText === 'function') {
-                updateRoomsButtonText(true);
-            }
-            
-            // Afficher l'overlay
-            if (clickOverlay) clickOverlay.style.display = 'block';
+            clickOverlay.classList.add('visible'); // Animer l'overlay aussi
+        } else {
+             console.log("DEBUG: Masquage des salles demandé");
+            roomsSection.classList.remove('visible');
+            clickOverlay.classList.remove('visible'); // Animer l'overlay aussi
+            // Masquer après l'animation
+            setTimeout(() => {
+                if (!roomsSection.classList.contains('visible')) { // Double vérification
+                    roomsSection.style.display = 'none';
+                    clickOverlay.style.display = 'none';
+                }
+            }, 300); // Doit correspondre à la durée de transition CSS
         }
-    }
-    
-    // Attacher la fonction aux boutons
-    if (toggleRoomsButton) {
-        // Remplacer le gestionnaire existant
-        const newToggleButton = toggleRoomsButton.cloneNode(true);
-        if (toggleRoomsButton.parentNode) {
-            toggleRoomsButton.parentNode.replaceChild(newToggleButton, toggleRoomsButton);
-            newToggleButton.addEventListener('click', toggleRooms);
+        updateRoomsButtonText(newState); // Mettre à jour les boutons
+    };
+
+    // Attacher aux boutons (Contrôle et Flottant)
+    const allToggleButtons = [controlRoomsBtn, floatingButton].filter(Boolean);
+    allToggleButtons.forEach(button => {
+        if (!button.hasAttribute('data-rooms-handler-added')) {
+             const newButton = button.cloneNode(true);
+             if (button.parentNode) {
+                  button.parentNode.replaceChild(newButton, button);
+                  newButton.addEventListener('click', (e) => {
+                      e.preventDefault();
+                      e.stopPropagation(); // Empêche de déclencher l'overlay immédiatement
+                      toggleRoomsVisibility(); // Basculer
+                  });
+                  newButton.setAttribute('data-rooms-handler-added', 'true');
+             }
         }
-    }
-    
-    if (controlRoomsBtn) {
-        // Remplacer le gestionnaire existant
-        const newControlBtn = controlRoomsBtn.cloneNode(true);
-        if (controlRoomsBtn.parentNode) {
-            controlRoomsBtn.parentNode.replaceChild(newControlBtn, controlRoomsBtn);
-            newControlBtn.addEventListener('click', toggleRooms);
-        }
-    }
-    
-    // Fix room cards if they exist
-    const roomCards = document.querySelectorAll('.room-card');
-    roomCards.forEach(card => {
-        card.style.borderRadius = '10px';
-        card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-        card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-        
-        card.addEventListener('mouseover', function() {
-            this.style.transform = 'translateY(-3px)';
-            this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.4)';
-        });
-        
-        card.addEventListener('mouseout', function() {
-            this.style.transform = '';
-            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-        });
-        
-        // Make sure room cards are clickable
-        card.addEventListener('click', function(e) {
-            e.stopPropagation(); // Empêcher la fermeture immédiate
-            const roomName = this.getAttribute('data-room');
-            if (roomName) {
-                window.location.href = '/' + roomName.toLowerCase();
-            }
-        });
     });
+
+    // Attacher à l'overlay pour fermer
+     if (!clickOverlay.hasAttribute('data-rooms-handler-added')) {
+        clickOverlay.addEventListener('click', (e) => {
+             e.preventDefault();
+             toggleRoomsVisibility(false); // Forcer la fermeture
+        });
+        clickOverlay.setAttribute('data-rooms-handler-added', 'true');
+     }
+
+     // Empêcher la fermeture si on clique DANS la section des salles
+     roomsSection.addEventListener('click', (e) => {
+          e.stopPropagation(); // Ne propage pas le clic à l'overlay
+     });
+
+    // Fix room cards if they exist
+    const roomCards = roomsSection.querySelectorAll('.room-card'); // Cibler DANS la section
+    roomCards.forEach(card => {
+        if (!card.hasAttribute('data-room-card-handler')) {
+            card.addEventListener('click', function(e) {
+                const roomName = this.getAttribute('data-room');
+                if (roomName) {
+                    // Rediriger vers la page de la salle
+                     console.log(`DEBUG: Redirection vers la salle: ${roomName}`);
+                     window.location.href = '/' + roomName.toLowerCase(); // Assumer structure URL simple
+                }
+            });
+            card.setAttribute('data-room-card-handler', 'true');
+        }
+    });
+
   } catch (error) {
     console.log("Erreur dans initializeRoomsDisplay:", error);
   }
@@ -1349,4 +1239,102 @@ function enhanceUIPerformance() {
       element.style.zIndex = '5';
     }
   });
+}
+
+/**
+ * Synchronize refresh buttons functionality
+ * **VÉRIFIÉ et AMÉLIORÉ**
+ */
+function synchronizeRefreshButtons() {
+    const controlRefreshBtn = document.getElementById('refreshBtn'); // Barre de contrôle
+    const panelRefreshBtn = document.querySelector('.meetings-title-bar .refresh-meetings-btn'); // Panneau meetings
+
+    const handleRefreshClick = (buttonClicked, event) => {
+        if (event) event.preventDefault();
+        console.log(`DEBUG: Clic sur Rafraîchir (${buttonClicked?.id || 'panel-btn'})`);
+
+        // Sélectionne les DEUX boutons pour gérer leur état
+        const buttonsToManage = [controlRefreshBtn, panelRefreshBtn].filter(Boolean); // Filtre au cas où un bouton n'existerait pas
+
+        // Vérifier si un rafraîchissement est déjà en cours (basé sur l'état disabled)
+        if (buttonsToManage.some(btn => btn.disabled)) {
+            console.log("DEBUG: Rafraîchissement déjà en cours, ignoré.");
+            return;
+        }
+
+        // Appliquer l'état "loading" aux deux boutons
+        buttonsToManage.forEach(button => {
+            const icon = button.querySelector('i');
+            if (icon) icon.classList.add('fa-spin');
+            button.disabled = true;
+        });
+
+
+        if (typeof window.fetchMeetings === 'function') {
+            console.log("DEBUG: Appel de window.fetchMeetings(true)");
+            window.fetchMeetings(true) // Toujours forcer une mise à jour visible pour un clic manuel
+                .catch(error => {
+                    console.error("Erreur lors du rafraîchissement manuel:", error);
+                    // Afficher une notification d'erreur à l'utilisateur si UISystem existe
+                    if (window.UISystem && typeof window.UISystem.showNotification === 'function') {
+                        window.UISystem.showNotification("Erreur lors du rafraîchissement.", "error");
+                    }
+                })
+                .finally(() => {
+                    // Retirer l'état "loading" après un délai (même en cas d'erreur)
+                    setTimeout(() => {
+                        buttonsToManage.forEach(button => {
+                             const icon = button.querySelector('i');
+                             if (icon) icon.classList.remove('fa-spin');
+                             button.disabled = false;
+                        });
+                         console.log("DEBUG: Fin du rafraîchissement manuel.");
+                    }, 500); // Délai pour visibilité du spin
+                });
+        } else {
+            console.error("Fonction fetchMeetings non trouvée.");
+             // Retirer immédiatement l'état loading si la fonction n'existe pas
+             buttonsToManage.forEach(button => {
+                 const icon = button.querySelector('i');
+                 if (icon) icon.classList.remove('fa-spin');
+                 button.disabled = false;
+            });
+        }
+    };
+
+    // Attacher les listeners s'ils n'existent pas
+    if (controlRefreshBtn && !controlRefreshBtn.hasAttribute('data-sync-refresh-handler')) {
+        controlRefreshBtn.addEventListener('click', (e) => handleRefreshClick(controlRefreshBtn, e));
+        controlRefreshBtn.setAttribute('data-sync-refresh-handler', 'true');
+        console.log("Listener SYNC ajouté au bouton refresh de contrôle");
+    } else if (!controlRefreshBtn) {
+         console.warn("Bouton refresh de contrôle (#refreshBtn) non trouvé pour listener SYNC.");
+    }
+
+    if (panelRefreshBtn && !panelRefreshBtn.hasAttribute('data-sync-refresh-handler')) {
+        panelRefreshBtn.addEventListener('click', (e) => handleRefreshClick(panelRefreshBtn, e));
+        panelRefreshBtn.setAttribute('data-sync-refresh-handler', 'true');
+        console.log("Listener SYNC ajouté au bouton refresh du panneau");
+    } else if (!panelRefreshBtn) {
+         console.warn("Bouton refresh panneau (.refresh-meetings-btn) non trouvé pour listener SYNC.");
+    }
+}
+
+/**
+ * Masquer le bouton flottant sur Desktop
+ * **VÉRIFIÉ**
+ */
+function hideFloatingRoomButtonOnDesktop() {
+    const floatingButton = document.querySelector('.rooms-toggle-button-floating');
+    if (floatingButton) {
+        const checkVisibility = () => {
+            if (window.innerWidth >= 769) { // Même breakpoint que le CSS
+                floatingButton.style.display = 'none';
+            } else {
+                floatingButton.style.display = 'flex'; // Ou 'inline-flex' selon le style de base
+            }
+        };
+        checkVisibility(); // Vérifier au chargement
+        window.addEventListener('resize', checkVisibility); // Vérifier au redimensionnement
+    }
 }

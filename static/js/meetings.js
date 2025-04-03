@@ -16,67 +16,70 @@ let debugMode = window.APP_CONFIG?.DEBUG ?? false; // Utiliser la config globale
 
 /**
  * Récupère les réunions depuis l'API
- * @param {boolean} forceVisibleUpdate - Force une mise à jour visible même si l'intervalle minimum n'est pas atteint
+ * @param {boolean} forceVisibleUpdate - Force une mise à jour visible (avec indicateur de chargement)
  * @returns {Promise<void>}
  */
 async function fetchMeetings(forceVisibleUpdate = false) {
-  // Éviter les requêtes multiples simultanées
-  if (isLoadingMeetings) {
-    if (debugMode) console.log("fetchMeetings: Requête déjà en cours, ignorée.");
-    return Promise.resolve(); // Retourne une promesse résolue
+  if (isLoadingMeetings && !forceVisibleUpdate) { // Allow forced updates to proceed even if another is loading
+    if (debugMode) console.log("fetchMeetings: Background request already loading, ignored.");
+    return Promise.resolve();
   }
-  isLoadingMeetings = true;
-  if (debugMode) console.log(`fetchMeetings: Début (forceVisibleUpdate: ${forceVisibleUpdate})`);
+  if (isLoadingMeetings && forceVisibleUpdate) {
+      if (debugMode) console.log("fetchMeetings: Forced request interrupting previous one.");
+      // Potentially add logic here to cancel the previous request if using AbortController
+  }
 
-  return new Promise(async (resolve, reject) => { // Envelopper dans une promesse
+  isLoadingMeetings = true;
+  if (debugMode) console.log(`fetchMeetings: Start (forceVisibleUpdate: ${forceVisibleUpdate}, isFirstLoad: ${isFirstLoad})`);
+
+  return new Promise(async (resolve, reject) => {
       try {
-        // Récupérer le conteneur une fois pour éviter les sélections multiples
         if (!meetingsContainer) {
           meetingsContainer = document.getElementById('meetingsContainer') || document.querySelector('.meetings-list');
           if (!meetingsContainer) {
-            console.error("Conteneur de réunions introuvable (meetingsContainer ou .meetings-list)");
+            console.error("Meetings container not found (meetingsContainer or .meetings-list)");
             isLoadingMeetings = false;
-            return reject(new Error("Conteneur de réunions introuvable")); // Rejeter la promesse
+            return reject(new Error("Meetings container not found"));
           }
         }
 
-        // Déterminer si nous devons afficher l'indicateur de chargement
         const now = Date.now();
         const hasExistingMeetings = meetingsContainer.querySelector('.meeting-item') !== null;
-        // Afficher le chargement si forcé, au premier chargement, ou s'il n'y a pas de réunions affichées
+        // --- MODIFICATION: Show loading indicator ONLY on first load or forced update ---
         const shouldShowLoading = forceVisibleUpdate || isFirstLoad || !hasExistingMeetings;
+        // --- END MODIFICATION ---
 
         let loadingIndicator = null;
         if (shouldShowLoading) {
-          if (debugMode) console.log("fetchMeetings: Affichage de l'indicateur de chargement");
+          if (debugMode) console.log("fetchMeetings: Showing loading indicator.");
+           // Clear previous content ONLY when showing loader
+          meetingsContainer.innerHTML = '';
           loadingIndicator = document.createElement('div');
           loadingIndicator.className = 'loading-indicator';
           loadingIndicator.innerHTML = `
             <i class="fas fa-circle-notch fa-spin"></i>
             <span>Chargement des réunions...</span>
-            <p class="loading-detail">Mise à jour en cours...</p>
+            <p class="loading-detail">Mise à jour...</p>
           `;
-          meetingsContainer.innerHTML = ''; // Vider avant d'ajouter le loader
           meetingsContainer.appendChild(loadingIndicator);
         } else {
-          if (debugMode) console.log("fetchMeetings: Mise à jour silencieuse en arrière-plan");
+          if (debugMode) console.log("fetchMeetings: Silent background update.");
         }
 
-        // URL de l'API
         const apiUrl = window.API_URLS?.GET_MEETINGS || '/meetings.json';
         const cacheBust = `?t=${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         const fullUrl = `${apiUrl}${cacheBust}`;
 
-        if (debugMode) console.log(`fetchMeetings: Requête API vers ${fullUrl}`);
+        if (debugMode) console.log(`fetchMeetings: API Request to ${fullUrl}`);
 
         const response = await fetch(fullUrl);
 
         if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+          throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
         }
 
         let meetings = await response.json();
-        if (debugMode) console.log(`fetchMeetings: Réunions brutes reçues: ${meetings.length}`);
+        if (debugMode) console.log(`fetchMeetings: Raw meetings received: ${meetings.length}`);
 
         // Filtrage par salle si nécessaire
         const salleName = window.resourceName || window.salleName;
@@ -121,29 +124,34 @@ async function fetchMeetings(forceVisibleUpdate = false) {
         // Vérifier si les données ont changé
         const currentMeetingsString = JSON.stringify(meetings);
         const dataChanged = previousMeetings !== currentMeetingsString;
-         if (debugMode) console.log(`fetchMeetings: Données changées: ${dataChanged}`);
+        if (debugMode) console.log(`fetchMeetings: Data changed: ${dataChanged}`);
 
-        previousMeetings = currentMeetingsString; // Mémoriser les nouvelles données
-
-        // Mise à jour de l'affichage ou des timers
-        if (shouldShowLoading || dataChanged) {
-          updateMeetingsDisplay(meetings);
-          if (debugMode) console.log(`fetchMeetings: Mise à jour complète de l'affichage.`);
-        } else {
-          updateMeetingTimers();
-          if (debugMode) console.log("fetchMeetings: Mise à jour des timers uniquement.");
+        if (dataChanged) {
+            previousMeetings = currentMeetingsString;
         }
 
-        // Mise à jour de l'heure de la dernière tentative de rafraîchissement
+        // --- MODIFICATION: Update display logic ---
+        if (shouldShowLoading || dataChanged) {
+            // Update the display fully if loading was shown OR if data actually changed
+            if (debugMode && dataChanged && !shouldShowLoading) console.log("fetchMeetings: Data changed, updating display without loader.");
+            if (debugMode && shouldShowLoading) console.log("fetchMeetings: Forced/Initial load, updating display.");
+            updateMeetingsDisplay(meetings); // This function clears and redraws
+        } else {
+            // If no change and no forced loading, just update timers silently
+            if (debugMode) console.log("fetchMeetings: No data change, updating timers only.");
+            updateMeetingTimers();
+        }
+        // --- END MODIFICATION ---
+
         lastRefreshTime = now;
-        isFirstLoad = false; // Marquer que le premier chargement est terminé
-        resolve(); // Résoudre la promesse
+        isFirstLoad = false;
+        resolve();
 
       } catch (error) {
-        console.error("fetchMeetings: Erreur lors du chargement des réunions:", error);
-        // Afficher l'erreur uniquement si on était censé afficher le chargement
+        console.error("fetchMeetings: Error loading meetings:", error);
+        // Show error message ONLY if a loading indicator was expected or it's the first load
         if (document.querySelector('.loading-indicator') || isFirstLoad) {
-           if (meetingsContainer) {
+            if (meetingsContainer) {
                 meetingsContainer.innerHTML = `
                   <div class="empty-meetings-message error">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -156,16 +164,20 @@ async function fetchMeetings(forceVisibleUpdate = false) {
                 `;
                 const retryBtn = document.getElementById('retryBtn');
                 if (retryBtn) {
-                  retryBtn.addEventListener('click', () => fetchMeetings(true));
+                    // Use event delegation or ensure button exists before adding listener
+                    if (!retryBtn.hasAttribute('data-retry-handler')) {
+                        retryBtn.addEventListener('click', () => fetchMeetings(true));
+                        retryBtn.setAttribute('data-retry-handler', 'true');
+                    }
                 }
-           }
+            }
         }
-        reject(error); // Rejeter la promesse en cas d'erreur
+        reject(error);
       } finally {
         isLoadingMeetings = false;
-        if (debugMode) console.log("fetchMeetings: Terminé.");
+        if (debugMode) console.log("fetchMeetings: Finished.");
       }
-  }); // Fin de la promesse
+  });
 }
 
 /**
@@ -645,9 +657,9 @@ function initializeParticipantsPopupsStylesAndLogic() {
 
 
 // --- Initialisation et Auto-Refresh ---
-
 // Initialiser au chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
+  // ... (récupération config, fetchMeetings initial) ...
   if (debugMode) console.log("DOM Chargé: Initialisation du module Meetings.");
   fetchMeetings(true); // Premier chargement forcé visible
 
@@ -655,15 +667,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshInterval = window.APP_CONFIG?.REFRESH_INTERVAL || 10000; // 10 secondes par défaut
   const autoRefreshEnabled = window.APP_CONFIG?.AUTO_REFRESH !== false; // Activé par défaut
 
+  // --- MODIFICATION : Seuil pour rafraîchissement visible après longue inactivité ---
+  const longInactivityThreshold = 300000; // 5 minutes en millisecondes
   if (autoRefreshEnabled) {
       if (debugMode) console.log(`Auto-refresh activé toutes les ${refreshInterval / 1000} secondes.`);
       setInterval(() => {
-          // Rafraîchir silencieusement sauf si l'onglet est inactif depuis longtemps
           const timeSinceLastRefresh = Date.now() - lastRefreshTime;
-          // Forcer une maj visible si > 5 mins sans refresh (ex: après mise en veille)
-          const forceVisible = timeSinceLastRefresh > 300000;
-          if (!document.hidden || forceVisible) { // Ne rafraîchit pas si l'onglet est caché (sauf si inactif depuis longtemps)
-             fetchMeetings(forceVisible);
+          // Forcer visible SEULEMENT si > 5 mins (longInactivityThreshold)
+          const forceVisible = timeSinceLastRefresh > longInactivityThreshold;
+          if (!document.hidden || forceVisible) {
+             fetchMeetings(forceVisible); // Appel avec forceVisible calculé
           } else {
              if (debugMode) console.log("Onglet caché, auto-refresh silencieux ignoré.");
           }
@@ -671,21 +684,26 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
        if (debugMode) console.log("Auto-refresh désactivé.");
   }
-
   // Ajouter un listener pour rafraîchir quand l'onglet redevient visible
   document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
+      if (!document.hidden) { // Si l'onglet DEVIENT visible
           const timeSinceLastRefresh = Date.now() - lastRefreshTime;
-          if (timeSinceLastRefresh > (refreshInterval * 1.5)) { // Si plus de 1.5x l'intervalle s'est écoulé
-             if (debugMode) console.log("Onglet visible après inactivité, rafraîchissement forcé.");
-             fetchMeetings(true); // Forcer une mise à jour visible
-          } else {
-              if (debugMode) console.log("Onglet visible, rafraîchissement normal (silencieux).");
-              fetchMeetings(false); // Rafraîchissement normal
+          // --- CORRECTION CLÉ ---
+          // Si inactif depuis longtemps (> 5min), forcer visible
+          if (timeSinceLastRefresh > longInactivityThreshold) {
+             if (debugMode) console.log("Onglet visible après LONGUE inactivité, rafraîchissement FORCÉ VISIBLE.");
+             fetchMeetings(true); // forceVisibleUpdate = true
           }
+          // Sinon (inactivité courte), rafraîchir SILENCIEUSEMENT
+          else if (timeSinceLastRefresh > 5000) { // Éviter refresh si on quitte/revient très vite (moins de 5s)
+              if (debugMode) console.log("Onglet visible après courte inactivité, rafraîchissement SILENCIEUX.");
+              fetchMeetings(false); // forceVisibleUpdate = false
+          } else {
+               if (debugMode) console.log("Onglet visible après très courte inactivité (<5s), pas de refresh immédiat.");
+          }
+          // --- FIN CORRECTION CLÉ ---
       }
   });
 });
-
 // Exposer fetchMeetings globalement pour le bouton refresh manuel
 window.fetchMeetings = fetchMeetings;
