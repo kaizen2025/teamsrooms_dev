@@ -14,6 +14,22 @@ let isFirstLoad = true;
 let lastRefreshTime = Date.now();
 let debugMode = window.APP_CONFIG?.DEBUG ?? false; // Utiliser la config globale si dispo
 
+// --- CORRECTION : Définition de formatTime au niveau global du module ---
+/**
+ * Formate un objet Date en chaîne HH:MM (format français)
+ * @param {Date} date L'objet Date à formater
+ * @returns {string} L'heure formatée (ex: "14:30")
+ */
+const formatTime = (date) => {
+  if (!(date instanceof Date) || isNaN(date)) {
+      console.warn("formatTime: Input invalide, attendu objet Date.");
+      return '??:??'; // Retourner une valeur par défaut en cas d'erreur
+  }
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+};
+// --- FIN CORRECTION ---
+
+
 /**
  * Récupère les réunions depuis l'API
  * @param {boolean} forceVisibleUpdate - Force une mise à jour visible (avec indicateur de chargement)
@@ -268,9 +284,10 @@ function createMeetingHTML(meeting) {
   const endTime = new Date(meeting.end);
   const now = new Date();
 
-  const formatTime = (date) => date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  const startTimeStr = formatTime(startTime);
-  const endTimeStr = formatTime(endTime);
+  // --- CORRECTION : Utilisation de la fonction formatTime globale ---
+  const startTimeStr = formatTime(startTime); // Appel ok car formatTime est maintenant global
+  const endTimeStr = formatTime(endTime);     // Appel ok
+  // --- FIN CORRECTION (Suppression de la définition locale de formatTime ici) ---
 
   let statusClass = meeting.status || '';
   let progressHTML = '';
@@ -459,9 +476,11 @@ function updateMeetingTimers() {
         const timeInfoDiv = item.querySelector('.time-info');
          if (timeInfoDiv) {
              // Reconstruire le contenu de time-info pour s'assurer que l'élément existe
-             const startTimeStr = formatTime(startTime);
-             const endTimeStr = formatTime(endTime);
-              timeInfoDiv.innerHTML = `<span>${startTimeStr} - ${endTimeStr}</span> ${remainingText}`;
+             // --- CORRECTION : Utilisation de la fonction formatTime globale ---
+             const startTimeStr = formatTime(startTime); // Appel ok
+             const endTimeStr = formatTime(endTime);     // Appel ok
+             // --- FIN CORRECTION ---
+             timeInfoDiv.innerHTML = `<span>${startTimeStr} - ${endTimeStr}</span> ${remainingText}`;
          }
 
         // Assurer que le badge "En cours" est là
